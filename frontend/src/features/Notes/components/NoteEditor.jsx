@@ -1,5 +1,4 @@
 import Document from '@tiptap/extension-document'
-import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
 import Bold from '@tiptap/extension-bold'
 import Italic from '@tiptap/extension-italic'
@@ -8,28 +7,61 @@ import Heading from '@tiptap/extension-heading'
 import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
-import Blockquote from '@tiptap/extension-blockquote'
 import HardBreak from '@tiptap/extension-hard-break'
+import Paragraph from '@tiptap/extension-paragraph'
 import { EditorContent, useEditor } from '@tiptap/react'
 import History from '@tiptap/extension-history'
+import {Color} from '@tiptap/extension-color'
+import {TextStyle} from '@tiptap/extension-text-style'
+import Highlight from '@tiptap/extension-highlight'
+import { Extension } from '@tiptap/core' 
 import React, { useEffect } from 'react'
 
+const FontSize = Extension.create({
+  name: 'fontSize',
+  addOptions() {
+    return { types: ['textStyle'] }
+  },
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: element => element.style.fontSize || null,
+            renderHTML: attributes => {
+              if (!attributes.fontSize) return {}
+              return { style: `font-size: ${attributes.fontSize}` }
+            },
+          },
+        },
+      },
+    ]
+  },
+  addCommands() {
+    return {
+      setFontSize: fontSize => ({ chain }) => {
+        return chain().setMark('textStyle', { fontSize }).run()
+      },
+      unsetFontSize: () => ({ chain }) => {
+        return chain().setMark('textStyle', { fontSize: null }).run()
+      },
+    }
+  },
+})
+
 // Toolbar button component
-const ToolbarButton = ({ onClick, isActive, children, title }) => (
+const ToolbarButton = ({ onClick, children, title }) => (
   <button
+    type="button" 
     onClick={onClick}
     title={title}
-    className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-      isActive
-        ? 'bg-blue-600 text-white shadow-md'
-        : 'bg-gray-100 text-white-800 hover:bg-gray-200 border border-gray-300'
-    }`}
+    className="px-3 py-2 bg-gray-500 text-white-800 hover:bg-blue-600 border border-gray-300 rounded text-sm font-medium transition-colors shadow-sm"
   >
     {children}
   </button>
 )
-
-const Divider = () => <div className="w-px h-6 bg-gray-400 mx-1" />
 
 // Toolbar component
 const MenuBar = ({ editor }) => {
@@ -61,31 +93,53 @@ const MenuBar = ({ editor }) => {
         <span className="line-through">S</span>
       </ToolbarButton>
 
-
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        isActive={editor.isActive('heading', { level: 1 })}
-        title="Heading 1"
+      <select
+        onChange={(event) => editor.chain().focus().setFontSize(event.target.value).run()}
+        value={editor.getAttributes('textStyle').fontSize || '16px'} 
+        className="px-2 py-1.5 bg-gray-500 text-white border border-gray-300 rounded text-sm font-medium hover:bg-blue-600 cursor-pointer outline-none shadow-sm"
+        title="Font Size"
       >
-        H1
+        <option value="12px">12px</option>
+        <option value="14px">14px</option>
+        <option value="16px">16px (Default)</option>
+        <option value="18px">18px</option>
+        <option value="20px">20px</option>
+        <option value="24px">24px</option>
+        <option value="30px">30px</option>
+        <option value="36px">36px</option>
+      </select>
+
+      <div className="relative flex items-center">
+        <label
+          title="Text Color"
+          className="flex flex-col items-center justify-center w-10 h-9 rounded text-sm font-bold transition-colors bg-gray-500 text-white-800 hover:bg-blue-800 border border-gray-300 cursor-pointer overflow-hidden"
+        >
+          <span className="leading-none mt-1 text-white">A</span>
+          
+          <div 
+            className="h-1 w-4 mt-0.5 rounded-sm" 
+            style={{ backgroundColor: editor.getAttributes('textStyle').color || '#000000' }}
+          />
+          
+          {/* The invisible native color picker */}
+          <input
+            type="color"
+            onInput={(event) => editor.chain().focus().setColor(event.target.value).run()}
+            value={editor.getAttributes('textStyle').color || '#000000'}
+            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+          />
+        </label>
+      </div>
+
+       <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHighlight().run()}
+        isActive={editor.isActive('highlight')}
+        title="Highlight"
+       >
+        Highlight
       </ToolbarButton>
 
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        isActive={editor.isActive('heading', { level: 2 })}
-        title="Heading 2"
-      >
-        H2
-      </ToolbarButton>
-
-      <ToolbarButton
-        onClick={() => editor.chain().focus().setParagraph().run()}
-        isActive={editor.isActive('paragraph')}
-        title="Paragraph"
-      >
-        P
-      </ToolbarButton>
-
+    
 
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -101,14 +155,6 @@ const MenuBar = ({ editor }) => {
         title="Ordered List"
       >
         Numbered
-      </ToolbarButton>
-
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        isActive={editor.isActive('blockquote')}
-        title="Quote"
-      >
-        " "
       </ToolbarButton>
 
       <ToolbarButton
@@ -135,6 +181,9 @@ export default function NoteEditor({ note, onUpdate }) {
       Document,
       Paragraph,
       Text,
+      Color,
+      TextStyle,
+      FontSize, // <-- Added to extensions
       Bold,
       Italic,
       Strike,
@@ -144,9 +193,9 @@ export default function NoteEditor({ note, onUpdate }) {
       BulletList,
       OrderedList,
       ListItem,
-      Blockquote,
       HardBreak,
       History, 
+      Highlight,
     ],
     content: note?.content || '<p>Start typing...</p>',
 
@@ -192,7 +241,7 @@ export default function NoteEditor({ note, onUpdate }) {
       <MenuBar editor={editor} />
 
       {/* Editor */}
-      <div className="prose prose-lg max-w-none p-6 min-h-96 bg-white rounded-b-lg border-l border-r border-b border-gray-200 text-gray-900">
+      <div className="prose max-w-none p-6 min-h-96 bg-white rounded-b-lg border-l border-r border-b border-gray-200 text-gray-900">
         <EditorContent editor={editor} />
       </div>
     </div>
