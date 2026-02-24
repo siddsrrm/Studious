@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 
 function DeleteAccount() {
+  const { username } = useParams();
   const [password, setPassword] = useState("");
   const [confirmed, setConfirmed] = useState(false);
 
-  const handleDelete = (e) => {
+  const handleDelete = async (e) => {
     e.preventDefault();
 
     if (!confirmed) {
@@ -12,14 +14,39 @@ function DeleteAccount() {
       return;
     }
 
-    // TODO: connect to backend delete API
-    console.log("Deleting account...");
+    try {
+      const response = await fetch("http://localhost:5000/api/users/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Account deleted successfully!");
+        window.location.href = "/";
+      } else {
+        alert("Error: " + (data.message || "Account deletion failed"));
+      }
+    } catch (error) {
+      alert("Error deleting account: " + error.message);
+      console.error("Delete error:", error);
+    }
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <h2 style={styles.title}>Delete Account</h2>
+        <p style={styles.accountInfo}>
+          Account: <strong>{username}</strong>
+        </p>
 
         <p style={styles.warning}>
           This action is permanent and cannot be undone.
@@ -90,6 +117,11 @@ const styles = {
   },
   title: {
     marginBottom: "1rem",
+  },
+  accountInfo: {
+    marginBottom: "1rem",
+    fontSize: "0.95rem",
+    color: "#f1d2d2",
   },
   warning: {
     color: "red",

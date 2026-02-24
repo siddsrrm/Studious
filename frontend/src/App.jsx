@@ -15,7 +15,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/customize" element={<Customize />} />
         <Route path="/filter" element={<Filtering />} />
-        <Route path="/delete" element={<Deletion />} />
+        <Route path="/delete/:username" element={<Deletion />} />
       </Routes>
     </Router>
   )
