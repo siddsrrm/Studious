@@ -22,7 +22,7 @@ function DeleteAccount() {
         <h2 style={styles.title}>Delete Account</h2>
 
         <p style={styles.warning}>
-          ⚠️This action is permanent and cannot be undone.
+          This action is permanent and cannot be undone.
           All your data will be permanently deleted.
         </p>
 
@@ -79,10 +79,10 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
-    backgroundColor: "#f4f4f4",
+    backgroundColor: "#ec1d1d",
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#751c1c",
     padding: "2rem",
     borderRadius: "8px",
     boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",

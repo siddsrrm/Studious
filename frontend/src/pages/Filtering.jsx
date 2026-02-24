@@ -86,7 +86,7 @@ const styles = {
     border: "1px solid #ddd",
     padding: "1rem",
     borderRadius: "6px",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#8e2121",
   },
   tagContainer: {
     marginTop: "0.5rem",
