@@ -1,4 +1,4 @@
-export type Priority_t = "low" | "medium" | "high";
+/*export type Priority_t = "low" | "medium" | "high";
 
 export interface SubTask_t {
   taskID: string;
@@ -19,3 +19,4 @@ export interface Task_t {
   reminderSent: boolean;
   subTasks: SubTask_t[];
 }
+*/

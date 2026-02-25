@@ -1,4 +1,4 @@
-import type { Priority_t, SubTask_t, Task_t } from "../types/Task_t";
+/*import type { Priority_t, SubTask_t, Task_t } from "../types/Task_t";
 
 interface Props {
   task: Task_t;
@@ -30,3 +30,4 @@ const Task: React.FC<Props> = ({ task, markCompleted }) => {
 };
 
 export default Task;
+*/

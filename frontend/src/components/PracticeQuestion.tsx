@@ -1,4 +1,4 @@
-import { useState } from "react";
+/*import { useState } from "react";
 import "../css/PracticeQuestion.css";
 
 interface Props {
@@ -31,3 +31,4 @@ const PracticeQuestion = ({
 };
 
 export default PracticeQuestion;
+*/
