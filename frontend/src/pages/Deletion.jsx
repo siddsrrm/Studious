@@ -9,8 +9,18 @@ function DeleteAccount() {
   const handleDelete = async (e) => {
     e.preventDefault();
 
+    if (!password) {
+      alert("Please enter your password to confirm.");
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account? This action cannot be undone."
+    );
+
     if (!confirmed) {
-      alert("Please confirm account deletion.");
+      // User clicked "Cancel"
       return;
     }
 
@@ -65,22 +75,10 @@ function DeleteAccount() {
             style={styles.input}
           />
 
-          <div style={styles.checkboxContainer}>
-            <input
-              type="checkbox"
-              id="confirmDelete"
-              checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-            />
-            <label htmlFor="confirmDelete">
-              I understand this action cannot be undone.
-            </label>
-          </div>
-
           <div style={styles.buttonGroup}>
             <button
               type="submit"
-              disabled={!confirmed || !password}
+    
               style={styles.deleteButton}
             >
               Permanently Delete Account
