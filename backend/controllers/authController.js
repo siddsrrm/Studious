@@ -1,7 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const sendEmail = require("../utils/email");
 
 //forgotPassword - send email with password reset token
