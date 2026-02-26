@@ -106,19 +106,19 @@ function Register() {
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="text" placeholder="First Name" className={styles.input + (firstNameError ? " " + styles.inputError : "")} onChange={handleFirstName} onBlur={handleFirstNameBlur}/>
+      <input type="text" placeholder="First Name" className={styles.input + (firstNameError ? " " + styles.inputError : "")} onChange={handleFirstName} onBlur={handleFirstNameBlur} onFocus={() => setFirstNameError("")}/>
       {firstNameError && <p className={styles.error}>{firstNameError}</p>}
 
-      <input type="text" placeholder="Last Name" className={styles.input + (lastNameError ? " " + styles.inputError : "")} onChange={handleLastName} onBlur={handleLastNameBlur}/>
+      <input type="text" placeholder="Last Name" className={styles.input + (lastNameError ? " " + styles.inputError : "")} onChange={handleLastName} onBlur={handleLastNameBlur} onFocus={() => setLastNameError("")}/>
       {lastNameError && <p className={styles.error}>{lastNameError}</p>}
 
-      <input type="email" placeholder="Email" className={styles.input + (emailError ? " " + styles.inputError : "")} onChange={handleEmail} onBlur={handleEmailBlur}/>
+      <input type="email" placeholder="Email" className={styles.input + (emailError ? " " + styles.inputError : "")} onChange={handleEmail} onBlur={handleEmailBlur} onFocus={() => setEmailError("")}/>
       {emailError && <p className={styles.error}>{emailError}</p>}
 
-      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur}/>
+      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")}/>
       {passwordError && <p className={styles.error}>{passwordError}</p>}
 
-      <input type="password" placeholder="Confirm Password" className={styles.input + (confirmPasswordError ? " " + styles.inputError : "")} onChange={handleConfirmPassword} onBlur={handleConfirmPasswordBlur}/>
+      <input type="password" placeholder="Confirm Password" className={styles.input + (confirmPasswordError ? " " + styles.inputError : "")} onChange={handleConfirmPassword} onBlur={handleConfirmPasswordBlur} onFocus={() => setConfirmPasswordError("")}/>
       {confirmPasswordError && <p className={styles.error}>{confirmPasswordError}</p>}
 
       <button onClick={handleSubmit} className={styles.button}>Register</button>

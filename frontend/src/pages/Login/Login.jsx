@@ -55,10 +55,10 @@ function Login() {
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="email" placeholder="Email" className={styles.input + (emailError ? " " + styles.inputError : "")} onChange={handleEmail} onBlur={handleEmailBlur}/>
+      <input type="email" placeholder="Email" className={styles.input + (emailError ? " " + styles.inputError : "")} onChange={handleEmail} onBlur={handleEmailBlur} onFocus={() => setEmailError("")}/>
       {emailError && <p className={styles.error}>{emailError}</p>}
 
-      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur}/>
+      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")}/>
       {passwordError && <p className={styles.error}>{passwordError}</p>}
 
       <button onClick={handleSubmit} className={styles.button}>Login</button>
