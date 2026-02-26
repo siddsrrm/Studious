@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const connectDB = require("./config/db");
 const User = require("./models/User");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 
@@ -23,11 +24,17 @@ app.post("/api/users/delete", async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
   //verify the pword
+  const match = await bcrypt.compare(password, user.password);
+
+  if (!match) {
+    return res.status(401).json({ message: "Incorrect password" });
+  }
 
   //delete user data from db
+  await User.deleteOne({ _id: user._id });
 
   //return success/error
-  //for now, return success
+  //return success
   res.json({ message: "Account deleted successfully" });
 });  
 
