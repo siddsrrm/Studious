@@ -35,7 +35,7 @@ app.post("/api/users/nameChange", async (req, res) => {
 
   //new name available, change the db
   user.username = newName;
-  await user.save();
+  await user.updateOne({ username: newName });
 
   //return success
   res.json({ message: "Name updated successfully" });
