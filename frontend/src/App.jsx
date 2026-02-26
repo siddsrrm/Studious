@@ -3,7 +3,11 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
-function App() {
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
+
+/*function App() {
   const [count, setCount] = useState(0)
 
   return (
@@ -30,6 +34,18 @@ function App() {
       </p>
     </>
   )
+}*/
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        {/* Your main page route can go here later */}
+      </Routes>
+    </Router>
+  );
 }
 
 export default App
