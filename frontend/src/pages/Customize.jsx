@@ -1,12 +1,18 @@
 import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 
+
+//Code to handle frontend of account name change
+//NOTE: THIS PAGE DOES NOT VERIFY THE USER'S IDENTITY
+// ANYONE CAN GO TO THE LINK OF A USERNAME THEY WANT TO CHANGE AND CHANGE IT
 function ProfileSettings() {
-  const [currentName] = useState("Aaron Carter"); // Replace with fetched user data
+  const {username} = useParams(); // Get username from URL
+  const [currentName] = useState(username); 
   const [newName, setNewName] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -21,11 +27,32 @@ function ProfileSettings() {
       return;
     }
 
-    // TODO: Connect to backend API
-    console.log("Updating name to:", newName);
 
-    setSuccess("Name updated successfully!");
-    setNewName("");
+
+    // send request to backend to update name
+    try {
+      const response = await fetch("http://localhost:5000/api/users/nameChange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          newName: newName
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess("Name updated successfully!");
+      } else {
+        setError("Error: " + (data.message || "Name Change failed"));
+      }
+    } catch (error) {
+      setError("Error updating name: " + error.message);
+      console.error("Update error:", error);
+    }
   };
 
   return (

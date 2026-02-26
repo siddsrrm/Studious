@@ -14,6 +14,33 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+app.post("/api/users/nameChange", async (req, res) => {
+  const { username, newName } = req.body;
+
+  // get the user from the db
+  const user = await User.findOne({ username: username });
+
+  //TODO: Verify user is owner of account
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  //see if new name is available
+  const existingUser = await User.findOne({ username: newName });
+
+  if (existingUser) {
+    return res.status(400).json({ message: "Username already taken" });
+  }
+
+  //new name available, change the db
+  user.username = newName;
+  await user.save();
+
+  //return success
+  res.json({ message: "Name updated successfully" });
+});
+
 app.post("/api/users/delete", async (req, res) => {
   const { username, password } = req.body;
 
