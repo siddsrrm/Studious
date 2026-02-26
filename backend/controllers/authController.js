@@ -7,6 +7,9 @@ const sendEmail = require("../utils/email");
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "Email not found" });
@@ -27,7 +30,7 @@ exports.forgotPassword = async (req, res) => {
       text: `Click this link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`,
     })
 
-    res.json({ message: "Password reset email sent" });
+    res.status(200).json({ message: "Password reset email sent" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -37,14 +40,18 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { email, token, newPassword } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
 
     const user = await User.findOne({
       email,
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordToken: token
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+    if (!user) return res.status(400).json({ message: "Invalid token" });
+    if (user.resetPasswordExpires < Date.now()) return res.status(400).json({ message: "Expired token"});
+
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -53,7 +60,7 @@ exports.resetPassword = async (req, res) => {
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.json({ message: "Password successfully reset" });
+    res.status(200).json({ message: "Password successfully reset" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
