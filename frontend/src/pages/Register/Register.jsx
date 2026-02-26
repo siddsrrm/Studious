@@ -4,39 +4,25 @@ import { useState } from 'react'
 
 function Register() {
   // set all default values to empty
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
-  const [firstNameError, setFirstNameError] = useState("")
-  const [lastNameError, setLastNameError] = useState("")
+  const [usernameError, setUsernameError] = useState("")
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
   const [confirmPasswordError, setConfirmPasswordError] = useState("")
 
-  const handleFirstName = (e) => {
-    setFirstName(e.target.value)
+  const handleUsername = (e) => {
+    setUsername(e.target.value)
   }
 
-  const handleFirstNameBlur = () => {
-    if (firstName === "") {
-      setFirstNameError("First name is required")
+  const handleUsernameBlur = () => {
+    if (username === "") {
+      setUsernameError("Username is required")
     } else {
-      setFirstNameError("")
-    }
-  }
-
-  const handleLastName = (e) => {
-    setLastName(e.target.value)
-  }
-
-  const handleLastNameBlur = () => {
-    if (lastName === "") {
-      setLastNameError("Last name is required")
-    } else {
-      setLastNameError("")
+      setUsernameError("")
     }
   }
 
@@ -83,13 +69,12 @@ function Register() {
   }
 
   const handleSubmit = (e) => {
-    handleFirstNameBlur()
-    handleLastNameBlur()
+    handleUsernameBlur()
     handleEmailBlur()
     handlePasswordBlur()
     handleConfirmPasswordBlur()
 
-    if (firstName === "" || lastName === "" || email === "" ||
+    if (username === "" || email === "" ||
         password === "" || confirmPassword === "") {
       return
     } else if (!email.includes("@") || !email.includes(".")) {
@@ -106,11 +91,8 @@ function Register() {
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="text" placeholder="First Name" className={styles.input + (firstNameError ? " " + styles.inputError : "")} onChange={handleFirstName} onBlur={handleFirstNameBlur} onFocus={() => setFirstNameError("")}/>
-      {firstNameError && <p className={styles.error}>{firstNameError}</p>}
-
-      <input type="text" placeholder="Last Name" className={styles.input + (lastNameError ? " " + styles.inputError : "")} onChange={handleLastName} onBlur={handleLastNameBlur} onFocus={() => setLastNameError("")}/>
-      {lastNameError && <p className={styles.error}>{lastNameError}</p>}
+      <input type="text" placeholder="Username" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
+      {usernameError && <p className={styles.error}>{usernameError}</p>}
 
       <input type="email" placeholder="Email" className={styles.input + (emailError ? " " + styles.inputError : "")} onChange={handleEmail} onBlur={handleEmailBlur} onFocus={() => setEmailError("")}/>
       {emailError && <p className={styles.error}>{emailError}</p>}

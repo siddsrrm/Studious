@@ -3,23 +3,21 @@ import styles from './Login.module.css'
 import { useState } from 'react'
 
 function Login() {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
 
-  const [emailError, setEmailError] = useState("")
+  const [usernameError, setUsernameError] = useState("")
   const [passwordError, setPasswordError] = useState("")
 
-  const handleEmail = (e) => {
-    setEmail(e.target.value)
+  const handleUsername = (e) => {
+    setUsername(e.target.value)
   }
 
-  const handleEmailBlur = () => {
-    if (email === "") {
-      setEmailError("Email is required")
-    } else if (!email.includes("@") || !email.includes(".")) {
-      setEmailError("Email is invalid")
+  const handleUsernameBlur = () => {
+    if (username === "") {
+      setUsernameError("Username is required")
     } else {
-      setEmailError("")
+      setUsernameError("")
     }
   }
   
@@ -38,7 +36,7 @@ function Login() {
   }
 
   const handleSubmit = (e) => {
-    handleEmailBlur()
+    handleUsernameBlur()
     handlePasswordBlur()
 
     if (email === "" || password === "") {
@@ -55,8 +53,8 @@ function Login() {
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="email" placeholder="Email" className={styles.input + (emailError ? " " + styles.inputError : "")} onChange={handleEmail} onBlur={handleEmailBlur} onFocus={() => setEmailError("")}/>
-      {emailError && <p className={styles.error}>{emailError}</p>}
+      <input type="username" placeholder="Username" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
+      {usernameError && <p className={styles.error}>{usernameError}</p>}
 
       <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")}/>
       {passwordError && <p className={styles.error}>{passwordError}</p>}
