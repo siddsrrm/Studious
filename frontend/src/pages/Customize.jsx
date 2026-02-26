@@ -45,7 +45,7 @@ function ProfileSettings() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess("Name updated successfully!");
+        window.location.href = `/customize/${newName}`;
       } else {
         setError("Error: " + (data.message || "Name Change failed"));
       }
