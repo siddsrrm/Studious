@@ -1,13 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import styles from './Login.module.css'
 import { useState } from 'react'
 
 function Login() {
+  const navigate = useNavigate()
+
+  // set all default values to empty
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
 
   const [usernameError, setUsernameError] = useState("")
   const [passwordError, setPasswordError] = useState("")
+
+  // error for backend errors
+  const [error, setError] = useState("")
 
   const handleUsername = (e) => {
     setUsername(e.target.value)
@@ -35,19 +41,29 @@ function Login() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async () => {
     handleUsernameBlur()
     handlePasswordBlur()
 
-    if (email === "" || password === "") {
+    if (username === "" || password === "") {
       return
-    } else if (!email.includes("@") || !email.includes(".")) {
-      return
-    } else if (password.length < 8 || confirmPassword.length < 8) {
+    } else if (password.length < 8) {
       return
     }
 
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    })
 
+    const data = await response.json()
+
+    if (!response.ok) {
+      setError(data.message)
+    } else {
+      navigate("/homepage")
+    }
   }
 
   return (
@@ -60,7 +76,9 @@ function Login() {
       {passwordError && <p className={styles.error}>{passwordError}</p>}
 
       <button onClick={handleSubmit} className={styles.button}>Login</button>
-      <p>Don't have an account? <Link to="/Register">Register</Link></p>
+      <p>Don't have an account? <Link to="/register">Register</Link></p>
+
+      {error && <p className={styles.error}>{error}</p>}
     </div>
   )
 }

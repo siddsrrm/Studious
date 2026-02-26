@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import styles from './Register.module.css'
 import { useState } from 'react'
 
 function Register() {
+  const navigate = useNavigate()
+
   // set all default values to empty
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
@@ -13,6 +15,9 @@ function Register() {
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
   const [confirmPasswordError, setConfirmPasswordError] = useState("")
+
+  // error for backend errors
+  const [error, setError] = useState("")
 
   const handleUsername = (e) => {
     setUsername(e.target.value)
@@ -68,7 +73,7 @@ function Register() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async () => {
     handleUsernameBlur()
     handleEmailBlur()
     handlePasswordBlur()
@@ -85,7 +90,24 @@ function Register() {
       return
     }
 
-    // validation passed, send to backend
+    // validation passed, send post request to backend
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.message)
+      } else {
+        navigate("/login")  
+      }
+    } catch (error) {
+      console.error(error.message)
+    }
   }
 
   return (
@@ -105,6 +127,8 @@ function Register() {
 
       <button onClick={handleSubmit} className={styles.button}>Register</button>
       <p>Already have an account? <Link to="/login">Login</Link></p>
+
+      {error && <p className={styles.error}>{error}</p>}
     </div>
   )
 }
