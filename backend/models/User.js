@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
-//const StudyPlan = require("./models/StudyPlan")
-//const ProgressTracker = require("./models/ProgressTracker")
+const StudyPlan = require("./StudyPlan")
+const ProgressTracker = require("./ProgressTracker")
 
 const userSchema = new mongoose.Schema({
   // attribute, type

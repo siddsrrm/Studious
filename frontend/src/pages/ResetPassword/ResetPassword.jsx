@@ -6,7 +6,7 @@ function ResetPassword() {
   const { token } = useParams(); // Get token from URL
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState(""); 
+  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -17,14 +17,19 @@ function ResetPassword() {
     setError("");
     setMessage("");
 
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
     try {
-        //note: add "VITE_API_URL=http://localhost:5000/api" to /frontend/.env
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/reset-password`, {
+      //note: add "VITE_API_URL=http://localhost:5000/api" to /frontend/.env
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, email, newPassword }),

@@ -15,7 +15,7 @@ exports.forgotPassword = async (req, res) => {
     if (!user) return res.status(404).json({ message: "Email not found" });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpiry = Date.now() + 3600000; //1 hour
+    const resetTokenExpiry = Date.now() + 3600000; //1 hour for now
 
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpiry;
@@ -51,7 +51,6 @@ exports.resetPassword = async (req, res) => {
 
     if (!user) return res.status(400).json({ message: "Invalid token" });
     if (user.resetPasswordExpires < Date.now()) return res.status(400).json({ message: "Expired token"});
-
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
