@@ -76,7 +76,9 @@ function Login() {
       {passwordError && <p className={styles.error}>{passwordError}</p>}
 
       <button onClick={handleSubmit} className={styles.button}>Login</button>
+      <button onClick={navigate("/forgotPassword")} className={styles.button}>Forgot Password</button>
       <p>Don't have an account? <Link to="/register">Register</Link></p>
+
 
       {error && <p className={styles.error}>{error}</p>}
     </div>
