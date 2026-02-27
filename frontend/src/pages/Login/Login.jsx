@@ -1,13 +1,86 @@
+import { Link, useNavigate } from 'react-router-dom'
 import styles from './Login.module.css'
+import { useState } from 'react'
 
 function Login() {
+  const navigate = useNavigate()
+
+  // set all default values to empty
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+
+  const [usernameError, setUsernameError] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
+  // error for backend errors
+  const [error, setError] = useState("")
+
+  const handleUsername = (e) => {
+    setUsername(e.target.value)
+  }
+
+  const handleUsernameBlur = () => {
+    if (username === "") {
+      setUsernameError("Username is required")
+    } else {
+      setUsernameError("")
+    }
+  }
+  
+  const handlePassword = (e) => {
+    setPassword(e.target.value)
+  }
+
+  const handlePasswordBlur = () => {
+    if (password === "") {
+      setPasswordError("Password is required")
+    } else if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters")
+    } else {
+      setPasswordError("")
+    }
+  }
+
+  const handleSubmit = async () => {
+    handleUsernameBlur()
+    handlePasswordBlur()
+
+    if (username === "" || password === "") {
+      return
+    } else if (password.length < 8) {
+      return
+    }
+
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setError(data.message)
+    } else {
+      navigate("/homepage")
+    }
+  }
+
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="email" placeholder="Email" className={styles.input} />
-      <input type="password" placeholder="Password" className={styles.input} />
-      <button className={styles.button}>Login</button>
-      <p>Don't have an account? <Link to="/Register">Register</Link></p>
+      <input type="username" placeholder="Username" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
+      {usernameError && <p className={styles.error}>{usernameError}</p>}
+
+      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")}/>
+      {passwordError && <p className={styles.error}>{passwordError}</p>}
+
+      <button onClick={handleSubmit} className={styles.button}>Login</button>
+      <button onClick={() => navigate("/forgotPassword")} className={styles.button}>Forgot Password</button>
+      <p>Don't have an account? <Link to="/register">Register</Link></p>
+
+
+      {error && <p className={styles.error}>{error}</p>}
     </div>
   )
 }

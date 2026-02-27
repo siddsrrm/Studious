@@ -27,3 +27,12 @@
 .button:hover {
   background-color: #0056b3;
 }
+
+.inputError {
+  border: 1px solid red;
+  color: red;
+}
+
+.error {
+  color: red;
+}
