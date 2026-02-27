@@ -16,7 +16,6 @@ const ToDoList = ({ toDoListId, studyPlanId }) => {
       startDate: new Date(),
       endDate: new Date(),
       priorityLevel: "low",
-      completed: false,
     };
 
     setTasks([...tasks, newTask]);
@@ -40,11 +39,9 @@ const ToDoList = ({ toDoListId, studyPlanId }) => {
         <AddTaskForm onAddTask={handleAddTask} />
       </div>
       <div>
-        <ul>
-          {tasks.map((task) => (
-            <Task key={task.taskID} taskObj={task} />
-          ))}
-        </ul>
+        {tasks.map((task) => (
+          <Task key={task.taskID} taskObj={task} />
+        ))}
       </div>
     </>
   );

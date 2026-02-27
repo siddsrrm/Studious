@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 const Task = ({ taskObj }) => {
   const [subTasks, setSubTasks] = useState([]);
+  const [completed, setCompleted] = useState(false);
 
   const handleAddSubTask = ({ title, description }) => {
     let index = subTasks.length + 1;
@@ -18,6 +19,20 @@ const Task = ({ taskObj }) => {
     };
 
     setSubTasks([...subTasks, newSubTask]);
+    setCompleted(false);
+  };
+
+  const handleMarkCompleted = () => {
+    setCompleted(true);
+    setSubTasks(subTasks.map((subTask) => ({ ...subTask, completed: true })));
+  };
+
+  const handleMarkSubTaskCompleted = (taskID) => {
+    setSubTasks(
+      subTasks.map((subTask) =>
+        subTask.taskID === taskID ? { ...subTask, completed: true } : subTask,
+      ),
+    );
   };
 
   return (
@@ -32,7 +47,11 @@ const Task = ({ taskObj }) => {
         <p>startDate: {taskObj.startDate.toString()}</p>
         <p>endDate: {taskObj.endDate.toString()}</p>
         <p>priorityLevel: {taskObj.priorityLevel}</p>
-        <p>completed: {taskObj.completed.toString()}</p>
+
+        <button onClick={handleMarkCompleted} disabled={completed}>
+          {completed ? "Completed" : "Mark Complete"}
+        </button>
+
         <p>subTasks:</p>
         <ul>
           {subTasks.map((subTask) => (
@@ -42,21 +61,25 @@ const Task = ({ taskObj }) => {
 
         <SubTaskForm onAdd={handleAddSubTask} />
       </div>
-      <ul>
-        {subTasks.map((subTask) => (
-          <div
-            key={subTask.taskID}
-            style={{
-              border: "2px solid black",
-              padding: "10px",
-              margin: "10px",
-            }}
+      {subTasks.map((subTask) => (
+        <div
+          key={subTask.taskID}
+          style={{
+            border: "2px solid black",
+            padding: "10px",
+            margin: "10px",
+          }}
+        >
+          <h2>{subTask.title}</h2>
+          <p>description: {subTask.description}</p>
+          <button
+            onClick={() => handleMarkSubTaskCompleted(subTask.taskID)}
+            disabled={subTask.completed}
           >
-            <h2>{subTask.title}</h2>
-            <p>description: {subTask.description}</p>
-          </div>
-        ))}
-      </ul>
+            {subTask.completed ? "Completed" : "Mark Complete"}
+          </button>{" "}
+        </div>
+      ))}
     </>
   );
 };
