@@ -1,12 +1,11 @@
-import React from "react";
-import Task from "./components/Task_AI";
+import ToDoList from "./components/ToDoList.jsx";
 
-const App = () => {
+function App() {
   return (
     <div>
-      <Task />
+      <ToDoList toDoListId={123} studyPlanId={2530} progress={0} />
     </div>
   );
-};
+}
 
 export default App;
