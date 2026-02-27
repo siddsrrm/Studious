@@ -1,13 +1,12 @@
+import React, { useState } from "react";
 import Task from "./Task.jsx";
 
-const ToDoList = ({ toDoListId, studyPlanId, progress }) => {
-  let tasks = [];
+const ToDoList = ({ toDoListId, studyPlanId }) => {
+  const [tasks, setTasks] = useState([]);
+  const [progress, setProgress] = useState(0);
 
-  const handleAddTask = () => {
+  const handleAddTask = ({ title, description }) => {
     let index = tasks.length + 1;
-
-    let title = "Task " + index;
-    let description = "It's a task";
 
     let newTask = {
       taskID: index,
@@ -20,12 +19,8 @@ const ToDoList = ({ toDoListId, studyPlanId, progress }) => {
       completed: false,
     };
 
-    tasks = [...tasks, newTask];
+    setTasks([...tasks, newTask]);
   };
-
-  handleAddTask();
-  handleAddTask();
-  handleAddTask();
 
   return (
     <>
@@ -42,6 +37,7 @@ const ToDoList = ({ toDoListId, studyPlanId, progress }) => {
             <li key={task.taskID}>{task.title}</li>
           ))}
         </ul>
+        <AddTaskForm onAddTask={handleAddTask} />
       </div>
       <div>
         <ul>
@@ -51,6 +47,39 @@ const ToDoList = ({ toDoListId, studyPlanId, progress }) => {
         </ul>
       </div>
     </>
+  );
+};
+
+const AddTaskForm = ({ onAddTask }) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title) return;
+
+    onAddTask({ title, description });
+
+    setTitle("");
+    setDescription("");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ marginTop: "10px" }}>
+      <input
+        type="text"
+        placeholder="Task title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Task description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      <button type="submit">Add Task</button>
+    </form>
   );
 };
 
