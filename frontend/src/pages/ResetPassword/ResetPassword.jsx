@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./ResetPassword.module.css";
+import logo from '../../assets/studious-logo.png'
 
 function ResetPassword() {
   const { token } = useParams(); // Get token from URL
@@ -50,7 +51,7 @@ function ResetPassword() {
 
   return (
     <div className={styles.container}>
-      <h1>Studious</h1>
+      <img src={logo} alt="Studious logo" width="325"/>
       <p className={styles.description}>
         Enter a new password to reset your account.
       </p>

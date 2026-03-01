@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import styles from './Login.module.css'
 import { useState } from 'react'
+import logo from '../../assets/studious-logo.png'
 
 function Login() {
   const navigate = useNavigate()
@@ -73,7 +74,7 @@ function Login() {
 
   return (
     <div className={styles.container}>
-      <h1>Studious</h1>
+      <img src={logo} alt="Studious logo" width="325"/>
       <input type="username" placeholder="Username or Email" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
       {usernameError && <p className={styles.error}>{usernameError}</p>}
 

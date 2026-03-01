@@ -1,5 +1,6 @@
 import { useState } from "react";
 import styles from "./ForgotPassword.module.css";
+import logo from '../../assets/studious-logo.png'
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -36,7 +37,7 @@ function ForgotPassword() {
 
   return (
     <div className={styles.container}>
-      <h1>Studious</h1>
+      <img src={logo} alt="Studious logo" width="325"/>
 
       <p className={styles.description}>
         Enter your email and we’ll send you a link to reset your password.
