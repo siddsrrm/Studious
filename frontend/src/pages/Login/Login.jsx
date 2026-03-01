@@ -51,10 +51,15 @@ function Login() {
       return
     }
 
+    // check if email was entered
+    const isEmail = username.includes("@")
+
+    const body = isEmail ? { email: username, password } : { username, password }
+
     const response = await fetch("http://localhost:5000/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify(body)
     })
 
     const data = await response.json()
@@ -69,7 +74,7 @@ function Login() {
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="username" placeholder="Username" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
+      <input type="username" placeholder="Username or Email" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
       {usernameError && <p className={styles.error}>{usernameError}</p>}
 
       <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")}/>
