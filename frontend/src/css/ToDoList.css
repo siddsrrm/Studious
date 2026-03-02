@@ -5,6 +5,7 @@
   margin: 20px auto;
   width: 85%;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+  color: #0f172a; 
 }
 
 .todolist-card h2 {
@@ -37,6 +38,8 @@
   padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid #cbd5e1;
+  color: inherit; /* inherit the card text color */
+  background: #fff;
 }
 
 .addtask-form button {
