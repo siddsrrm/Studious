@@ -50,7 +50,7 @@ exports.resetPassword = async (req, res) => {
     });
 
     if (!user) return res.status(400).json({ message: "Invalid token" });
-    if (user.resetPasswordExpires < Date.now()) return res.status(400).json({ message: "Expired token"});
+    if (user.resetPasswordExpires < Date.now()) return res.status(400).json({ message: "Expired token" });
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -63,4 +63,9 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+//verify2FA - send email containing 6 character token
+exports.verify2FA = async (req, res) => {
+
 };

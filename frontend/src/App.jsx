@@ -6,6 +6,7 @@ import './App.css'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
+import Verify2FA from "./pages/Verify2FA/Verify2FA";
 
 /*function App() {
   const [count, setCount] = useState(0)
@@ -42,6 +43,7 @@ function App() {
       <Routes>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-2fa" element={<Verify2FA />} />
         {/* Your main page route can go here later */}
       </Routes>
     </Router>
