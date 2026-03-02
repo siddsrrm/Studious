@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "../css/Task.css";
 
 const Task = ({ taskObj }) => {
   const [subTasks, setSubTasks] = useState([]);
@@ -37,9 +38,7 @@ const Task = ({ taskObj }) => {
 
   return (
     <>
-      <div
-        style={{ border: "2px solid black", padding: "10px", margin: "10px" }}
-      >
+      <div className="task-card">
         <h2>{taskObj.title}</h2>
         <p>taskID: {taskObj.taskID}</p>
         <p>toDoListID: {taskObj.toDoListID}</p>
@@ -47,29 +46,19 @@ const Task = ({ taskObj }) => {
         <p>startDate: {taskObj.startDate.toString()}</p>
         <p>endDate: {taskObj.endDate.toString()}</p>
         <p>priorityLevel: {taskObj.priorityLevel}</p>
-
         <button onClick={handleMarkCompleted} disabled={completed}>
           {completed ? "Completed" : "Mark Complete"}
         </button>
-
         <p>subTasks:</p>
         <ul>
           {subTasks.map((subTask) => (
             <li key={subTask.taskID}>{subTask.title}</li>
           ))}
         </ul>
-
         <SubTaskForm onAdd={handleAddSubTask} />
       </div>
       {subTasks.map((subTask) => (
-        <div
-          key={subTask.taskID}
-          style={{
-            border: "2px solid black",
-            padding: "10px",
-            margin: "10px",
-          }}
-        >
+        <div className="subtask-card" key={subTask.taskID}>
           <h2>{subTask.title}</h2>
           <p>description: {subTask.description}</p>
           <button
@@ -77,7 +66,7 @@ const Task = ({ taskObj }) => {
             disabled={subTask.completed}
           >
             {subTask.completed ? "Completed" : "Mark Complete"}
-          </button>{" "}
+          </button>
         </div>
       ))}
     </>
@@ -99,7 +88,7 @@ const SubTaskForm = ({ onAdd }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginTop: "5px" }}>
+    <form className="subtask-form" onSubmit={handleSubmit}>
       <input
         type="text"
         placeholder="SubTask title"

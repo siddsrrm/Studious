@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Task from "./Task.jsx";
+import "../css/ToDoList.css";
 
 const ToDoList = ({ toDoListId, studyPlanId }) => {
   const [tasks, setTasks] = useState([]);
@@ -23,9 +24,7 @@ const ToDoList = ({ toDoListId, studyPlanId }) => {
 
   return (
     <>
-      <div
-        style={{ border: "2px solid black", padding: "10px", margin: "10px" }}
-      >
+      <div className="todolist-card">
         <h2>ToDoList</h2>
         <p>To-Do List Id: {toDoListId}</p>
         <p>Study Plan Id: {studyPlanId}</p>
@@ -38,7 +37,7 @@ const ToDoList = ({ toDoListId, studyPlanId }) => {
         </ul>
         <AddTaskForm onAddTask={handleAddTask} />
       </div>
-      <div>
+      <div className="tasks-container">
         {tasks.map((task) => (
           <Task key={task.taskID} taskObj={task} />
         ))}
@@ -62,7 +61,7 @@ const AddTaskForm = ({ onAddTask }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginTop: "10px" }}>
+    <form className="addtask-form" onSubmit={handleSubmit}>
       <input
         type="text"
         placeholder="Task title"

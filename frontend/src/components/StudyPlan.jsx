@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ToDoList from "./ToDoList";
+import "../css/StudyPlan.css";
 
 const StudyPlan = ({ studyPlanObj }) => {
   const [viewingToDoList, setViewingToDoList] = useState(false);
@@ -10,13 +11,7 @@ const StudyPlan = ({ studyPlanObj }) => {
 
   return (
     <>
-      <div
-        style={{
-          border: "2px solid black",
-          padding: "10px",
-          margin: "10px",
-        }}
-      >
+      <div className="studyplan-card">
         <h3>{studyPlanObj.title}</h3>
         <p>ID</p>
         <p>Description</p>

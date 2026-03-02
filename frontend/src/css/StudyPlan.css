@@ -1,0 +1,38 @@
+.studyplan-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px auto;
+  width: 80%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.studyplan-card h3 {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+  color: #1e293b;
+}
+
+.studyplan-card p {
+  margin: 5px 0;
+  color: #475569;
+}
+
+.studyplan-card button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #0ea5e9;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.studyplan-card button:hover:not(:disabled) {
+  background-color: #0284c7;
+}
+
+.studyplan-card button:disabled {
+  background-color: #94a3b8;
+}

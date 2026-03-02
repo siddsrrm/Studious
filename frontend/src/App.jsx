@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage/HomePage";
+import Calendar from "./components/Calendar";
 
 function App() {
   return (
@@ -7,7 +8,6 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/homepage" element={<HomePage />} />
-        {/* Your main page route can go here later */}
       </Routes>
     </BrowserRouter>
   );

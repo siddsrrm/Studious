@@ -61,11 +61,12 @@ const Calendar = () => {
             ></td>,
           );
         } else {
+          const currentDay = dayCount;
           const key = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${dayCount}`;
           cells.push(
             <td
               key={key}
-              onClick={() => handleAddEvent(dayCount)}
+              onClick={() => handleAddEvent(currentDay)}
               style={{
                 border: "1px solid #ccc",
                 height: "80px",
@@ -74,7 +75,7 @@ const Calendar = () => {
                 cursor: "pointer",
               }}
             >
-              <div>{dayCount}</div>
+              <div>{currentDay}</div>
               {events[key] &&
                 events[key].map((ev, idx) => (
                   <div
