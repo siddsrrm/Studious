@@ -37,7 +37,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
         </div>
       </header>
 
-      {/* Tabs to access indiviudal compoenents  */}
+      {/* Tabs to access indiviudal components  */}
       <div className="max-w-5xl mx-auto px-6 pt-6">
         <div className="flex gap-2 border-b border-gray-200 mb-6">
           {["todo", "notes"].map((tab) => (
