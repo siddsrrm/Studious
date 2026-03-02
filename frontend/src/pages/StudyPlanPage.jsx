@@ -8,7 +8,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
+      {/* Top bar displaying study plan title and description*/}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex items-center gap-4 px-6 py-4">
           <button
@@ -37,7 +37,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
         </div>
       </header>
 
-      {/* Tabs */}
+      {/* Tabs to access indiviudal compoenents  */}
       <div className="max-w-5xl mx-auto px-6 pt-6">
         <div className="flex gap-2 border-b border-gray-200 mb-6">
           {["todo", "notes"].map((tab) => (
@@ -55,7 +55,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
           ))}
         </div>
 
-        {/* Tab content */}
+        {/* Rendering selected component*/}
         {activeTab === "todo" && <ToDoList studyPlanId={plan.id} toDoListId={plan.id} />}
 
         {activeTab === "notes" && (

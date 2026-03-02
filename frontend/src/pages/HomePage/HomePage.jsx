@@ -4,13 +4,13 @@ import PlanCard from "../../components/StudyPlans/PlanCard";
 import StudyPlanPage from "../StudyPlanPage";
 
 const HomePage = () => {
-  // ---- state ----
+  // Current States
   const [studyPlans, setStudyPlans] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activePlan, setActivePlan] = useState(null);
   const [activeTab, setActiveTab] = useState("todo");
 
-  // ---- handlers ----
+  // Handle creation and deletion of study plans
   const handleCreatePlan = (newPlan) => {
     setStudyPlans((prev) => [...prev, newPlan]);
     setShowCreateForm(false);
@@ -30,12 +30,12 @@ const HomePage = () => {
     setActivePlan(null);
   };
 
-  // detail view moved to StudyPlanPage component
+  // Renders study plan interface
   if (activePlan) {
     return <StudyPlanPage plan={activePlan} onBack={handleBack} />;
   }
 
-  // ================= HOME / PLAN GRID VIEW =================
+  // Homepage view
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -65,9 +65,10 @@ const HomePage = () => {
         </div>
       </header>
 
+
       <main className="max-w-5xl mx-auto px-6 py-8">
+        {/* Custom message if no study plans are created*/}
         {studyPlans.length === 0 ? (
-          /* Empty state */
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-6xl mb-4">&#128214;</span>
             <h2 className="text-xl font-semibold text-gray-700">
@@ -85,7 +86,7 @@ const HomePage = () => {
             </button>
           </div>
         ) : (
-          /* Plan grid */
+          // Grid of study plans
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {studyPlans.map((plan) => (
               <PlanCard
@@ -99,7 +100,6 @@ const HomePage = () => {
         )}
       </main>
 
-      {/* Create plan modal */}
       {showCreateForm && (
         <CreatePlanForm
           onCreatePlan={handleCreatePlan}
