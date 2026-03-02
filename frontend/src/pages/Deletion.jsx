@@ -25,7 +25,7 @@ function DeleteAccount() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/delete", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

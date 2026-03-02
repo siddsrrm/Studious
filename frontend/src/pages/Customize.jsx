@@ -31,7 +31,7 @@ function ProfileSettings() {
 
     // send request to backend to update name
     try {
-      const response = await fetch("http://localhost:5000/api/users/nameChange", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/nameChange`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
