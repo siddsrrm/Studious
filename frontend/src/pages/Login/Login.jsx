@@ -67,7 +67,7 @@ function Login() {
     if (!response.ok) {
       setError(data.message)
     } else {
-      navigate("/homepage")
+      navigate("/home")
     }
   }
 

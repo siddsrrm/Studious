@@ -6,6 +6,7 @@ import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import ProfileSettings from "./pages/Customize";
 import DeleteAccount from "./pages/Deletion";
 import FilterNotes from "./pages/Filtering";
+import HomePage from "./pages/HomePage/HomePage"
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/delete/:username" element={<DeleteAccount />} />
         <Route path="/notes" element={<FilterNotes />} />
         {/* Your main page route can go here later */}
+        <Route path="/home" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
   );
