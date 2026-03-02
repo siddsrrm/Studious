@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ToDoList from "./ToDoList";
 
-const StudyPlan = () => {
+const StudyPlan = ({ studyPlanObj }) => {
   const [viewingToDoList, setViewingToDoList] = useState(false);
 
   const handleViewToDoList = () => {
@@ -17,7 +17,7 @@ const StudyPlan = () => {
           margin: "10px",
         }}
       >
-        <p>StudyPlan</p>
+        <h3>{studyPlanObj.title}</h3>
         <p>ID</p>
         <p>Description</p>
         <p>Notes</p>

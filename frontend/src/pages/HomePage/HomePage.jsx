@@ -1,21 +1,46 @@
 import React, { useState } from "react";
-import Calendar from "../../components/Calendar";
-import ToDoList from "../../components/ToDoList";
 import StudyPlan from "../../components/StudyPlan";
 
 const HomePage = () => {
-  const [disabled, setDisabled] = useState(false);
-  const handleClick = () => {
-    setDisabled(true);
+  const studyPlans = [
+    { title: "Study Plan 1" },
+    { title: "Study Plan 2" },
+    { title: "Study Plan 3" },
+    { title: "Study Plan 4" },
+    { title: "Study Plan 5" },
+  ];
+
+  const [viewingStudyPlan, setViewingStudyPlan] = useState(() =>
+    studyPlans.map(() => false),
+  );
+
+  const handleClick = (index) => {
+    const updated = studyPlans.map(() => false);
+    updated[index] = true;
+    setViewingStudyPlan(updated);
   };
 
   return (
     <div>
       <h1>Studious Home Page</h1>
-      <button onClick={() => handleClick()} disabled={disabled}>
-        View Study Plan
-      </button>
-      {disabled && <StudyPlan />}
+      {studyPlans.length === 0 && (
+        <p>You have not yet created any study plans...</p>
+      )}
+      {studyPlans.map((studyPlan, index) => (
+        <div>
+          <button
+            onClick={() => handleClick(index)}
+            disabled={viewingStudyPlan[index]}
+          >
+            {"View " + studyPlan.title}
+          </button>
+        </div>
+      ))}
+      {studyPlans.map((studyPlan, index) => (
+        <div>
+          {viewingStudyPlan[index] && <StudyPlan studyPlanObj={studyPlan} />}
+        </div>
+      ))}
     </div>
   );
 };
