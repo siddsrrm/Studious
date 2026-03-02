@@ -17,6 +17,8 @@ import Highlight from '@tiptap/extension-highlight'
 import { Extension } from '@tiptap/core' 
 import React, { useEffect } from 'react'
 
+
+// Fontsize extension
 const FontSize = Extension.create({
   name: 'fontSize',
   addOptions() {
@@ -63,7 +65,7 @@ const ToolbarButton = ({ onClick, children, title }) => (
   </button>
 )
 
-// Toolbar component
+
 const MenuBar = ({ editor }) => {
   if (!editor) return null
 
@@ -93,6 +95,7 @@ const MenuBar = ({ editor }) => {
         <span className="line-through">S</span>
       </ToolbarButton>
 
+      {/* Font size extension*/}
       <select
         onChange={(event) => editor.chain().focus().setFontSize(event.target.value).run()}
         value={editor.getAttributes('textStyle').fontSize || '16px'} 
@@ -121,7 +124,7 @@ const MenuBar = ({ editor }) => {
             style={{ backgroundColor: editor.getAttributes('textStyle').color || '#000000' }}
           />
           
-          {/* The invisible native color picker */}
+          {/* Color extension*/}
           <input
             type="color"
             onInput={(event) => editor.chain().focus().setColor(event.target.value).run()}
@@ -183,7 +186,7 @@ export default function NoteEditor({ note, onUpdate }) {
       Text,
       Color,
       TextStyle,
-      FontSize, // <-- Added to extensions
+      FontSize, 
       Bold,
       Italic,
       Strike,
@@ -228,7 +231,7 @@ export default function NoteEditor({ note, onUpdate }) {
 
   return (
     <div className="text-left max-w-5xl mx-auto my-8 p-6 bg-white rounded-lg shadow-lg border border-gray-200">
-      {/* Title Input */}
+      {/* Handles notes title */}
       <input
         type="text"
         className="w-full text-4xl font-bold text-gray-900 placeholder-gray-300 border-none outline-none mb-6 bg-transparent"
@@ -237,10 +240,8 @@ export default function NoteEditor({ note, onUpdate }) {
         onChange={(e) => onUpdate && onUpdate('title', e.target.value)}
       />
 
-      {/* Toolbar */}
       <MenuBar editor={editor} />
 
-      {/* Editor */}
       <div className="prose max-w-none p-6 min-h-96 bg-white rounded-b-lg border-l border-r border-b border-gray-200 text-gray-900">
         <EditorContent editor={editor} />
       </div>

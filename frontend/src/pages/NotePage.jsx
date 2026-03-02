@@ -44,11 +44,7 @@ const NotesPage = () => {
   };
 
   return (
-    // Changed main background to a subtle gray (bg-gray-100)
     <div className="flex h-screen bg-gray-100 font-sans">
-      
-      {/* --- SIDEBAR --- */}
-      {/* Kept sidebar white to contrast with the gray workspace */}
       <div className="w-72 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10">
         <div className="p-5 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-800">My Notes</h2>
@@ -82,10 +78,7 @@ const NotesPage = () => {
         </div>
       </div>
 
-      {/* --- MAIN WORKSPACE --- */}
-      {/* Let the workspace handle scrolling, allowing the NoteEditor card to sit comfortably */}
       <div className="flex-1 overflow-y-auto">
-        {/* We pass the note and the update function down to the editor */}
         <NoteEditor 
           note={activeNote} 
           onUpdate={handleUpdateNote} 
