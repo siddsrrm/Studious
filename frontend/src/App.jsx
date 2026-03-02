@@ -7,6 +7,7 @@ import ProfileSettings from "./pages/Customize";
 import DeleteAccount from "./pages/Deletion";
 import FilterNotes from "./pages/Filtering";
 import HomePage from "./pages/HomePage/HomePage"
+import NotesPage from "./pages/NotePage";
 
 function App() {
   return (
@@ -20,7 +21,8 @@ function App() {
 
         <Route path="/settings/:username" element={<ProfileSettings />} />
         <Route path="/delete/:username" element={<DeleteAccount />} />
-        <Route path="/notes" element={<FilterNotes />} />
+        <Route path="/notes" element={<NotesPage />} />
+        <Route path="/filter-notes" element={<FilterNotes />} />
         {/* Your main page route can go here later */}
         <Route path="/home" element={<HomePage />} />
       </Routes>

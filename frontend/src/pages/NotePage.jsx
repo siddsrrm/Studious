@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import NoteEditor from '../features/notes/components/NoteEditor';
+import NoteEditor from '../components/NoteEditor';
 
 const NotesPage = () => {
   // Mock Database
