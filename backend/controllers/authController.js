@@ -2,6 +2,8 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
 
 // register a new user
 exports.register = async (req, res) => {
@@ -44,7 +46,11 @@ exports.login = async (req, res) => {
       return res.status(401).json({message: "Invalid credentials"})
     }
 
-    res.json({message: "User succcessfully logged in", userId: user._id})
+    token = jwt.sign({ userId: user._id }, 
+                           process.env.JWT_SECRET,
+                           { expiresIn: "1h"})
+
+    res.json({message: "User succcessfully logged in", userId: user._id, token: token})
   } catch (error) {
     res.status(500).json({error: error.message})
   }

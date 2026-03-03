@@ -67,6 +67,7 @@ function Login() {
     if (!response.ok) {
       setError(data.message)
     } else {
+      localStorage.setItem("token", data.token)
       navigate("/home")
     }
   }

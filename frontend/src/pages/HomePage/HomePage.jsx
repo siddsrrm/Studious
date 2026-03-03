@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CreatePlanForm from "../../components/StudyPlans/CreatePlanForm";
 import PlanCard from "../../components/StudyPlans/PlanCard";
 import StudyPlanPage from "../StudyPlanPage";
@@ -9,6 +9,17 @@ const HomePage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activePlan, setActivePlan] = useState(null);
   const [activeTab, setActiveTab] = useState("todo");
+  const [showToken, setShowToken] = useState(true)
+  const [tokenOpacity, setTokenOpacity] = useState(true);
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => setTokenOpacity(false), 2000);
+    const hideTimer = setTimeout(() => setShowToken(false), 5000);
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
+    };
+  }, []);
 
   // Handle creation and deletion of study plans
   const handleCreatePlan = (newPlan) => {
@@ -106,6 +117,15 @@ const HomePage = () => {
           onCancel={() => setShowCreateForm(false)}
         />
       )}
+
+      {showToken && (
+        <div className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 w-72 border border-gray-200 transition-opacity duration-1000 ${tokenOpacity ? "opacity-100" : "opacity-0"}`}>
+          <p className="text-sm font-semibold text-gray-700 mb-1">Session Active</p>
+          <p className="text-xs text-gray-400 truncate">
+            {localStorage.getItem("token")}
+          </p>
+        </div>
+      )}    
     </div>
   );
 };
