@@ -9,7 +9,7 @@ const Task = ({ taskObj }) => {
     let index = subTasks.length + 1;
 
     let newSubTask = {
-      taskID: index,
+      id: index,
       toDoListID: 123,
       title: title,
       description: description,
@@ -28,10 +28,10 @@ const Task = ({ taskObj }) => {
     setSubTasks(subTasks.map((subTask) => ({ ...subTask, completed: true })));
   };
 
-  const handleMarkSubTaskCompleted = (taskID) => {
+  const handleMarkSubTaskCompleted = (id) => {
     setSubTasks(
       subTasks.map((subTask) =>
-        subTask.taskID === taskID ? { ...subTask, completed: true } : subTask,
+        subTask.id === id ? { ...subTask, completed: true } : subTask,
       ),
     );
   };
@@ -40,7 +40,7 @@ const Task = ({ taskObj }) => {
     <>
       <div className="task-card">
         <h2>{taskObj.title}</h2>
-        <p>taskID: {taskObj.taskID}</p>
+        <p>id: {taskObj.id}</p>
         <p>toDoListID: {taskObj.toDoListID}</p>
         <p>description: {taskObj.description}</p>
         <p>startDate: {taskObj.startDate.toString()}</p>
@@ -52,17 +52,17 @@ const Task = ({ taskObj }) => {
         <p>subTasks:</p>
         <ul>
           {subTasks.map((subTask) => (
-            <li key={subTask.taskID}>{subTask.title}</li>
+            <li key={subTask.id}>{subTask.title}</li>
           ))}
         </ul>
         <SubTaskForm onAdd={handleAddSubTask} />
       </div>
       {subTasks.map((subTask) => (
-        <div className="subtask-card" key={subTask.taskID}>
+        <div className="subtask-card" key={subTask.id}>
           <h2>{subTask.title}</h2>
           <p>description: {subTask.description}</p>
           <button
-            onClick={() => handleMarkSubTaskCompleted(subTask.taskID)}
+            onClick={() => handleMarkSubTaskCompleted(subTask.id)}
             disabled={subTask.completed}
           >
             {subTask.completed ? "Completed" : "Mark Complete"}

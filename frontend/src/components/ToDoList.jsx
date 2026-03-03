@@ -2,44 +2,34 @@ import React, { useState } from "react";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
 
-const ToDoList = ({ toDoListId, studyPlanId }) => {
-  const [tasks, setTasks] = useState([]);
-  const [progress, setProgress] = useState(0);
-
-  const handleAddTask = ({ title, description }) => {
-    let index = tasks.length + 1;
-
-    let newTask = {
-      taskID: index,
-      toDoListID: 123,
-      title: title,
-      description: description,
-      startDate: new Date(),
-      endDate: new Date(),
-      priorityLevel: "low",
-    };
-
-    setTasks([...tasks, newTask]);
-  };
-
+const ToDoList = ({
+  id,
+  studyPlanId,
+  tasks,
+  addTask,
+  progress,
+  setProgress,
+}) => {
   return (
     <>
       <div className="todolist-card">
         <h2>ToDoList</h2>
-        <p>To-Do List Id: {toDoListId}</p>
+        <p>To-Do List Id: {id}</p>
         <p>Study Plan Id: {studyPlanId}</p>
-        <p>Progress: {progress}</p>
+        <p>
+          Progress: {progress}/{tasks.length}
+        </p>
         <p>Tasks:</p>
         <ul>
           {tasks.map((task) => (
-            <li key={task.taskID}>{task.title}</li>
+            <li key={task.id}>{task.title}</li>
           ))}
         </ul>
-        <AddTaskForm onAddTask={handleAddTask} />
+        <AddTaskForm onAddTask={addTask} />
       </div>
       <div className="tasks-container">
         {tasks.map((task) => (
-          <Task key={task.taskID} taskObj={task} />
+          <Task key={task.id} taskObj={task} />
         ))}
       </div>
     </>

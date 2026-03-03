@@ -4,16 +4,16 @@ import "../../css/HomePage.css";
 
 const HomePage = () => {
   const studyPlans = [
-    { title: "Study Plan 1" },
-    { title: "Study Plan 2" },
-    { title: "Study Plan 3" },
-    { title: "Study Plan 4" },
-    { title: "Study Plan 5" },
-    { title: "Study Plan 6" },
-    { title: "Study Plan 7" },
-    { title: "Study Plan 8" },
-    { title: "Study Plan 9" },
-    { title: "Study Plan 10" },
+    { title: "Study Plan 1", id: "SP1", description: "1st Study Plan" },
+    { title: "Study Plan 2", id: "SP2", description: "2nd Study Plan" },
+    { title: "Study Plan 3", id: "SP3", description: "3rd Study Plan" },
+    { title: "Study Plan 4", id: "SP4", description: "4th Study Plan" },
+    { title: "Study Plan 5", id: "SP5", description: "5th Study Plan" },
+    { title: "Study Plan 6", id: "SP6", description: "6th Study Plan" },
+    { title: "Study Plan 7", id: "SP7", description: "7th Study Plan" },
+    { title: "Study Plan 8", id: "SP8", description: "8th Study Plan" },
+    { title: "Study Plan 9", id: "SP9", description: "9th Study Plan" },
+    { title: "Study Plan 10", id: "SP10", description: "10th Study Plan" },
   ];
 
   const [viewingStudyPlan, setViewingStudyPlan] = useState(() =>
