@@ -12,7 +12,6 @@ const authToken = (req, res, next) => {
   try {
     // sets the user of the request to the user from the token
     req.user = jwt.verify(token, process.env.JWT_SECRET)
-    console.log(req.user.username)    
 
     // tells express to move to the next function
     next()

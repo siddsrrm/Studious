@@ -2,10 +2,10 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
 exports.nameChange = async (req, res) => {
-  const { userID, newName } = req.body;
+  const { newName } = req.body;
 
   // get the user from the db
-  const user = await User.findOne({ userID: userID });
+  const user = await User.findById(req.user.userId);
 
   //TODO: Verify user is owner of account
 
@@ -29,10 +29,10 @@ exports.nameChange = async (req, res) => {
 };
 
 exports.deleteAccount = async (req, res) => {
-  const { userID, password } = req.body;
+  const { password } = req.body;
 
   // get the user from the db
-  const user = await User.findOne({ userID: userID });
+  const user = await User.findById(req.user.userId);
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
