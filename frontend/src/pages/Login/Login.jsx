@@ -63,10 +63,13 @@ function Login() {
     })
 
     const data = await response.json()
+    console.log(data)
 
     if (!response.ok) {
       setError(data.message)
     } else {
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("username", data.username)
       navigate("/home")
     }
   }

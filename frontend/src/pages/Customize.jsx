@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 //Code to handle frontend of account name change
 //NOTE: THIS PAGE DOES NOT VERIFY THE USER'S IDENTITY
 // ANYONE CAN GO TO THE LINK OF A USERNAME THEY WANT TO CHANGE AND CHANGE IT
 function ProfileSettings() {
+  const navigate = useNavigate();
+
   const {username} = useParams(); // Get username from URL
   const [currentName] = useState(username); 
   const [newName, setNewName] = useState("");
@@ -81,6 +83,13 @@ function ProfileSettings() {
             Update Name
           </button>
         </form>
+
+        <button
+          onClick={() => navigate(`/delete/${username}`)}
+          style={{ ...styles.button, backgroundColor: "red", marginTop: "1rem" }}
+        >
+          Delete Account
+        </button>
       </div>
     </div>
   );
