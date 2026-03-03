@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-const StudyPlan = require("./models/StudyPlan")
+const StudyPlan = require("./StudyPlan")
 
 const noteSchema = new mongoose.Schema({
   // attribute, type

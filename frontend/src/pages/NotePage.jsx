@@ -4,6 +4,9 @@ import NoteEditor from '../components/NoteEditor';
 const UNFILED_ID = '__unfiled__';
 
 const NotesPage = () => {
+  //token
+  const token = localStorage.getItem("token");
+
   // Folder variables 
   const [folders, setFolders] = useState([
     { _id: UNFILED_ID, name: 'Unfiled' },
@@ -16,6 +19,7 @@ const NotesPage = () => {
   //note tags
   const [tagInput, setTagInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
 
   // Mock database
   const [notes, setNotes] = useState([
@@ -98,6 +102,34 @@ const NotesPage = () => {
     );
     setFolders(prev => prev.filter(f => f._id !== folderId));
   };
+
+  //tag operations
+  const searchController = useRef(null);
+
+const handleSearch = async (term) => {
+  setSearchTerm(term);
+
+  // Cancel any in-flight request
+  if (searchController.current) searchController.current.abort();
+
+  if (!term.trim()) {
+    setSearchResults(null);
+    return;
+  }
+
+  searchController.current = new AbortController();
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/notes/search?tag=${term}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: searchController.current.signal
+    });
+    const data = await res.json();
+    setSearchResults(Array.isArray(data) ? data : []);
+  } catch (err) {
+    if (err.name === "AbortError") return; // ignore cancelled requests
+  }
+};
 
   useEffect(() => {
     if (creatingFolder) newFolderInputRef.current?.focus();
@@ -236,14 +268,14 @@ const NotesPage = () => {
   <input
     type="text"
     value={searchTerm}
-    onChange={e => setSearchTerm(e.target.value)}
+    onChange={e => handleSearch(e.target.value)}
     placeholder="Search by tag..."
     className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg outline-none focus:border-blue-300 text-gray-700"
   />
 </div>
 )}
           {folders.map(folder => {
-            const folderNotes = filteredNotes.filter(n => n.folderId === folder._id);
+            const folderNotes = (searchResults ?? notes).filter(n => n.folderId === folder._id);
             const isCollapsed = !!collapsedFolders[folder._id];
 
             return (
