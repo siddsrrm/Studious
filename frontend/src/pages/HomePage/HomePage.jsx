@@ -12,22 +12,26 @@ const HomePage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activePlan, setActivePlan] = useState(null);
   const [activeTab, setActiveTab] = useState("todo");
-  const [showToken, setShowToken] = useState(true)
+  const [showToken, setShowToken] = useState(() => !sessionStorage.getItem("tokenShown"));
   const [tokenOpacity, setTokenOpacity] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setTokenOpacity(false), 2000);
-    const hideTimer = setTimeout(() => setShowToken(false), 5000);
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(hideTimer);
-    };
+    if (showToken) {
+      sessionStorage.setItem("tokenShown", "true");
+      const fadeTimer = setTimeout(() => setTokenOpacity(false), 2000);
+      const hideTimer = setTimeout(() => setShowToken(false), 5000);
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(hideTimer);
+      };
+    }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token")
+    sessionStorage.removeItem("tokenShown")
     navigate("/login")
   }
 

@@ -47,7 +47,8 @@ function ProfileSettings() {
       const data = await response.json();
 
       if (response.ok) {
-        window.location.href = `/customize/${newName}`;
+        localStorage.setItem("username", newName)
+        window.location.href = `/settings/${newName}`;
       } else {
         setError("Error: " + (data.message || "Name Change failed"));
       }
@@ -60,7 +61,15 @@ function ProfileSettings() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2>Profile Settings</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <h2 style={{ margin: 0 }}>Profile Settings</h2>
+          <button
+            onClick={() => navigate("/home")}
+            style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#555" }}
+          >
+            &times;
+          </button>
+        </div>
 
         <p style={styles.currentName}>
           Current Name: <strong>{currentName}</strong>
