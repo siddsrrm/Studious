@@ -15,6 +15,7 @@ const NotesPage = () => {
 
   //note tags
   const [tagInput, setTagInput] = useState("");
+  const [selectedTag, setSelectedTag] = useState(null);
 
   // Mock database
   const [notes, setNotes] = useState([
@@ -77,19 +78,6 @@ const NotesPage = () => {
     setMoveMenuNoteId(null);
   };
 
-  //tag operations
-  const handleAddTag = (e) => {
-  if (e.key === "Enter" && tagInput.trim()) {
-    if (!activeNote.tags.includes(tagInput.trim())) {
-      handleUpdateNote("tags", [...activeNote.tags, tagInput.trim()]);
-    }
-    setTagInput("");
-  }
-};
-
-const handleRemoveTag = (tag) => {
-  handleUpdateNote("tags", activeNote.tags.filter(t => t !== tag));
-};
 
   // Folder operations
   const toggleFolder = (folderId) =>
@@ -184,6 +172,11 @@ const handleRemoveTag = (tag) => {
     </div>
   );
 
+   const allTags = [...new Set(notes.flatMap(n => n.tags))];
+  const filteredNotes = selectedTag
+  ? notes.filter(n => n.tags.includes(selectedTag))
+  : notes;
+
   // Render page
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -237,8 +230,26 @@ const handleRemoveTag = (tag) => {
 
         {/* Folder list */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          
+                {allTags.length > 0 && (
+  <div className="px-3 py-2 border-b border-gray-100 flex flex-wrap gap-1">
+    {allTags.map(tag => (
+      <button
+        key={tag}
+        onClick={() => setSelectedTag(prev => prev === tag ? null : tag)}
+        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+          selectedTag === tag
+            ? "bg-blue-500 text-white border-blue-500"
+            : "bg-white text-gray-500 border-gray-200 hover:border-blue-300"
+        }`}
+      >
+        #{tag}
+      </button>
+    ))}
+  </div>
+)}
           {folders.map(folder => {
-            const folderNotes = notes.filter(n => n.folderId === folder._id);
+            const folderNotes = filteredNotes.filter(n => n.folderId === folder._id);
             const isCollapsed = !!collapsedFolders[folder._id];
 
             return (
@@ -285,6 +296,7 @@ const handleRemoveTag = (tag) => {
                     )}
                   </div>
                 </div>
+
 
                 {/* Notes inside folder */}
                 {!isCollapsed && (
