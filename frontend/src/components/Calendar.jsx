@@ -1,5 +1,44 @@
-import React, { useState } from "react";
+import React from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 
+const Calendar = () => {
+  const handleDateClick = (info) => {
+    const title = prompt("Enter event title:");
+    if (title) {
+      info.view.calendar.addEvent({
+        title,
+        start: info.dateStr,
+      });
+    }
+  };
+
+  return (
+    <FullCalendar
+      plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+      initialView="dayGridMonth"
+      headerToolbar={{
+        left: "prev,next today",
+        center: "title",
+        right: "dayGridMonth,timeGridWeek,timeGridDay",
+      }}
+      events={[
+        { title: "Meeting", date: "2026-03-05" },
+        {
+          title: "Workout",
+          start: "2026-03-06T10:00:00",
+          end: "2026-03-06T12:00:00",
+        },
+      ]}
+      dateClick={handleDateClick}
+    />
+  );
+};
+
+export default Calendar;
+/*
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState({});
@@ -145,3 +184,4 @@ const Calendar = () => {
 };
 
 export default Calendar;
+*/

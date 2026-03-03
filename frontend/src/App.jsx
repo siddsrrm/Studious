@@ -3,6 +3,12 @@ import HomePage from "./pages/HomePage/HomePage";
 import Calendar from "./components/Calendar";
 
 function App() {
+  const displayHomePage = true;
+
+  if (!displayHomePage) {
+    return <Calendar />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>
