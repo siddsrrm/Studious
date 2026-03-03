@@ -1,33 +1,27 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./Settings.module.css";
 
+const API_BASE = import.meta.env.VITE_API_URL;
 
-export default function SettingsPage() {
+const SECTIONS = {
+  USERNAME: "username",
+  DELETE: "delete",
+};
+
+function UsernameSection({ oldUsername, setOldUsername }) {
   const [newUsername, setNewUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [usernameSuccess, setUsernameSuccess] = useState("");
-  const [usernameLoading, setUsernameLoading] = useState(false);
-  const [deleteStatus, setDeleteStatus] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
-  const oldUsername = localStorage.getItem("username");
-
-
-//function for name change
-
 
   async function handleNameChange() {
-    if (!newUsername.trim()) {
-      setUsernameError("Username cannot be empty.");
-      return;
-    }
-    setUsernameLoading(true);
+    if (!newUsername.trim()) { setUsernameError("Username cannot be empty."); return; }
+    setLoading(true);
     setUsernameError("");
     setUsernameSuccess("");
     try {
-        //post req to server to change username
       const res = await fetch(`${import.meta.env.VITE_API_URL}/users/nameChange`, {
         method: "POST",
         headers: {
@@ -38,8 +32,9 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("username", newUsername);
         setUsernameSuccess("Username updated successfully.");
+        localStorage.setItem("username", newUsername);
+        setOldUsername(newUsername);
         setNewUsername("");
       } else {
         setUsernameError(data.message || "Failed to update username.");
@@ -47,13 +42,42 @@ export default function SettingsPage() {
     } catch {
       setUsernameError("Network error. Please try again.");
     } finally {
-      setUsernameLoading(false);
+      setLoading(false);
     }
   }
 
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Change Username</h2>
+      <p className={styles.contentDescription}>Update the name displayed on your account.</p>
+      <hr className={styles.contentDivider} />
+      <p className={styles.fieldLabel}>New username</p>
+      <input
+        type="text"
+        placeholder={oldUsername}
+        value={newUsername}
+        onChange={(e) => setNewUsername(e.target.value)}
+        onFocus={() => { setUsernameError(""); setUsernameSuccess(""); }}
+        disabled={loading}
+        className={styles.input + (usernameError ? " " + styles.inputError : "")}
+      />
+      {usernameError && <p className={styles.error}>{usernameError}</p>}
+      {usernameSuccess && <p className={styles.success}>{usernameSuccess}</p>}
+      <button className={styles.button} onClick={handleNameChange} disabled={loading}>
+        {loading ? "Saving..." : "Save Username"}
+      </button>
+    </div>
+  );
+}
+
+function DeleteSection() {
+  const [showModal, setShowModal] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+
   async function handleDeleteAccount() {
-    setDeleteLoading(true);
-    setDeleteStatus("");
+    setLoading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/users/delete`, {
         method: "POST",
@@ -64,6 +88,7 @@ export default function SettingsPage() {
         setDeleteStatus("Account deleted. Redirecting...");
         setTimeout(() => {
           localStorage.removeItem("token");
+          localStorage.removeItem("username");
           window.location.href = "/";
         }, 2000);
       } else {
@@ -74,59 +99,95 @@ export default function SettingsPage() {
       setDeleteStatus("Network error. Please try again.");
       setShowModal(false);
     } finally {
-      setDeleteLoading(false);
+      setLoading(false);
     }
   }
 
   return (
-    <div className={styles.container}>
-      <h1>Studious</h1>
-      <p>Current username: {oldUsername}</p>
-
-      <input
-        type="text"
-        placeholder="New username"
-        className={styles.input + (usernameError ? " " + styles.inputError : "")}
-        value={newUsername}
-        onChange={(e) => setNewUsername(e.target.value)}
-        onFocus={() => { setUsernameError(""); setUsernameSuccess(""); }}
-        disabled={usernameLoading}
-      />
-      {usernameError && <p className={styles.error}>{usernameError}</p>}
-      {usernameSuccess && <p>{usernameSuccess}</p>}
-
-      <button className={styles.button} onClick={handleNameChange} disabled={usernameLoading}>
-        {usernameLoading ? "Saving..." : "Save Username"}
-      </button>
-
-      <button className={styles.button} onClick={() => setShowModal(true)} disabled={deleteLoading}
-        style={{ backgroundColor: "#dc3545" }}>
-        Delete Account
-      </button>
+    <div>
+      <h2 className={styles.contentTitle}>Delete Account</h2>
+      <p className={styles.contentDescription}>Permanently remove your account from Studious.</p>
+      <hr className={styles.contentDivider} />
+      <div className={styles.warningBox}>
+        Once you delete your account, all of your data will be permanently removed
+        and cannot be recovered. Please be certain before continuing.
+      </div>
       {deleteStatus && <p className={styles.error}>{deleteStatus}</p>}
+      <button className={styles.buttonDanger} onClick={() => setShowModal(true)} disabled={loading}>
+        Delete My Account
+      </button>
 
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}
-          onClick={() => setShowModal(false)}>
-          <div style={{ background: "#fff", borderRadius: "8px", padding: "30px", width: "320px", display: "flex", flexDirection: "column", gap: "10px" }}
-            onClick={(e) => e.stopPropagation()}>
-            <p style={{ fontWeight: 600 }}>Delete your account?</p>
-            <p style={{ fontSize: "13px", color: "hsl(0,0%,40%)" }}>
-              This will permanently delete your account and all associated data. This cannot be undone.
+        <div className={styles.overlay} onClick={() => setShowModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.modalTitle}>Delete your account?</p>
+            <p className={styles.modalBody}>
+              This will permanently delete your account and all associated data.
+              There is no way to recover it after confirmation.
             </p>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button className={styles.button} style={{ backgroundColor: "transparent", color: "#333", border: "1px solid hsl(0,0%,80%)" }}
-                onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button className={styles.button} style={{ backgroundColor: "#dc3545" }}
-                onClick={handleDeleteAccount} disabled={deleteLoading}>
-                {deleteLoading ? "Deleting..." : "Delete"}
+            <div className={styles.modalActions}>
+              <button className={styles.btnCancel} onClick={() => setShowModal(false)}>Cancel</button>
+              <button className={styles.btnConfirm} onClick={handleDeleteAccount} disabled={loading}>
+                {loading ? "Deleting..." : "Yes, delete"}
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState(SECTIONS.USERNAME);
+  const [oldUsername, setOldUsername] = useState(localStorage.getItem("username") || "User");
+
+  return (
+    <div className={styles.page}>
+
+      {/* Top bar */}
+      <div className={styles.topBar}>
+        <button className={styles.backButton} onClick={() => navigate("/home")}>
+          ← Back
+        </button>
+        <h1 className={styles.topBarTitle}>Studious</h1>
+        <p className={styles.topBarWelcome}>Welcome, {oldUsername}!</p>
+      </div>
+
+      {/* Sidebar */}
+      <div className={styles.sidebar}>
+        <p className={styles.sidebarHeading}>Account</p>
+
+        <button
+          className={`${styles.sidebarItem} ${activeSection === SECTIONS.USERNAME ? styles.sidebarItemActive : ""}`}
+          onClick={() => setActiveSection(SECTIONS.USERNAME)}
+        >
+          Change Username
+        </button>
+
+        <hr className={styles.sidebarDivider} />
+
+        <p className={styles.sidebarHeading}>Danger Zone</p>
+
+        <button
+          className={`${styles.sidebarItem} ${styles.sidebarItemDanger} ${activeSection === SECTIONS.DELETE ? styles.sidebarItemDangerActive : ""}`}
+          onClick={() => setActiveSection(SECTIONS.DELETE)}
+        >
+          Delete Account
+        </button>
+      </div>
+
+      {/* Main content */}
+      <div className={styles.content}>
+        {activeSection === SECTIONS.USERNAME && (
+          <UsernameSection oldUsername={oldUsername} setOldUsername={setOldUsername} />
+        )}
+        {activeSection === SECTIONS.DELETE && (
+          <DeleteSection />
+        )}
+      </div>
+
     </div>
   );
 }
