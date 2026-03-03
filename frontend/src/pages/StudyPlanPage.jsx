@@ -5,6 +5,7 @@ import NotePage from "./NotePage"
 
 const StudyPlanPage = ({ plan, onBack }) => {
   const [activeTab, setActiveTab] = useState("todo");
+  const [progress, setProgress] = useState(40); // will be replaced with real data later
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,6 +54,16 @@ const StudyPlanPage = ({ plan, onBack }) => {
               {tab === "todo" ? "To-Do List" : "Notes"}
             </button>
           ))}
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 500 }}>Progress</span>
+            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{Math.round(progress)}%</span>
+          </div>
+          <div style={{ width: '100%', backgroundColor: '#e0e7ff', borderRadius: '9999px', height: '8px' }}>
+            <div style={{ width: `${progress}%`, backgroundColor: '#4f46e5', borderRadius: '9999px', height: '8px', transition: 'width 0.3s ease' }} />
+          </div>
         </div>
 
         {/* Rendering selected component*/}
