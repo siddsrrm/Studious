@@ -15,7 +15,7 @@ const NotesPage = () => {
 
   //note tags
   const [tagInput, setTagInput] = useState("");
-  const [selectedTag, setSelectedTag] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Mock database
   const [notes, setNotes] = useState([
@@ -173,8 +173,8 @@ const NotesPage = () => {
   );
 
    const allTags = [...new Set(notes.flatMap(n => n.tags))];
-  const filteredNotes = selectedTag
-  ? notes.filter(n => n.tags.includes(selectedTag))
+  const filteredNotes = searchTerm.trim()
+  ? notes.filter(n => n.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   : notes;
 
   // Render page
@@ -232,21 +232,15 @@ const NotesPage = () => {
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           
                 {allTags.length > 0 && (
-  <div className="px-3 py-2 border-b border-gray-100 flex flex-wrap gap-1">
-    {allTags.map(tag => (
-      <button
-        key={tag}
-        onClick={() => setSelectedTag(prev => prev === tag ? null : tag)}
-        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-          selectedTag === tag
-            ? "bg-blue-500 text-white border-blue-500"
-            : "bg-white text-gray-500 border-gray-200 hover:border-blue-300"
-        }`}
-      >
-        #{tag}
-      </button>
-    ))}
-  </div>
+    <div className="px-3 py-2 border-b border-gray-100">
+  <input
+    type="text"
+    value={searchTerm}
+    onChange={e => setSearchTerm(e.target.value)}
+    placeholder="Search by tag..."
+    className="w-full text-sm px-3 py-1.5 border border-gray-200 rounded-lg outline-none focus:border-blue-300 text-gray-700"
+  />
+</div>
 )}
           {folders.map(folder => {
             const folderNotes = filteredNotes.filter(n => n.folderId === folder._id);
