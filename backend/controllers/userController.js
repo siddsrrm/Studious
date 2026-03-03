@@ -44,3 +44,34 @@ exports.deleteAccount = async (req, res) => {
   //return success
   res.json({ message: "Account deleted successfully" });
 };
+
+//email change
+exports.emailChange = async (req, res) => {
+  try {
+    //save new email
+    const newEmail = req.body.email;
+
+    //find user by id
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (newEmail === user.email) {
+      return res.status(400).json({ message: "New email is the same as the current email" });
+    }
+
+    //verify email is available
+    const existingUser = await User.findOne({ email: newEmail });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    //update email
+    user.email = newEmail;
+    await user.updateOne({ email: newEmail });
+    res.json({ message: "Email updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update email" });
+  }
+}

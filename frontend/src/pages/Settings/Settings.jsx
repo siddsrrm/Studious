@@ -6,7 +6,8 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 const SECTIONS = {
   USERNAME: "username",
-  DELETE: "delete",
+  EMAIL: "email",
+  DELETE: "delete"
 };
 
 function UsernameSection({ oldUsername, setOldUsername }) {
@@ -65,6 +66,73 @@ function UsernameSection({ oldUsername, setOldUsername }) {
       {usernameSuccess && <p className={styles.success}>{usernameSuccess}</p>}
       <button className={styles.button} onClick={handleNameChange} disabled={loading}>
         {loading ? "Saving..." : "Save Username"}
+      </button>
+    </div>
+  );
+}
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? null : "Please enter a valid email address";
+}
+
+
+function EmailSection() {
+  const [newEmail, setNewEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [emailSuccess, setEmailSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+
+  async function handleEmailChange() {
+    if (!newEmail.trim()) { setEmailError("Email cannot be empty."); return; }
+  
+    const validationError = validateEmail(newEmail);
+    if (validationError) { setEmailError(validationError); return; }
+
+    setLoading(true);
+    setEmailError("");
+    setEmailSuccess("");
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/emailChange`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: newEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEmailSuccess("Email updated successfully.");
+        setNewEmail("");
+      } else {
+        setEmailError(data.message || "Failed to update email.");
+      }
+    } catch {
+      setEmailError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Change Email</h2>
+      <p className={styles.contentDescription}>Update the email address associated with your account.</p>
+      <hr className={styles.contentDivider} />
+      <p className={styles.fieldLabel}>New email</p>
+      <input
+        type="email"
+        placeholder="New email address"
+        value={newEmail}
+        onChange={(e) => setNewEmail(e.target.value)}
+        onFocus={() => { setEmailError(""); setEmailSuccess(""); }}
+        disabled={loading}
+        className={styles.input + (emailError ? " " + styles.inputError : "")}
+      />
+      {emailError && <p className={styles.error}>{emailError}</p>}
+      {emailSuccess && <p className={styles.success}>{emailSuccess}</p>}
+      <button className={styles.button} onClick={handleEmailChange} disabled={loading}>
+        {loading ? "Saving..." : "Save Email"}
       </button>
     </div>
   );
@@ -166,6 +234,14 @@ export default function SettingsPage() {
           Change Username
         </button>
 
+    {/* Email change */}
+<button
+  className={`${styles.sidebarItem} ${activeSection === SECTIONS.EMAIL ? styles.sidebarItemActive : ""}`}
+  onClick={() => setActiveSection(SECTIONS.EMAIL)}
+>
+  Change Email
+</button>
+
         <hr className={styles.sidebarDivider} />
 
         <p className={styles.sidebarHeading}>Danger Zone</p>
@@ -183,6 +259,7 @@ export default function SettingsPage() {
         {activeSection === SECTIONS.USERNAME && (
           <UsernameSection oldUsername={oldUsername} setOldUsername={setOldUsername} />
         )}
+{activeSection === SECTIONS.EMAIL && <EmailSection />}
         {activeSection === SECTIONS.DELETE && (
           <DeleteSection />
         )}
