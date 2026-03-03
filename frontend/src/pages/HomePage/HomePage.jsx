@@ -92,7 +92,7 @@ const HomePage = () => {
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
                   <button
-                    onClick={() => { setMenuOpen(false); navigate(`/settings/${localStorage.getItem("username")}`); }}
+                    onClick={() => { setMenuOpen(false); navigate(`/settings`); }}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

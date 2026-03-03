@@ -3,8 +3,7 @@ import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
-import ProfileSettings from "./pages/Customize";
-import DeleteAccount from "./pages/Deletion";
+import SettingsPage from "./pages/Settings/Settings";
 import FilterNotes from "./pages/Filtering";
 import HomePage from "./pages/HomePage/HomePage"
 import NotesPage from "./pages/NotePage";
@@ -19,8 +18,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        <Route path="/settings/:username" element={<ProfileSettings />} />
-        <Route path="/delete/:username" element={<DeleteAccount />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notes" element={<NotesPage />} />
         <Route path="/filter-notes" element={<FilterNotes />} />
         {/* Your main page route can go here later */}
