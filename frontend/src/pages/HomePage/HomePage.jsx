@@ -150,6 +150,15 @@ const HomePage = () => {
           <p className="text-xs text-gray-400 truncate">{localStorage.getItem("token")}</p>
         </div>
       )}
+
+      {showToken && (
+        <div className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 w-72 border border-gray-200 transition-opacity duration-1000 ${tokenOpacity ? "opacity-100" : "opacity-0"}`}>
+          <p className="text-sm font-semibold text-gray-700 mb-1">Session Active</p>
+          <p className="text-xs text-gray-400 truncate">
+            {localStorage.getItem("token")}
+          </p>
+        </div>
+      )}    
     </div>
   );
 };

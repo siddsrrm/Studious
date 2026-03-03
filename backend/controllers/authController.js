@@ -2,6 +2,8 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
 
 // register a new user
 exports.register = async (req, res) => {
