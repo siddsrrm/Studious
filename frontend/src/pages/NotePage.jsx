@@ -13,6 +13,9 @@ const NotesPage = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const newFolderInputRef = useRef(null);
 
+  //note tags
+  const [tagInput, setTagInput] = useState("");
+
   // Mock database
   const [notes, setNotes] = useState([
     {
@@ -73,6 +76,20 @@ const NotesPage = () => {
     );
     setMoveMenuNoteId(null);
   };
+
+  //tag operations
+  const handleAddTag = (e) => {
+  if (e.key === "Enter" && tagInput.trim()) {
+    if (!activeNote.tags.includes(tagInput.trim())) {
+      handleUpdateNote("tags", [...activeNote.tags, tagInput.trim()]);
+    }
+    setTagInput("");
+  }
+};
+
+const handleRemoveTag = (tag) => {
+  handleUpdateNote("tags", activeNote.tags.filter(t => t !== tag));
+};
 
   // Folder operations
   const toggleFolder = (folderId) =>
@@ -300,6 +317,7 @@ const NotesPage = () => {
             </button>
           </div>
         )}
+        
       </div>
     </div>
   );

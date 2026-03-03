@@ -15,7 +15,7 @@ import {Color} from '@tiptap/extension-color'
 import {TextStyle} from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
 import { Extension } from '@tiptap/core' 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 
 // Fontsize extension
@@ -177,6 +177,40 @@ const MenuBar = ({ editor }) => {
   )
 }
 
+//create tageditor component
+const TagEditor = ({ tags, onUpdate }) => {
+  const [tagInput, setTagInput] = useState("");
+
+  const handleAddTag = () => {
+    if (!tagInput.trim() || tags.includes(tagInput.trim())) return;
+    onUpdate("tags", [...tags, tagInput.trim()]);
+    setTagInput("");
+  };
+
+  const handleRemoveTag = (tag) => {
+    onUpdate("tags", tags.filter(t => t !== tag));
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-6">
+      {tags.map(tag => (
+        <span key={tag} className="flex items-center gap-1 bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full">
+          #{tag}
+          <button onClick={() => handleRemoveTag(tag)} className="hover:text-red-500">×</button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={tagInput}
+        onChange={e => setTagInput(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); }}}
+        placeholder="Add tag..."
+        className="text-xs px-2 py-1 border border-gray-200 rounded-full outline-none focus:border-blue-300 w-24 text-gray-800"
+      />
+    </div>
+  );
+};
+
 // Main NoteEditor component
 export default function NoteEditor({ note, onUpdate }) {
   const editor = useEditor({
@@ -239,6 +273,8 @@ export default function NoteEditor({ note, onUpdate }) {
         value={note.title || ''}
         onChange={(e) => onUpdate && onUpdate('title', e.target.value)}
       />
+
+      <TagEditor key={note._id} tags={note.tags || []} onUpdate={onUpdate} />
 
       <MenuBar editor={editor} />
 
