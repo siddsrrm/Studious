@@ -6,7 +6,8 @@ const noteSchema = new mongoose.Schema({
   // userID can just be _id property of schema
   ownerID: {type:mongoose.Schema.Types.ObjectId, ref:"User", required: true},
   studyPlanID: {type: mongoose.Schema.Types.ObjectId, ref:"StudyPlan", required: true},
-  title: {type: String, required: true},
+  folderId: {type: String, default: "__unfiled__"},
+  title: {type: String, default: "Untitled"},
   content: String,
   tags: [String],
   attachments: [String],

@@ -3,7 +3,7 @@ import NoteEditor from '../components/NoteEditor';
 
 const UNFILED_ID = '__unfiled__';
 
-const NotesPage = () => {
+const NotesPage = ({ studyPlanId }) => {
   //token
   const token = localStorage.getItem("token");
 
@@ -21,57 +21,100 @@ const NotesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState(null);
 
-  // Mock database
-  const [notes, setNotes] = useState([
-    {
-      _id: '1',
-      folderId: UNFILED_ID,
-      title: 'Graph Coverage Criteria',
-      content: '<p>Notes on <strong>node coverage</strong> and edge coverage...</p>',
-      tags: ['testing', 'algorithms'],
-      summary: '',
-    },
-    {
-      _id: '2',
-      folderId: UNFILED_ID,
-      title: 'MERN Stack Architecture',
-      content: '<p>Understanding the three-tier architecture.</p>',
-      tags: ['web-dev'],
-      summary: '',
-    },
-  ]);
+  const [notes, setNotes] = useState([]);
 
-  const [activeNoteId, setActiveNoteId] = useState('1');
+  const [activeNoteId, setActiveNoteId] = useState(null);
   const [moveMenuNoteId, setMoveMenuNoteId] = useState(null);
+  const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState(null);
   const activeNote = notes.find(n => n._id === activeNoteId);
+  const saveTimerRef = useRef(null);
+
+  // Fetch notes for this study plan
+  useEffect(() => {
+    if (!token || !studyPlanId) return;
+    (async () => {
+      try {
+        // Fetch notes and folders in parallel
+        const [notesRes, foldersRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/notes?studyPlanId=${studyPlanId}`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_URL}/folders?studyPlanId=${studyPlanId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+
+        if (notesRes.ok) {
+          const notesData = await notesRes.json();
+          const withFolder = notesData.map(n => ({ ...n, folderId: n.folderId || UNFILED_ID }));
+          setNotes(withFolder);
+          if (withFolder.length > 0) setActiveNoteId(withFolder[0]._id);
+        }
+
+        if (foldersRes.ok) {
+          const foldersData = await foldersRes.json();
+          setFolders([{ _id: UNFILED_ID, name: 'Unfiled' }, ...foldersData]);
+        }
+      } catch (err) {
+        // ignore network errors
+      }
+    })();
+  }, [studyPlanId]);
 
   // Note operations
   const handleUpdateNote = (field, value) => {
     setNotes(prev =>
       prev.map(n => (n._id === activeNoteId ? { ...n, [field]: value } : n))
     );
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      if (!token || !activeNoteId) return;
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/notes/${activeNoteId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ [field]: value }),
+        });
+      } catch (err) {
+      }
+    }, 500);
   };
 
-  const handleAddNote = (folderId = UNFILED_ID) => {
-    const newNote = {
-      _id: Date.now().toString(),
-      folderId,
-      title: '',
-      content: '',
-      tags: [],
-      summary: '',
-    };
-    setNotes(prev => [newNote, ...prev]);
-    setActiveNoteId(newNote._id);
-    setCollapsedFolders(prev => ({ ...prev, [folderId]: false }));
+  const handleAddNote = async (folderId = UNFILED_ID) => {
+    if (!token || !studyPlanId) return;
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ studyPlanID: studyPlanId, title: '', content: '', tags: [], folderId }),
+      });
+
+      if (res.ok) {
+        const saved = await res.json();
+        const newNote = { ...saved, folderId };
+        setNotes(prev => [newNote, ...prev]);
+        setActiveNoteId(saved._id);
+        setCollapsedFolders(prev => ({ ...prev, [folderId]: false }));
+      }
+    } catch (err) {
+    }
   };
 
-  const handleDeleteNote = (noteId) => {
+  const handleDeleteNote = async (noteId) => {
     const remaining = notes.filter(n => n._id !== noteId);
     setNotes(remaining);
     if (activeNoteId === noteId) {
       const idx = notes.findIndex(n => n._id === noteId);
       setActiveNoteId(remaining[Math.max(0, idx - 1)]?._id ?? null);
+    }
+
+    // Delete from backend
+    if (!token) return;
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/notes/${noteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      // ignore
     }
   };
 
@@ -80,6 +123,20 @@ const NotesPage = () => {
       prev.map(n => (n._id === noteId ? { ...n, folderId: targetFolderId } : n))
     );
     setMoveMenuNoteId(null);
+
+    // Save folder change to backend
+    if (!token) return;
+    (async () => {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/notes/${noteId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ folderId: targetFolderId }),
+        });
+      } catch (err) {
+        // ignore
+      }
+    })();
   };
 
 
@@ -87,29 +144,72 @@ const NotesPage = () => {
   const toggleFolder = (folderId) =>
     setCollapsedFolders(prev => ({ ...prev, [folderId]: !prev[folderId] }));
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     const name = newFolderName.trim();
     if (!name) { setCreatingFolder(false); setNewFolderName(''); return; }
+
+    if (token && studyPlanId) {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/folders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ studyPlanID: studyPlanId, name }),
+        });
+        if (res.ok) {
+          const saved = await res.json();
+          setFolders(prev => [...prev, saved]);
+          setCreatingFolder(false);
+          setNewFolderName('');
+          return;
+        }
+      } catch (err) {
+      }
+    }
+
     setFolders(prev => [...prev, { _id: Date.now().toString(), name }]);
     setCreatingFolder(false);
     setNewFolderName('');
   };
 
-  const handleDeleteFolder = (folderId) => {
+  const handleDeleteFolder = async (folderId) => {
     if (folderId === UNFILED_ID) return;
+
+    // Move notes in this folder to Unfiled 
+    const notesInFolder = notes.filter(n => n.folderId === folderId);
     setNotes(prev =>
       prev.map(n => (n.folderId === folderId ? { ...n, folderId: UNFILED_ID } : n))
     );
     setFolders(prev => prev.filter(f => f._id !== folderId));
+
+    if (!token) return;
+
+    // Update each note's folderId on the server
+    for (const note of notesInFolder) {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/notes/${note._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ folderId: UNFILED_ID }),
+        });
+      } catch (err) { }
+    }
+
+    // Delete folder from backend
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/folders/${folderId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+    }
   };
 
-  //tag operations
-  const searchController = useRef(null);
+//tag operations
+const searchController = useRef(null);
 
 const handleSearch = async (term) => {
   setSearchTerm(term);
 
-  // Cancel any in-flight request
   if (searchController.current) searchController.current.abort();
 
   if (!term.trim()) {
@@ -127,7 +227,7 @@ const handleSearch = async (term) => {
     const data = await res.json();
     setSearchResults(Array.isArray(data) ? data : []);
   } catch (err) {
-    if (err.name === "AbortError") return; // ignore cancelled requests
+    if (err.name === "AbortError") return; 
   }
 };
 
@@ -191,15 +291,44 @@ const handleSearch = async (term) => {
         </div>
 
         {/* Delete note */}
-        <button
-          onClick={(e) => { e.stopPropagation(); handleDeleteNote(note._id); }}
-          className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-          title="Delete note"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
+        <div className="relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmDeleteNoteId(note._id); }}
+            className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+            title="Delete note"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+
+          {confirmDeleteNoteId === note._id && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 top-8 z-50 w-52 bg-white border border-gray-200 rounded-lg shadow-lg p-3"
+            >
+              <p className="text-sm text-gray-700 mb-2">Delete this note?</p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setConfirmDeleteNoteId(null)}
+                  className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDeleteNoteId(null);
+                    handleDeleteNote(note._id);
+                  }}
+                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

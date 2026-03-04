@@ -60,7 +60,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
 
         {activeTab === "notes" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <NotePage />
+            <NotePage studyPlanId={plan.id} />
           </div>
         )}
       </div>
