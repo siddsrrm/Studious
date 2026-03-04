@@ -8,7 +8,7 @@ function Verify2FA() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const { state } = useLocation();
-  const pendingToken = state?.pendingToken;  // ← passed from login page
+  const pendingToken = state?.pendingToken;
 
   const handleVerify = async () => {
     setError("");
@@ -25,11 +25,11 @@ function Verify2FA() {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/verify-2fa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, pendingToken }),  // ← send both
+        body: JSON.stringify({ code, pendingToken }),
       });
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("token", data.token)  // ← store real session token
+        localStorage.setItem("token", data.token)  //store real session token
         setMessage("Verification successful! Redirecting...");
         setTimeout(() => navigate("/home"), 1500);
       } else {
@@ -63,10 +63,6 @@ function Verify2FA() {
       <button className={styles.button} onClick={handleVerify}>
         Verify
       </button>
-
-      {/* <p>
-        Didn’t receive a code? <a href="/resend-2fa">Resend</a>
-      </p> */}
 
       <p>
         Back to <a href="/login">Login</a>
