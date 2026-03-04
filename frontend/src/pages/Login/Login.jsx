@@ -26,7 +26,7 @@ function Login() {
       setUsernameError("")
     }
   }
-  
+
   const handlePassword = (e) => {
     setPassword(e.target.value)
   }
@@ -67,6 +67,8 @@ function Login() {
 
     if (!response.ok) {
       setError(data.message)
+    } else if (data.requiresTwoFactor) {
+      navigate("/verify-2fa", { state: { pendingToken: data.pendingToken } })
     } else {
       localStorage.setItem("token", data.token)
       localStorage.setItem("username", data.username)
@@ -77,10 +79,10 @@ function Login() {
   return (
     <div className={styles.container}>
       <h1>Studious</h1>
-      <input type="username" placeholder="Username or Email" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")}/>
+      <input type="username" placeholder="Username or Email" className={styles.input + (usernameError ? " " + styles.inputError : "")} onChange={handleUsername} onBlur={handleUsernameBlur} onFocus={() => setUsernameError("")} />
       {usernameError && <p className={styles.error}>{usernameError}</p>}
 
-      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")}/>
+      <input type="password" placeholder="Password" className={styles.input + (passwordError ? " " + styles.inputError : "")} onChange={handlePassword} onBlur={handlePasswordBlur} onFocus={() => setPasswordError("")} />
       {passwordError && <p className={styles.error}>{passwordError}</p>}
 
       <button onClick={handleSubmit} className={styles.button}>Login</button>

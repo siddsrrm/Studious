@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: Date,
   twoFactorCode: String,
   twoFactorExpires: Date,
+  twoFactorEnabled: {type: Boolean, default: false},
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   progressTracker: { type: mongoose.Schema.Types.ObjectId, ref: "ProgressTracker" }
 })

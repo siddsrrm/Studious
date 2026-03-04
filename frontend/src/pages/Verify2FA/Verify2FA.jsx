@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./Verify2FA.module.css";
 
 function Verify2FA() {
@@ -7,36 +7,31 @@ function Verify2FA() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const pendingToken = state?.pendingToken;  // ← passed from login page
 
   const handleVerify = async () => {
     setError("");
     setMessage("");
-
     if (!code) {
       setError("Please enter the verification code.");
       return;
     }
-
     if (code.length !== 6) {
       setError("Code must be 6 digits.");
       return;
     }
-
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/auth/verify-2fa`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
-        }
-      );
-
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/verify-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, pendingToken }),  // ← send both
+      });
       const data = await res.json();
-
       if (res.ok) {
+        localStorage.setItem("token", data.token)  // ← store real session token
         setMessage("Verification successful! Redirecting...");
-        setTimeout(() => navigate("/dashboard"), 1500); //change later
+        setTimeout(() => navigate("/home"), 1500);
       } else {
         setError(data.message || "Invalid or expired code.");
       }
