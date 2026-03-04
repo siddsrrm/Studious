@@ -29,21 +29,92 @@ const HomePage = () => {
     }
   }, []);
 
+  // Load user's study plans from backend
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/study-plans`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const plans = await res.json();
+        const normalized = plans.map(p => ({ id: p._id, title: p.title, description: p.description, notes: p.notes || [], to_do_list: p.to_do_list || [], practiceQuestions: p.practiceQuestions || [] }));
+        setStudyPlans(normalized);
+      } catch (err) {
+      }
+    })();
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token")
     sessionStorage.removeItem("tokenShown")
     navigate("/login")
   }
 
-  // Handle creation and deletion of study plans
-  const handleCreatePlan = (newPlan) => {
-    setStudyPlans((prev) => [...prev, newPlan]);
-    setShowCreateForm(false);
+  // Handle creation of study plans
+  const handleCreatePlan = async (newPlan) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setStudyPlans((prev) => [...prev, newPlan]);
+      setShowCreateForm(false);
+      return;
+    }
+
+    // Create study plan in backend
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/study-plans`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: newPlan.title, description: newPlan.description }),
+      });
+
+      if (!res.ok) {
+        setStudyPlans((prev) => [...prev, newPlan]);
+      } else {
+        const data = await res.json();
+        const saved = data.studyPlan;
+        const normalized = { id: saved._id, title: saved.title, description: saved.description, notes: saved.notes || [], to_do_list: saved.to_do_list || [], practiceQuestions: saved.practiceQuestions || [] };
+        setStudyPlans((prev) => [...prev, normalized]);
+      }
+    } catch (err) {
+      setStudyPlans((prev) => [...prev, newPlan]);
+    } finally {
+      setShowCreateForm(false);
+    }
   };
 
+  // Handle deletion of study plans
   const handleDeletePlan = (planId) => {
-    setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-    if (activePlan?.id === planId) setActivePlan(null);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
+      if (activePlan?.id === planId) setActivePlan(null);
+      return;
+    }
+
+    // Handle deletion of study plans in backend
+    (async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/study-plans/${planId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
+          if (activePlan?.id === planId) setActivePlan(null);
+        } else {
+          setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
+          if (activePlan?.id === planId) setActivePlan(null);
+        }
+      } catch (err) {
+        setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
+        if (activePlan?.id === planId) setActivePlan(null);
+      }
+    })();
   };
 
   const handleSelectPlan = (plan) => {
