@@ -1,0 +1,48 @@
+/* HomePage.css */
+
+/* --- Page container --- */
+.home-container {
+  min-height: 100vh;
+  padding: 40px;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- Page title --- */
+.home-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  color: #1e293b;
+}
+
+/* --- Dropdown container --- */
+.studyplan-dropdown-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.studyplan-dropdown-container select {
+  padding: 10px 15px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: white;
+  color: #1e293b;
+  cursor: pointer;
+  min-width: 220px;
+  transition: all 0.2s ease;
+}
+
+.studyplan-dropdown-container select:hover {
+  border-color: #4f46e5;
+}
+
+/* --- Fallback message if no study plans --- */
+.no-studyplans {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #475569;
+  margin-top: 20px;
+}

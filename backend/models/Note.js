@@ -1,12 +1,13 @@
 const mongoose = require("mongoose")
-const StudyPlan = require("./models/StudyPlan")
+const StudyPlan = require("./StudyPlan")
 
 const noteSchema = new mongoose.Schema({
   // attribute, type
   // userID can just be _id property of schema
   ownerID: {type:mongoose.Schema.Types.ObjectId, ref:"User", required: true},
   studyPlanID: {type: mongoose.Schema.Types.ObjectId, ref:"StudyPlan", required: true},
-  title: {type: String, required: true},
+  folderId: {type: String, default: "__unfiled__"},
+  title: {type: String, default: "Untitled"},
   content: String,
   tags: [String],
   attachments: [String],

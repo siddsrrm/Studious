@@ -1,0 +1,77 @@
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+
+exports.nameChange = async (req, res) => {
+  const newName = req.body.name;
+
+  // get the user from the db
+  const user = await User.findById(req.user.userId);
+
+  //User is verified to be the owner via jwt token
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  //see if new name is available
+  const existingUser = await User.findOne({ username: newName });
+
+  if (existingUser) {
+    return res.status(400).json({ message: "Username already taken" });
+  }
+
+  //new name available, change the db
+  user.username = newName;
+  await user.updateOne({ username: newName });
+
+  //return success
+  res.json({ message: "Name updated successfully" });
+};
+
+exports.deleteAccount = async (req, res) => {
+
+  // get the user from the db
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  //do not need to verify password, token verifies for us
+
+  //delete user data from db
+  await User.deleteOne({ _id: user._id });
+
+  //return success
+  res.json({ message: "Account deleted successfully" });
+};
+
+//email change
+exports.emailChange = async (req, res) => {
+  try {
+    //save new email
+    const newEmail = req.body.email;
+
+    //find user by id
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (newEmail === user.email) {
+      return res.status(400).json({ message: "New email is the same as the current email" });
+    }
+
+    //verify email is available
+    const existingUser = await User.findOne({ email: newEmail });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    //update email
+    user.email = newEmail;
+    await user.updateOne({ email: newEmail });
+    res.json({ message: "Email updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update email" });
+  }
+}
