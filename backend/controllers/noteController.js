@@ -7,7 +7,7 @@ const searchNotes = async (req, res) => {
 
     const notes = await Note.find({
       ownerID: req.user.userId,
-      tags: { $in: [tag] }
+      tags: { $elemMatch: { $regex: tag, $options: "i" } }
     });
 
     res.json(notes ?? []);
