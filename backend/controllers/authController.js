@@ -71,7 +71,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" })
 
-    res.json({ message: "User succcessfully logged in", userId: user._id, token: token, username: user.username })
+    res.json({ message: "User succcessfully logged in", userId: user._id, token: token, username: user.username, twoFactorEnabled: user.twoFactorEnabled })
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
@@ -186,7 +186,7 @@ exports.verify2FA = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     )
-    res.status(200).json({ message: "Verification successful", userId: user._id, token, username: user.username })
+    res.status(200).json({ message: "Verification successful", userId: user._id, token, username: user.username, twoFactorEnabled: user.twoFactorEnabled })
   } catch (error) {
     res.status(500).json({ error: error.message })
   }

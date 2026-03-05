@@ -75,3 +75,19 @@ exports.emailChange = async (req, res) => {
     res.status(500).json({ message: "Failed to update email" });
   }
 }
+
+//toggle 2FA
+exports.toggle2FA = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    user.twoFactorEnabled = !user.twoFactorEnabled;
+    await user.save();
+    res.json({
+      message: `2FA ${user.twoFactorEnabled ? "enabled" : "disabled"}`,
+      twoFactorEnabled: user.twoFactorEnabled
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update 2FA setting" });
+  }
+}
