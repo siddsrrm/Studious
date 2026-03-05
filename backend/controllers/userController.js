@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const StudyPlan = require("../models/StudyPlan");
 const bcrypt = require("bcryptjs");
 
 
@@ -50,6 +51,10 @@ exports.deleteAccount = async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
   //do not need to verify password, token verifies for us
+
+
+  // Delete all study plans belonging to the user
+    await StudyPlan.deleteMany({ owner: req.user.userId });
 
   //delete user data from db
   await User.deleteOne({ _id: user._id });
