@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Settings.module.css";
 
@@ -82,6 +82,22 @@ function EmailSection() {
   const [emailSuccess, setEmailSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
+  const [currentEmail, setCurrentEmail] = useState("Loading...");
+
+  useEffect(() => {
+  const fetchUserInfo = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setCurrentEmail(data.email);
+    } catch {
+      console.error("Failed to fetch user info");
+    }
+  };
+  fetchUserInfo();
+}, []);
 
   async function handleEmailChange() {
     if (!newEmail.trim()) { setEmailError("Email cannot be empty."); return; }
@@ -105,6 +121,7 @@ function EmailSection() {
       if (res.ok) {
         setEmailSuccess("Email updated successfully.");
         setNewEmail("");
+        setCurrentEmail(newEmail);
       } else {
         setEmailError(data.message || "Failed to update email.");
       }
@@ -116,27 +133,29 @@ function EmailSection() {
   }
 
   return (
-    <div>
-      <h2 className={styles.contentTitle}>Change Email</h2>
-      <p className={styles.contentDescription}>Update the email address associated with your account.</p>
-      <hr className={styles.contentDivider} />
-      <p className={styles.fieldLabel}>New email</p>
-      <input
-        type="email"
-        placeholder="New email address"
-        value={newEmail}
-        onChange={(e) => setNewEmail(e.target.value)}
-        onFocus={() => { setEmailError(""); setEmailSuccess(""); }}
-        disabled={loading}
-        className={styles.input + (emailError ? " " + styles.inputError : "")}
-      />
-      {emailError && <p className={styles.error}>{emailError}</p>}
-      {emailSuccess && <p className={styles.success}>{emailSuccess}</p>}
-      <button className={styles.button} onClick={handleEmailChange} disabled={loading}>
-        {loading ? "Saving..." : "Save Email"}
-      </button>
-    </div>
-  );
+  <div>
+    <h2 className={styles.contentTitle}>Change Email</h2>
+    <p className={styles.contentDescription}>Update the email address associated with your account.</p>
+    <hr className={styles.contentDivider} />
+    <p className={styles.fieldLabel}>Current email</p>
+    <p style={{ fontSize: "14px", color: "#374151", marginBottom: "20px" }}>{currentEmail}</p>
+    <p className={styles.fieldLabel}>New email</p>
+    <input
+      type="email"
+      placeholder="New email address"
+      value={newEmail}
+      onChange={(e) => setNewEmail(e.target.value)}
+      onFocus={() => { setEmailError(""); setEmailSuccess(""); }}
+      disabled={loading}
+      className={styles.input + (emailError ? " " + styles.inputError : "")}
+    />
+    {emailError && <p className={styles.error}>{emailError}</p>}
+    {emailSuccess && <p className={styles.success}>{emailSuccess}</p>}
+    <button className={styles.button} onClick={handleEmailChange} disabled={loading}>
+      {loading ? "Saving..." : "Save Email"}
+    </button>
+  </div>
+);
 }
 
 function TwoFactorSection() {

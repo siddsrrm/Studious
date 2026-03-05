@@ -1,5 +1,19 @@
 const User = require("../models/User");
+const StudyPlan = require("../models/StudyPlan");
 const bcrypt = require("bcryptjs");
+
+
+exports.getInfo = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user) { 
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch user info" });
+  }
+}
 
 exports.nameChange = async (req, res) => {
   const newName = req.body.name;
@@ -37,6 +51,10 @@ exports.deleteAccount = async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
   //do not need to verify password, token verifies for us
+
+
+  // Delete all study plans belonging to the user
+    await StudyPlan.deleteMany({ owner: req.user.userId });
 
   //delete user data from db
   await User.deleteOne({ _id: user._id });
