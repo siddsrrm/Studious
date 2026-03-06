@@ -1,45 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
 
-const ToDoList = ({ toDoListId, studyPlanId }) => {
+const API = import.meta.env.VITE_API_URL;
+
+const ToDoList = ({ studyPlanId }) => {
   const [tasks, setTasks] = useState([]);
-  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
 
-  const handleAddTask = ({ title, description }) => {
-    let index = tasks.length + 1;
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        const res = await fetch(`${API}/tasks?studyPlanId=${studyPlanId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok) setTasks(data);
+        else setError(data.message || "Failed to load tasks.");
+      } catch {
+        setError("Network error. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTasks();
+  }, [studyPlanId]);
 
-    let newTask = {
-      taskID: index,
-      toDoListID: 123,
-      title: title,
-      description: description,
-      startDate: new Date(),
-      endDate: new Date(),
-      priorityLevel: "low",
-    };
-
-    setTasks([...tasks, newTask]);
+  const handleAddTask = async ({ title, description }) => {
+    try {
+      const res = await fetch(`${API}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ studyPlanID: studyPlanId, title, description }),
+      });
+      const data = await res.json();
+      if (res.ok) setTasks([...tasks, data]);
+      else setError(data.message || "Failed to create task.");
+    } catch {
+      setError("Network error. Please try again.");
+    }
   };
+
+  const handleUpdateTask = (updatedTask) => {
+    setTasks(tasks.map((t) => (t._id === updatedTask._id ? updatedTask : t)));
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const res = await fetch(`${API}/tasks/${taskId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setTasks(tasks.filter((t) => t._id !== taskId));
+      else setError("Failed to delete task.");
+    } catch {
+      setError("Network error. Please try again.");
+    }
+  };
+
+  const progress = 0; //placeholder for progress tracker later
 
   return (
     <>
       <div className="todolist-card">
-        <h2>ToDoList</h2>
-        <p>To-Do List Id: {toDoListId}</p>
-        <p>Study Plan Id: {studyPlanId}</p>
-        <p>Progress: {progress}</p>
-        <p>Tasks:</p>
-        <ul>
-          {tasks.map((task) => (
-            <li key={task.taskID}>{task.title}</li>
-          ))}
-        </ul>
+        <h2>To-Do List</h2>
+        <p>Progress: {progress}% </p> 
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {loading ? (
+          <p>Loading tasks...</p>
+        ) : tasks.length === 0 ? (
+          <p>No tasks yet. Add one below!</p>
+        ) : (
+          <ul>
+            {tasks.map((task) => (
+              <li key={task._id}>{task.title}</li>
+            ))}
+          </ul>
+        )}
         <AddTaskForm onAddTask={handleAddTask} />
       </div>
       <div className="tasks-container">
         {tasks.map((task) => (
-          <Task key={task.taskID} taskObj={task} />
+          <Task
+            key={task._id}
+            taskObj={task}
+            onUpdate={handleUpdateTask}
+            onDelete={handleDeleteTask}
+          />
         ))}
       </div>
     </>
@@ -52,10 +101,8 @@ const AddTaskForm = ({ onAddTask }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title) return;
-
+    if (!title.trim()) return;
     onAddTask({ title, description });
-
     setTitle("");
     setDescription("");
   };
