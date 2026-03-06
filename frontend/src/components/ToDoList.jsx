@@ -9,6 +9,16 @@ const ToDoList = ({ studyPlanId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
+  const [filterDueDateTo, setFilterDueDateTo] = useState("");
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filterPriority !== "all" && task.priority !== filterPriority) return false;
+    if (filterDueDateFrom && new Date(task.dueDate) < new Date(filterDueDateFrom)) return false;
+    if (filterDueDateTo && new Date(task.dueDate) > new Date(filterDueDateTo)) return false;
+    return true;
+  });
 
   useEffect(() => {
     async function fetchTasks() {
@@ -28,12 +38,12 @@ const ToDoList = ({ studyPlanId }) => {
     fetchTasks();
   }, [studyPlanId]);
 
-  const handleAddTask = async ({ title, description }) => {
+  const handleAddTask = async ({ title, description, priority, dueDate }) => {
     try {
       const res = await fetch(`${API}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ studyPlanID: studyPlanId, title, description }),
+        body: JSON.stringify({ studyPlanID: studyPlanId, title, description, priority, dueDate }),
       });
       const data = await res.json();
       if (res.ok) setTasks([...tasks, data]);
@@ -60,13 +70,38 @@ const ToDoList = ({ studyPlanId }) => {
     }
   };
 
+  const handleClearFilters = () => {
+    setFilterPriority("all");
+    setFilterDueDateFrom("");
+    setFilterDueDateTo("");
+  };
+
   const progress = 0; //placeholder for progress tracker later
 
   return (
     <>
       <div className="todolist-card">
         <h2>To-Do List</h2>
-        <p>Progress: {progress}% </p> 
+        <p>Progress: {progress}% </p>
+        <div className="filter-bar">
+          <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
+            <option value="all">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <input
+            type="date"
+            value={filterDueDateFrom}
+            onChange={(e) => setFilterDueDateFrom(e.target.value)}
+          />
+          <input
+            type="date"
+            value={filterDueDateTo}
+            onChange={(e) => setFilterDueDateTo(e.target.value)}
+          />
+          <button type="button" onClick={handleClearFilters}>Clear Filters</button>
+        </div>
         {error && <p style={{ color: "red" }}>{error}</p>}
         {loading ? (
           <p>Loading tasks...</p>
@@ -74,7 +109,7 @@ const ToDoList = ({ studyPlanId }) => {
           <p>No tasks yet. Add one below!</p>
         ) : (
           <ul>
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <li key={task._id}>{task.title}</li>
             ))}
           </ul>
@@ -82,7 +117,7 @@ const ToDoList = ({ studyPlanId }) => {
         <AddTaskForm onAddTask={handleAddTask} />
       </div>
       <div className="tasks-container">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <Task
             key={task._id}
             taskObj={task}
@@ -98,13 +133,17 @@ const ToDoList = ({ studyPlanId }) => {
 const AddTaskForm = ({ onAddTask }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [dueDate, setDueDate] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAddTask({ title, description });
+    onAddTask({ title, description, priority, dueDate });
     setTitle("");
     setDescription("");
+    setPriority("medium");
+    setDueDate("");
   };
 
   return (
@@ -120,6 +159,16 @@ const AddTaskForm = ({ onAddTask }) => {
         placeholder="Task description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+      />
+      <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <input
+        type="date"
+        value={dueDate}
+        onChange={(e) => setDueDate(e.target.value)}
       />
       <button type="submit">Add Task</button>
     </form>

@@ -13,13 +13,15 @@ exports.getTasks = async (req, res) => {
 
 exports.createTask = async (req, res) => {
     try {
-        const { studyPlanID, title, description } = req.body;
+        const { studyPlanID, title, description, priority, dueDate } = req.body;
         if (!studyPlanID) return res.status(400).json({ message: "studyPlanID is required" });
         const task = await Task.create({
             ownerID: req.user.userId,
             studyPlanID,
             title: title || "Untitled",
             description: description || "",
+            priority: priority || "medium",
+            dueDate: dueDate || null,
             subTasks: [],
         });
         res.status(201).json(task);
@@ -33,10 +35,12 @@ exports.updateTask = async (req, res) => {
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: "Task not found" });
         if (task.ownerID.toString() !== req.user.userId) return res.status(403).json({ message: "Forbidden" });
-        const { title, description, completed } = req.body;
+        const { title, description, completed, priority, dueDate } = req.body;
         if (title !== undefined) task.title = title;
         if (description !== undefined) task.description = description;
         if (completed !== undefined) task.completed = completed;
+        if (priority !== undefined) task.priority = priotity;
+        if (dueDate !== undefined) task.dueDate = dueDate;
         await task.save();
         res.json(task);
     } catch (err) {

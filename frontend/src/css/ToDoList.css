@@ -54,3 +54,32 @@
 .addtask-form button:hover {
   background-color: #4f46e5;
 }
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  align-items: center;
+}
+.filter-bar select,
+.filter-bar input[type="date"] {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-size: 14px;
+}
+.filter-bar button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #94a3b8;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+.filter-bar button:hover {
+  background-color: #64748b;
+}
