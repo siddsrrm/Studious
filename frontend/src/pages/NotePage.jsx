@@ -272,7 +272,7 @@ const handleSearch = async (term) => {
           {moveMenuNoteId === note._id && (
             <div
               onClick={e => e.stopPropagation()}
-              className="absolute left-0 top-7 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-max"
+              className="absolute right-0 top-7 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-max"
             >
               <p className="px-3 py-1 text-xs text-gray-400 font-semibold uppercase tracking-wide">Move to</p>
               {folders.map(f => (
@@ -305,7 +305,7 @@ const handleSearch = async (term) => {
           {confirmDeleteNoteId === note._id && (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-8 z-50 w-52 bg-white border border-gray-200 rounded-lg shadow-lg p-3"
+              className="absolute right-0 top-8 z-50 w-52 bg-white border border-gray-200 rounded-lg shadow-lg p-3 "
             >
               <p className="text-sm text-gray-700 mb-2">Delete this note?</p>
               <div className="flex justify-end gap-2">
