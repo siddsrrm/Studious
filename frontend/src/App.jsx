@@ -7,6 +7,7 @@ import SettingsPage from "./pages/Settings/Settings";
 import FilterNotes from "./pages/Filtering";
 import HomePage from "./pages/HomePage/HomePage"
 import NotesPage from "./pages/NotePage";
+import Verify2FA from "./pages/Verify2FA/Verify2FA";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-2fa" element={<Verify2FA />} />
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notes" element={<NotesPage />} />
