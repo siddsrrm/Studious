@@ -12,7 +12,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [editingSubTaskId, setEditingSubTaskId] = useState(null);
 const [editSubTitle, setEditSubTitle] = useState("");
 const [editSubDescription, setEditSubDescription] = useState("");
-  
+const [editPriority, setEditPriority] = useState(taskObj.priority);  
 
   const handleMarkCompleted = async () => {
     try {
@@ -49,7 +49,7 @@ const [editSubDescription, setEditSubDescription] = useState("");
       const res = await fetch(`${API}/tasks/${taskObj._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title: editTitle, description: editDescription }),
+        body: JSON.stringify({ title: editTitle, description: editDescription, priority: editPriority }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -67,6 +67,7 @@ const [editSubDescription, setEditSubDescription] = useState("");
     setEditTitle(taskObj.title);
     setEditDescription(taskObj.description);
     setIsEditing(false);
+    setEditPriority(taskObj.priority);
   };
 
   const handleAddSubTask = async ({ title, description }) => {
@@ -152,6 +153,11 @@ const [editSubDescription, setEditSubDescription] = useState("");
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
             />
+            <select value={editPriority} onChange={(e) => setEditPriority(e.target.value)}>
+  <option value="low">Low</option>
+  <option value="medium">Medium</option>
+  <option value="high">High</option>
+</select>
             <button onClick={handleEditSave}>Save</button>
             <button onClick={handleEditCancel}>Cancel</button>
           </>

@@ -39,7 +39,7 @@ exports.updateTask = async (req, res) => {
         if (title !== undefined) task.title = title;
         if (description !== undefined) task.description = description;
         if (completed !== undefined) task.completed = completed;
-        if (priority !== undefined) task.priority = priotity;
+        if (priority !== undefined) task.priority = priority;
         if (dueDate !== undefined) task.dueDate = dueDate;
         await task.save();
         res.json(task);
