@@ -11,7 +11,10 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     try {
       const res = await fetch(`${API}/tasks/${taskObj._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ completed: true }),
       });
       const data = await res.json();
@@ -26,7 +29,10 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     try {
       const res = await fetch(`${API}/tasks/${taskObj._id}/subtasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ title, description }),
       });
       const data = await res.json();
@@ -39,24 +45,39 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
 
   const handleMarkSubTaskCompleted = async (subTaskId) => {
     try {
-      const res = await fetch(`${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ completed: true }),
-      });
+      const res = await fetch(
+        `${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ completed: true }),
+        },
+      );
       const data = await res.json();
-      if (!res.ok) { setError("Failed to update subtask."); return; }
+      if (!res.ok) {
+        setError("Failed to update subtask.");
+        return;
+      }
 
       //check if all subtasks are now complete
       const allComplete = data.subTasks.every((st) => st.completed);
       if (allComplete && data.subTasks.length > 0) {
         const taskRes = await fetch(`${API}/tasks/${taskObj._id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ completed: true }),
         });
         const taskData = await taskRes.json();
-        if (taskRes.ok) { onUpdate(taskData); return; }
+        if (taskRes.ok) {
+          onUpdate(taskData);
+          return;
+        }
       }
 
       onUpdate(data);
@@ -67,10 +88,13 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
 
   const handleDeleteSubTask = async (subTaskId) => {
     try {
-      const res = await fetch(`${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await res.json();
       if (res.ok) onUpdate(data);
       else setError("Failed to delete subtask.");
@@ -85,7 +109,14 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         <h2>{taskObj.title}</h2>
         <p>Description: {taskObj.description}</p>
         <p>Priority: {taskObj.priority}</p>
-        <p>Due: {taskObj.dueDate ? new Date(taskObj.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : "No due date"}</p>
+        <p>
+          Due:{" "}
+          {taskObj.dueDate
+            ? new Date(taskObj.dueDate).toLocaleDateString("en-US", {
+                timeZone: "UTC",
+              })
+            : "No due date"}
+        </p>
         {error && <p style={{ color: "red" }}>{error}</p>}
         <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
           {taskObj.completed ? "Completed" : "Mark Complete"}
@@ -111,7 +142,10 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           >
             {subTask.completed ? "Completed" : "Mark Complete"}
           </button>
-          <button className="delete-btn" onClick={() => handleDeleteSubTask(subTask._id)}>
+          <button
+            className="delete-btn"
+            onClick={() => handleDeleteSubTask(subTask._id)}
+          >
             Delete
           </button>
         </div>

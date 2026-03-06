@@ -14,9 +14,15 @@ const ToDoList = ({ studyPlanId }) => {
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
 
   const filteredTasks = tasks.filter((task) => {
-    if (filterPriority !== "all" && task.priority !== filterPriority) return false;
-    if (filterDueDateFrom && new Date(task.dueDate) < new Date(filterDueDateFrom)) return false;
-    if (filterDueDateTo && new Date(task.dueDate) > new Date(filterDueDateTo)) return false;
+    if (filterPriority !== "all" && task.priority !== filterPriority)
+      return false;
+    if (
+      filterDueDateFrom &&
+      new Date(task.dueDate) < new Date(filterDueDateFrom)
+    )
+      return false;
+    if (filterDueDateTo && new Date(task.dueDate) > new Date(filterDueDateTo))
+      return false;
     return true;
   });
 
@@ -42,8 +48,17 @@ const ToDoList = ({ studyPlanId }) => {
     try {
       const res = await fetch(`${API}/tasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ studyPlanID: studyPlanId, title, description, priority, dueDate }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          studyPlanID: studyPlanId,
+          title,
+          description,
+          priority,
+          dueDate,
+        }),
       });
       const data = await res.json();
       if (res.ok) setTasks([...tasks, data]);
@@ -84,7 +99,10 @@ const ToDoList = ({ studyPlanId }) => {
         <h2>To-Do List</h2>
         <p>Progress: {progress}% </p>
         <div className="filter-bar">
-          <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
+          <select
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+          >
             <option value="all">All Priorities</option>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -100,7 +118,9 @@ const ToDoList = ({ studyPlanId }) => {
             value={filterDueDateTo}
             onChange={(e) => setFilterDueDateTo(e.target.value)}
           />
-          <button type="button" onClick={handleClearFilters}>Clear Filters</button>
+          <button type="button" onClick={handleClearFilters}>
+            Clear Filters
+          </button>
         </div>
         {error && <p style={{ color: "red" }}>{error}</p>}
         {loading ? (
