@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
-const StudyPlan = require("./models/StudyPlan")
-const ProgressTracker = require("./models/ProgressTracker")
+const StudyPlan = require("./StudyPlan")
+const ProgressTracker = require("./ProgressTracker")
 
 const userSchema = new mongoose.Schema({
   // attribute, type
@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
   email: {type: String, required: true},
   username: {type: String, required: true},
   password: {type: String, required: true},
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
+  twoFactorCode: String,
+  twoFactorExpires: Date,
+  twoFactorEnabled: {type: Boolean, default: false},
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   progressTracker: { type: mongoose.Schema.Types.ObjectId, ref: "ProgressTracker" }
 })
