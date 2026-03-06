@@ -1,33 +1,58 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
 const Calendar = () => {
-  const handleDateClick = (info) => {
+  const [events, setEvents] = useState([]);
+
+  // Fetch events from backend
+  useEffect(() => {
+    fetch("http://localhost:5000/api/events")
+      .then((res) => res.json())
+      .then((data) => setEvents(data))
+      .catch((err) => console.error("Error loading events:", err));
+  }, []);
+
+  const handleDateClick = async (info) => {
     const title = prompt("Enter event title:");
     if (!title) return;
 
-    // Prompt for start time (default to clicked date)
     const startInput = prompt(
-      "Enter start date & time (YYYY-MM-DDTHH:MM), e.g., 2026-03-05T14:00",
+      "Enter start date & time (YYYY-MM-DDTHH:MM)",
       info.dateStr + "T09:00",
     );
     if (!startInput) return;
 
-    // Prompt for end time (default 1 hour after start)
     const endInput = prompt(
-      "Enter end date & time (YYYY-MM-DDTHH:MM), e.g., 2026-03-05T15:00",
+      "Enter end date & time (YYYY-MM-DDTHH:MM)",
       info.dateStr + "T10:00",
     );
     if (!endInput) return;
 
-    info.view.calendar.addEvent({
+    const newEvent = {
       title,
       start: startInput,
       end: endInput,
-    });
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/api/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newEvent),
+      });
+
+      const savedEvent = await res.json();
+
+      // update frontend state
+      setEvents((prev) => [...prev, savedEvent]);
+    } catch (err) {
+      console.error("Error saving event:", err);
+    }
   };
 
   return (
@@ -39,7 +64,7 @@ const Calendar = () => {
         center: "title",
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       }}
-      events={[]}
+      events={events}
       dateClick={handleDateClick}
     />
   );

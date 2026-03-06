@@ -11,6 +11,7 @@ const userRoutes = require("./routes/userRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const folderRoutes = require("./routes/folderRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/folders", folderRoutes);
+app.use("/api/events", eventRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
