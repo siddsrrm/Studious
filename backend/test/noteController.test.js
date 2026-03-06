@@ -13,6 +13,75 @@ const USER_ID = "user123";
 
 
 //get notes
+describe("searchNotes", () => {
+  let res;
+
+  beforeEach(() => {
+    res = makeRes();
+    jest.clearAllMocks();
+  });
+
+  test("returns 400 when tag query param is missing", async () => {
+    const req = { query: {}, user: { userId: USER_ID } };
+
+    await noteController.searchNotes(req, res);
+
+    expect(Note.find).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "No tag provided" });
+  });
+
+  test("returns matching notes for a given tag", async () => {
+    const mockNotes = [{ _id: "n1", tags: ["javascript"] }];
+    Note.find.mockResolvedValue(mockNotes);
+
+    const req = { query: { tag: "javascript" }, user: { userId: USER_ID } };
+
+    await noteController.searchNotes(req, res);
+
+    expect(Note.find).toHaveBeenCalledWith({
+      ownerID: USER_ID,
+      tags: { $elemMatch: { $regex: "javascript", $options: "i" } },
+    });
+    expect(res.json).toHaveBeenCalledWith(mockNotes);
+  });
+
+  test("search is case-insensitive", async () => {
+    const mockNotes = [{ _id: "n1", tags: ["JavaScript"] }];
+    Note.find.mockResolvedValue(mockNotes);
+
+    const req = { query: { tag: "JAVASCRIPT" }, user: { userId: USER_ID } };
+
+    await noteController.searchNotes(req, res);
+
+    expect(Note.find).toHaveBeenCalledWith({
+      ownerID: USER_ID,
+      tags: { $elemMatch: { $regex: "JAVASCRIPT", $options: "i" } },
+    });
+    expect(res.json).toHaveBeenCalledWith(mockNotes);
+  });
+
+  test("returns empty array when no notes match the tag", async () => {
+    Note.find.mockResolvedValue([]);
+
+    const req = { query: { tag: "nonexistent" }, user: { userId: USER_ID } };
+
+    await noteController.searchNotes(req, res);
+
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  test("returns empty array when Note.find returns null", async () => {
+    Note.find.mockResolvedValue(null);
+
+    const req = { query: { tag: "sometag" }, user: { userId: USER_ID } };
+
+    await noteController.searchNotes(req, res);
+
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+});
 
 describe("getNotes", () => {
   let res;
