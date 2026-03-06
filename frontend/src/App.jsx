@@ -5,17 +5,11 @@ import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import SettingsPage from "./pages/Settings/Settings";
 import FilterNotes from "./pages/Filtering";
-import HomePage from "./pages/HomePage/HomePage"
+import HomePage from "./pages/HomePage/HomePage";
 import NotesPage from "./pages/NotePage";
 import Verify2FA from "./pages/Verify2FA/Verify2FA";
 
 function App() {
-  const displayHomePage = true;
-
-  if (!displayHomePage) {
-    return <Calendar />;
-  }
-
   return (
     <BrowserRouter>
       <Routes>
