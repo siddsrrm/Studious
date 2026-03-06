@@ -84,6 +84,8 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
       <div className="task-card">
         <h2>{taskObj.title}</h2>
         <p>Description: {taskObj.description}</p>
+        <p>Priority: {taskObj.priorityLevel}</p>
+        <p>Due: {taskObj.dueDate ? new Date(taskObj.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : "No due date"}</p>
         {error && <p style={{ color: "red" }}>{error}</p>}
         <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
           {taskObj.completed ? "Completed" : "Mark Complete"}

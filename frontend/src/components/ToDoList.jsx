@@ -28,12 +28,12 @@ const ToDoList = ({ studyPlanId }) => {
     fetchTasks();
   }, [studyPlanId]);
 
-  const handleAddTask = async ({ title, description }) => {
+  const handleAddTask = async ({ title, description, priority, dueDate }) => {
     try {
       const res = await fetch(`${API}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ studyPlanID: studyPlanId, title, description }),
+        body: JSON.stringify({ studyPlanID: studyPlanId, title, description, priority, dueDate }),
       });
       const data = await res.json();
       if (res.ok) setTasks([...tasks, data]);
@@ -66,7 +66,7 @@ const ToDoList = ({ studyPlanId }) => {
     <>
       <div className="todolist-card">
         <h2>To-Do List</h2>
-        <p>Progress: {progress}% </p> 
+        <p>Progress: {progress}% </p>
         {error && <p style={{ color: "red" }}>{error}</p>}
         {loading ? (
           <p>Loading tasks...</p>
@@ -98,13 +98,17 @@ const ToDoList = ({ studyPlanId }) => {
 const AddTaskForm = ({ onAddTask }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [dueDate, setDueDate] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAddTask({ title, description });
+    onAddTask({ title, description, priority, dueDate });
     setTitle("");
     setDescription("");
+    setPriority("medium");
+    setDueDate("");
   };
 
   return (
@@ -120,6 +124,16 @@ const AddTaskForm = ({ onAddTask }) => {
         placeholder="Task description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+      />
+      <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <input
+        type="date"
+        value={dueDate}
+        onChange={(e) => setDueDate(e.target.value)}
       />
       <button type="submit">Add Task</button>
     </form>

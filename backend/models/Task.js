@@ -14,6 +14,8 @@ const TaskSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, default: "" },
     completed: { type: Boolean, default: false },
+    priority: {type: String, default: "medium"},
+    dueDate: {type: Date, default: null},
     subTasks: [SubTaskSchema],
 }, { timestamps: true });
 
