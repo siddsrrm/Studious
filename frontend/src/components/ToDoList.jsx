@@ -9,6 +9,16 @@ const ToDoList = ({ studyPlanId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
+  const [filterDueDateTo, setFilterDueDateTo] = useState("");
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filterPriority !== "all" && task.priority !== filterPriority) return false;
+    if (filterDueDateFrom && new Date(task.dueDate) < new Date(filterDueDateFrom)) return false;
+    if (filterDueDateTo && new Date(task.dueDate) > new Date(filterDueDateTo)) return false;
+    return true;
+  });
 
   useEffect(() => {
     async function fetchTasks() {
@@ -60,6 +70,12 @@ const ToDoList = ({ studyPlanId }) => {
     }
   };
 
+  const handleClearFilters = () => {
+    setFilterPriority("all");
+    setFilterDueDateFrom("");
+    setFilterDueDateTo("");
+  };
+
   const progress = 0; //placeholder for progress tracker later
 
   return (
@@ -67,6 +83,25 @@ const ToDoList = ({ studyPlanId }) => {
       <div className="todolist-card">
         <h2>To-Do List</h2>
         <p>Progress: {progress}% </p>
+        <div className="filter-bar">
+          <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
+            <option value="all">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <input
+            type="date"
+            value={filterDueDateFrom}
+            onChange={(e) => setFilterDueDateFrom(e.target.value)}
+          />
+          <input
+            type="date"
+            value={filterDueDateTo}
+            onChange={(e) => setFilterDueDateTo(e.target.value)}
+          />
+          <button type="button" onClick={handleClearFilters}>Clear Filters</button>
+        </div>
         {error && <p style={{ color: "red" }}>{error}</p>}
         {loading ? (
           <p>Loading tasks...</p>
@@ -74,7 +109,7 @@ const ToDoList = ({ studyPlanId }) => {
           <p>No tasks yet. Add one below!</p>
         ) : (
           <ul>
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <li key={task._id}>{task.title}</li>
             ))}
           </ul>
@@ -82,7 +117,7 @@ const ToDoList = ({ studyPlanId }) => {
         <AddTaskForm onAddTask={handleAddTask} />
       </div>
       <div className="tasks-container">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <Task
             key={task._id}
             taskObj={task}
