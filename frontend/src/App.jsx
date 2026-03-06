@@ -4,7 +4,6 @@ import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import SettingsPage from "./pages/Settings/Settings";
-import FilterNotes from "./pages/Filtering";
 import HomePage from "./pages/HomePage/HomePage"
 import NotesPage from "./pages/NotePage";
 import Verify2FA from "./pages/Verify2FA/Verify2FA";
@@ -22,7 +21,6 @@ function App() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notes" element={<NotesPage />} />
-        <Route path="/filter-notes" element={<FilterNotes />} />
         {/* Your main page route can go here later */}
         <Route path="/home" element={<HomePage />} />
       </Routes>
