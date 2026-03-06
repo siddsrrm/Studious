@@ -10,6 +10,9 @@ const userSchema = new mongoose.Schema({
   password: {type: String, required: true},
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  twoFactorCode: String,
+  twoFactorExpires: Date,
+  twoFactorEnabled: {type: Boolean, default: false},
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   progressTracker: { type: mongoose.Schema.Types.ObjectId, ref: "ProgressTracker" }
 })

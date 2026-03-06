@@ -7,6 +7,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const SECTIONS = {
   USERNAME: "username",
   EMAIL: "email",
+  TWO_FACTOR: "two_factor",
   DELETE: "delete"
 };
 
@@ -100,7 +101,7 @@ function EmailSection() {
 
   async function handleEmailChange() {
     if (!newEmail.trim()) { setEmailError("Email cannot be empty."); return; }
-  
+
     const validationError = validateEmail(newEmail);
     if (validationError) { setEmailError(validationError); return; }
 
@@ -155,6 +156,62 @@ function EmailSection() {
     </button>
   </div>
 );
+}
+
+function TwoFactorSection() {
+  const [enabled, setEnabled] = useState(
+    localStorage.getItem("twoFactorEnabled") === "true"
+  );
+  const [statusMessage, setStatusMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+
+  async function handleToggle() {
+    setLoading(true);
+    setStatusMessage("");
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/toggle2FA`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEnabled(data.twoFactorEnabled);
+        localStorage.setItem("twoFactorEnabled", data.twoFactorEnabled);
+        setStatusMessage(data.message);
+      } else {
+        setError(data.message || "Failed to update 2FA.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Two-Factor Authentication</h2>
+      <p className={styles.contentDescription}>
+        Add an extra layer of security by requiring an email verification code at login.
+      </p>
+      <hr className={styles.contentDivider} />
+      <p className={styles.fieldLabel}>
+        2FA is currently <strong>{enabled ? "enabled" : "disabled"}</strong>
+      </p>
+      {statusMessage && <p className={styles.success}>{statusMessage}</p>}
+      {error && <p className={styles.error}>{error}</p>}
+      <button
+        className={enabled ? styles.buttonDanger : styles.button}
+        onClick={handleToggle}
+        disabled={loading}
+      >
+        {loading ? "Saving..." : enabled ? "Disable 2FA" : "Enable 2FA"}
+      </button>
+    </div>
+  );
 }
 
 function DeleteSection() {
@@ -253,13 +310,21 @@ export default function SettingsPage() {
           Change Username
         </button>
 
-    {/* Email change */}
-<button
-  className={`${styles.sidebarItem} ${activeSection === SECTIONS.EMAIL ? styles.sidebarItemActive : ""}`}
-  onClick={() => setActiveSection(SECTIONS.EMAIL)}
->
-  Change Email
-</button>
+        {/* Email change */}
+        <button
+          className={`${styles.sidebarItem} ${activeSection === SECTIONS.EMAIL ? styles.sidebarItemActive : ""}`}
+          onClick={() => setActiveSection(SECTIONS.EMAIL)}
+        >
+          Change Email
+        </button>
+
+        {/* Toggle 2FA */}
+        <button
+          className={`${styles.sidebarItem} ${activeSection === SECTIONS.TWO_FACTOR ? styles.sidebarItemActive : ""}`}
+          onClick={() => setActiveSection(SECTIONS.TWO_FACTOR)}
+        >
+          Two-Factor Authentication
+        </button>
 
         <hr className={styles.sidebarDivider} />
 
@@ -278,7 +343,8 @@ export default function SettingsPage() {
         {activeSection === SECTIONS.USERNAME && (
           <UsernameSection oldUsername={oldUsername} setOldUsername={setOldUsername} />
         )}
-{activeSection === SECTIONS.EMAIL && <EmailSection />}
+        {activeSection === SECTIONS.EMAIL && <EmailSection />}
+        {activeSection === SECTIONS.TWO_FACTOR && <TwoFactorSection />}
         {activeSection === SECTIONS.DELETE && (
           <DeleteSection />
         )}
