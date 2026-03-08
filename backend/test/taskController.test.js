@@ -143,7 +143,7 @@ describe("updateTask", () => {
     jest.clearAllMocks();
   });
 
-  test("returns 404 when task does not exist", async () => {
+  test("returns 403 when task does not exist", async () => {
     Task.findById.mockResolvedValue(null);
     const req = {
       params: { id: "t1" },
@@ -151,15 +151,14 @@ describe("updateTask", () => {
       user: { userId: USER_ID },
     };
     await taskController.updateTask(req, res);
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "Task not found" });
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
   });
 
   test("returns 403 when user is not the owner", async () => {
     Task.findById.mockResolvedValue({
       _id: "t1",
       ownerID: { toString: () => "otherUser" },
-      save: jest.fn(),
     });
     const req = {
       params: { id: "t1" },
@@ -171,49 +170,42 @@ describe("updateTask", () => {
     expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
   });
 
-  test("updates all provided fields and saves", async () => {
+  test("calls updateTask schema method and returns updated task", async () => {
+    const mockUpdatedTask = {
+      _id: "t1",
+      title: "New Title",
+      description: "New description",
+      completed: true,
+      priority: "high",
+      dueDate: "2025-12-01",
+    };
     const mockTask = {
       _id: "t1",
       ownerID: { toString: () => USER_ID },
-      title: "Old Title",
-      description: "Old description",
-      completed: false,
-      priority: "low",
-      dueDate: null,
-      save: jest.fn().mockResolvedValue(true),
+      updateTask: jest.fn().mockResolvedValue(mockUpdatedTask),
     };
     Task.findById.mockResolvedValue(mockTask);
     const req = {
       params: { id: "t1" },
-      body: {
-        title: "New Title",
-        description: "New description",
-        completed: true,
-        priority: "high",
-        dueDate: "2025-12-01",
-      },
+      body: { title: "New Title", description: "New description", completed: true, priority: "high", dueDate: "2025-12-01" },
       user: { userId: USER_ID },
     };
     await taskController.updateTask(req, res);
-    expect(mockTask.title).toBe("New Title");
-    expect(mockTask.description).toBe("New description");
-    expect(mockTask.completed).toBe(true);
-    expect(mockTask.priority).toBe("high");
-    expect(mockTask.dueDate).toBe("2025-12-01");
-    expect(mockTask.save).toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith(mockTask);
+    expect(mockTask.updateTask).toHaveBeenCalledWith(req.body);
+    expect(res.json).toHaveBeenCalledWith(mockUpdatedTask);
   });
 
   test("does not overwrite fields that are not provided", async () => {
+    const mockUpdatedTask = {
+      _id: "t1",
+      title: "Existing Title",
+      priority: "medium",
+      completed: true,
+    };
     const mockTask = {
       _id: "t1",
       ownerID: { toString: () => USER_ID },
-      title: "Existing Title",
-      description: "Existing description",
-      completed: false,
-      priority: "medium",
-      dueDate: null,
-      save: jest.fn().mockResolvedValue(true),
+      updateTask: jest.fn().mockResolvedValue(mockUpdatedTask),
     };
     Task.findById.mockResolvedValue(mockTask);
     const req = {
@@ -222,10 +214,24 @@ describe("updateTask", () => {
       user: { userId: USER_ID },
     };
     await taskController.updateTask(req, res);
-    expect(mockTask.title).toBe("Existing Title");
-    expect(mockTask.priority).toBe("medium");
-    expect(mockTask.completed).toBe(true);
-    expect(mockTask.save).toHaveBeenCalled();
+    expect(mockTask.updateTask).toHaveBeenCalledWith(req.body);
+    expect(res.json).toHaveBeenCalledWith(mockUpdatedTask);
+  });
+
+  test("returns 500 on server error", async () => {
+    const mockTask = {
+      _id: "t1",
+      ownerID: { toString: () => USER_ID },
+      updateTask: jest.fn().mockRejectedValue(new Error("DB error")),
+    };
+    Task.findById.mockResolvedValue(mockTask);
+    const req = {
+      params: { id: "t1" },
+      body: { title: "New Title" },
+      user: { userId: USER_ID },
+    };
+    await taskController.updateTask(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 });
 
@@ -403,11 +409,12 @@ describe("updateSubTask", () => {
   });
 
   test("returns 404 when subtask does not exist", async () => {
-    Task.findById.mockResolvedValue({
+    const mockTask = {
       _id: "t1",
       ownerID: { toString: () => USER_ID },
-      subTasks: { id: jest.fn().mockReturnValue(null) },
-    });
+      updateSubTask: jest.fn().mockRejectedValue(new Error("Subtask not found")),
+    };
+    Task.findById.mockResolvedValue(mockTask);
     const req = {
       params: { id: "t1", subTaskId: "st1" },
       body: { title: "Updated SubTask" },
@@ -419,16 +426,14 @@ describe("updateSubTask", () => {
   });
 
   test("updates subtask fields and saves", async () => {
-    const mockSubTask = {
-      title: "Old SubTask",
-      description: "Old desc",
-      completed: false,
+    const mockUpdatedTask = {
+      _id: "t1",
+      subTasks: [{ _id: "st1", title: "New SubTask", description: "New desc", completed: true }],
     };
     const mockTask = {
       _id: "t1",
       ownerID: { toString: () => USER_ID },
-      subTasks: { id: jest.fn().mockReturnValue(mockSubTask) },
-      save: jest.fn().mockResolvedValue(true),
+      updateSubTask: jest.fn().mockResolvedValue(mockUpdatedTask),
     };
     Task.findById.mockResolvedValue(mockTask);
     const req = {
@@ -437,11 +442,8 @@ describe("updateSubTask", () => {
       user: { userId: USER_ID },
     };
     await taskController.updateSubTask(req, res);
-    expect(mockSubTask.title).toBe("New SubTask");
-    expect(mockSubTask.description).toBe("New desc");
-    expect(mockSubTask.completed).toBe(true);
-    expect(mockTask.save).toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith(mockTask);
+    expect(mockTask.updateSubTask).toHaveBeenCalledWith("st1", req.body);
+    expect(res.json).toHaveBeenCalledWith(mockUpdatedTask);
   });
 });
 
