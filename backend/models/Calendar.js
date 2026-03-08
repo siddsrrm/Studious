@@ -3,19 +3,23 @@ const mongoose = require("mongoose");
 const CalendarSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
   },
-  date: {
+  start: {
     type: Date,
-    required: true
+    required: true,
+  },
+  end: {
+    type: Date,
+    required: true,
   },
   description: {
-    type: String
+    type: String,
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  }
+    ref: "User",
+  },
 });
 
 module.exports = mongoose.model("Calendar", CalendarSchema);

@@ -1,0 +1,97 @@
+/* Dark background overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+}
+
+/* Modal box */
+.modal {
+  background: white;
+  padding: 24px;
+  border-radius: 10px;
+
+  width: 340px;
+  max-width: 90%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+
+  position: relative;
+  z-index: 10000;
+}
+
+/* Title */
+.modal h2 {
+  margin: 0;
+  text-align: center;
+}
+
+/* Labels */
+.modal label {
+  display: block; /* ensures label is on its own line */
+  margin-top: 10px; /* space from previous element */
+  margin-bottom: 4px; /* space before input */
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Inputs */
+.modal input {
+  display: block; /* block-level input (not required if width is 100%) */
+  width: 100%; /* fill modal width */
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box; /* ensure padding doesn't overflow */
+}
+
+/* Button row */
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+/* Make Delete button stand out */
+.delete-button {
+  background: #ef4444; /* red */
+  color: white;
+  border-radius: 6px;
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Buttons */
+.modal-buttons button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Cancel button */
+.modal-buttons button:first-child {
+  background: #ddd;
+}
+
+/* Save button */
+.modal-buttons button:last-child {
+  background: #3b82f6;
+  color: white;
+}
