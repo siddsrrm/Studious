@@ -11,8 +11,7 @@ const makeRes = () => ({
 
 const USER_ID = "user123";
 
-
-//get notes
+// search notes
 describe("searchNotes", () => {
   let res;
 
@@ -83,6 +82,7 @@ describe("searchNotes", () => {
 
 });
 
+// get notes
 describe("getNotes", () => {
   let res;
 
@@ -119,10 +119,16 @@ describe("getNotes", () => {
     expect(res.json).toHaveBeenCalledWith(mockNotes);
   });
 
+  test("returns 500 on server error", async () => {
+    Note.find.mockRejectedValue(new Error("DB error"));
+    const req = { query: { studyPlanId: "plan1" }, user: { userId: USER_ID } };
+    await noteController.getNotes(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
 });
 
 // create notes
-
 describe("createNote", () => {
   let res;
 
@@ -208,9 +214,9 @@ describe("createNote", () => {
     );
   });
 
+});
 
 // update notes
-
 describe("updateNote", () => {
   let res;
 
@@ -221,15 +227,12 @@ describe("updateNote", () => {
 
   test("returns 404 when note does not exist", async () => {
     Note.findById.mockResolvedValue(null);
-
     const req = {
       params: { id: "n1" },
       body: { title: "Updated" },
       user: { userId: USER_ID },
     };
-
     await noteController.updateNote(req, res);
-
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: "Note not found" });
   });
@@ -238,53 +241,77 @@ describe("updateNote", () => {
     Note.findById.mockResolvedValue({
       _id: "n1",
       ownerID: { toString: () => "otherUser" },
-      save: jest.fn(),
     });
-
     const req = {
       params: { id: "n1" },
       body: { title: "Updated" },
       user: { userId: USER_ID },
     };
-
     await noteController.updateNote(req, res);
-
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
   });
 
-  test("updates all provided fields and saves", async () => {
+  test("calls updateNote schema method and returns updated note", async () => {
+    const mockUpdatedNote = {
+      _id: "n1",
+      title: "New Title",
+      content: "New content",
+      tags: ["react"],
+      folderId: "folder1",
+    };
     const mockNote = {
       _id: "n1",
       ownerID: { toString: () => USER_ID },
-      title: "Old Title",
-      content: "Old content",
-      tags: [],
-      folderId: "__unfiled__",
-      save: jest.fn().mockResolvedValue(true),
+      updateNote: jest.fn().mockResolvedValue(mockUpdatedNote),
     };
     Note.findById.mockResolvedValue(mockNote);
-
     const req = {
       params: { id: "n1" },
       body: { title: "New Title", content: "New content", tags: ["react"], folderId: "folder1" },
       user: { userId: USER_ID },
     };
-
     await noteController.updateNote(req, res);
-
-    expect(mockNote.title).toBe("New Title");
-    expect(mockNote.content).toBe("New content");
-    expect(mockNote.tags).toEqual(["react"]);
-    expect(mockNote.folderId).toBe("folder1");
-    expect(mockNote.save).toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith(mockNote);
+    expect(mockNote.updateNote).toHaveBeenCalledWith(req.body);
+    expect(res.json).toHaveBeenCalledWith(mockUpdatedNote);
   });
 
+  test("does not update fields outside the whitelist", async () => {
+    const mockUpdatedNote = { _id: "n1", ownerID: USER_ID };
+    const mockNote = {
+      _id: "n1",
+      ownerID: { toString: () => USER_ID },
+      updateNote: jest.fn().mockResolvedValue(mockUpdatedNote),
+    };
+    Note.findById.mockResolvedValue(mockNote);
+    const req = {
+      params: { id: "n1" },
+      body: { ownerID: "hacker123", studyPlanID: "malicious" },
+      user: { userId: USER_ID },
+    };
+    await noteController.updateNote(req, res);
+    expect(mockNote.updateNote).toHaveBeenCalledWith(req.body);
+    expect(res.json).toHaveBeenCalledWith(mockUpdatedNote);
+  });
+
+  test("returns 500 on server error", async () => {
+    const mockNote = {
+      _id: "n1",
+      ownerID: { toString: () => USER_ID },
+      updateNote: jest.fn().mockRejectedValue(new Error("DB error")),
+    };
+    Note.findById.mockResolvedValue(mockNote);
+    const req = {
+      params: { id: "n1" },
+      body: { title: "New Title" },
+      user: { userId: USER_ID },
+    };
+    await noteController.updateNote(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
 });
 
 // delete notes
-
 describe("deleteNote", () => {
   let res;
 
@@ -332,7 +359,5 @@ describe("deleteNote", () => {
     expect(Note.deleteOne).toHaveBeenCalledWith({ _id: "n1" });
     expect(res.json).toHaveBeenCalledWith({ message: "Note deleted" });
   });
-  
-});
 
 });

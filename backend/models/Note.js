@@ -1,33 +1,34 @@
 const mongoose = require("mongoose")
-const StudyPlan = require("./StudyPlan")
 
 const noteSchema = new mongoose.Schema({
   // attribute, type
   // userID can just be _id property of schema
-  ownerID: {type:mongoose.Schema.Types.ObjectId, ref:"User", required: true},
-  studyPlanID: {type: mongoose.Schema.Types.ObjectId, ref:"StudyPlan", required: true},
-  folderId: {type: String, default: "__unfiled__"},
-  title: {type: String, default: "Untitled"},
+  ownerID: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  studyPlanID: { type: mongoose.Schema.Types.ObjectId, ref: "StudyPlan", required: true },
+  folderId: { type: String, default: "__unfiled__" },
+  title: { type: String, default: "Untitled" },
   content: String,
   tags: [String],
   attachments: [String],
   summary: String // populated by AI service
 })
 
-noteSchema.methods.updateContent = function(newContent) {
-  // logic here
+//updateNote - update certain fields of note
+noteSchema.methods.updateNote = async function (updates) {
+  const allowed = ['title', 'content', 'tags', 'folderId'];
+  allowed.forEach(field => {
+    if (updates[field] !== undefined) this[field] = updates[field];
+  });
+  await this.save();
+  return this;
 }
 
-noteSchema.methods.addTag = function(tag) {
-  
+noteSchema.methods.addAttachment = function (attachment) {
+  //logic tbd
 }
 
-noteSchema.methods.addAttachment = function(attachment) {
-
-}
-
-noteSchema.methods.generateSummary = function(attachment) {
-
+noteSchema.methods.generateSummary = function (attachment) {
+  //logic tbd
 }
 
 

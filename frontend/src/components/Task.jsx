@@ -10,9 +10,9 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [editTitle, setEditTitle] = useState(taskObj.title);
   const [editDescription, setEditDescription] = useState(taskObj.description);
   const [editingSubTaskId, setEditingSubTaskId] = useState(null);
-const [editSubTitle, setEditSubTitle] = useState("");
-const [editSubDescription, setEditSubDescription] = useState("");
-const [editPriority, setEditPriority] = useState(taskObj.priority);  
+  const [editSubTitle, setEditSubTitle] = useState("");
+  const [editSubDescription, setEditSubDescription] = useState("");
+  const [editPriority, setEditPriority] = useState(taskObj.priority);
 
   const handleMarkCompleted = async () => {
     try {
@@ -86,15 +86,15 @@ const [editPriority, setEditPriority] = useState(taskObj.priority);
   };
 
   const handleEditSubTaskSave = async (subTaskId) => {
-  const res = await fetch(`${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ title: editSubTitle, description: editSubDescription }),
-  });
-  const data = await res.json();
-  if (res.ok) { onUpdate(data); setEditingSubTaskId(null); }
-  else setError("Failed to update subtask.");
-};
+    const res = await fetch(`${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ title: editSubTitle, description: editSubDescription }),
+    });
+    const data = await res.json();
+    if (res.ok) { onUpdate(data); setEditingSubTaskId(null); }
+    else setError("Failed to update subtask.");
+  };
 
   const handleMarkSubTaskCompleted = async (subTaskId) => {
     try {
@@ -104,21 +104,8 @@ const [editPriority, setEditPriority] = useState(taskObj.priority);
         body: JSON.stringify({ completed: true }),
       });
       const data = await res.json();
-      if (!res.ok) { setError("Failed to update subtask."); return; }
-
-      //check if all subtasks are now complete
-      const allComplete = data.subTasks.every((st) => st.completed);
-      if (allComplete && data.subTasks.length > 0) {
-        const taskRes = await fetch(`${API}/tasks/${taskObj._id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ completed: true }),
-        });
-        const taskData = await taskRes.json();
-        if (taskRes.ok) { onUpdate(taskData); return; }
-      }
-
-      onUpdate(data);
+      if (res.ok) onUpdate(data);
+      else setError("Failed to update subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -139,7 +126,7 @@ const [editPriority, setEditPriority] = useState(taskObj.priority);
   };
 
   return (
-     <>
+    <>
       <div className="task-card">
         {isEditing ? (
           <>
@@ -154,10 +141,10 @@ const [editPriority, setEditPriority] = useState(taskObj.priority);
               onChange={(e) => setEditDescription(e.target.value)}
             />
             <select value={editPriority} onChange={(e) => setEditPriority(e.target.value)}>
-  <option value="low">Low</option>
-  <option value="medium">Medium</option>
-  <option value="high">High</option>
-</select>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
             <button onClick={handleEditSave}>Save</button>
             <button onClick={handleEditCancel}>Cancel</button>
           </>
@@ -190,19 +177,19 @@ const [editPriority, setEditPriority] = useState(taskObj.priority);
       {taskObj.subTasks.map((subTask) => (
         <div className="subtask-card" key={subTask._id}>
           {editingSubTaskId === subTask._id ? (
-  <>
-    <input value={editSubTitle} onChange={(e) => setEditSubTitle(e.target.value)} />
-    <input value={editSubDescription} onChange={(e) => setEditSubDescription(e.target.value)} />
-    <button onClick={() => handleEditSubTaskSave(subTask._id)}>Save</button>
-    <button onClick={() => setEditingSubTaskId(null)}>Cancel</button>
-  </>
-) : (
-  <>
-    <h2>{subTask.title}</h2>
-    <p>{subTask.description}</p>
-    <button onClick={() => { setEditingSubTaskId(subTask._id); setEditSubTitle(subTask.title); setEditSubDescription(subTask.description); }}>Edit</button>
-  </>
-)}
+            <>
+              <input value={editSubTitle} onChange={(e) => setEditSubTitle(e.target.value)} />
+              <input value={editSubDescription} onChange={(e) => setEditSubDescription(e.target.value)} />
+              <button onClick={() => handleEditSubTaskSave(subTask._id)}>Save</button>
+              <button onClick={() => setEditingSubTaskId(null)}>Cancel</button>
+            </>
+          ) : (
+            <>
+              <h2>{subTask.title}</h2>
+              <p>{subTask.description}</p>
+              <button onClick={() => { setEditingSubTaskId(subTask._id); setEditSubTitle(subTask.title); setEditSubDescription(subTask.description); }}>Edit</button>
+            </>
+          )}
           <button
             onClick={() => handleMarkSubTaskCompleted(subTask._id)}
             disabled={subTask.completed}

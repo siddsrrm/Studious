@@ -33,16 +33,13 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
     try {
         const task = await Task.findById(req.params.id);
-        if (!task) return res.status(404).json({ message: "Task not found" });
-        if (task.ownerID.toString() !== req.user.userId) return res.status(403).json({ message: "Forbidden" });
-        const { title, description, completed, priority, dueDate } = req.body;
-        if (title !== undefined) task.title = title;
-        if (description !== undefined) task.description = description;
-        if (completed !== undefined) task.completed = completed;
-        if (priority !== undefined) task.priority = priority;
-        if (dueDate !== undefined) task.dueDate = dueDate;
-        await task.save();
-        res.json(task);
+        if (!task || task.ownerID.toString() !== req.user.userId) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        //use model method to update task
+        const updated = await task.updateTask(req.body);
+        res.json(updated);
     } catch (err) {
         res.status(500).json({ message: "Error updating task", error: err.message });
     }
@@ -86,15 +83,12 @@ exports.updateSubTask = async (req, res) => {
         const task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: "Task not found" });
         if (task.ownerID.toString() !== req.user.userId) return res.status(403).json({ message: "Forbidden" });
-        const subTask = task.subTasks.id(req.params.subTaskId);
-        if (!subTask) return res.status(404).json({ message: "Subtask not found" });
-        const { title, description, completed } = req.body;
-        if (title !== undefined) subTask.title = title;
-        if (description !== undefined) subTask.description = description;
-        if (completed !== undefined) subTask.completed = completed;
-        await task.save();
-        res.json(task);
+
+        //use model method to update subtask
+        const updated = await task.updateSubTask(req.params.subTaskId, req.body);
+        res.json(updated);
     } catch (err) {
+        if (err.message === "Subtask not found") return res.status(404).json({ message: err.message });
         res.status(500).json({ message: "Error updating subtask", error: err.message });
     }
 };
