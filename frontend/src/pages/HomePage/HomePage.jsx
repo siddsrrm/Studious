@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import Calendar from "../../components/Calendar";
 import CreatePlanForm from "../../components/StudyPlans/CreatePlanForm";
 import PlanCard from "../../components/StudyPlans/PlanCard";
 import StudyPlanPage from "../StudyPlanPage";
@@ -263,14 +262,6 @@ const HomePage = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="w-full lg:w-3/4 bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
-            Calendar
-          </h2>
-          <div className="calendar-container">
-            <Calendar />
-          </div>
-        </div>
 
         {studyPlans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
