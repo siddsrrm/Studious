@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { getEvents, createEvent, updateEvent, deleteEvent } = require("../controllers/calendarController");
+const {
+  getEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} = require("../controllers/calendarController");
 const auth = require("../middleware/authMiddleware");
 
 router.get("/", auth, getEvents);
