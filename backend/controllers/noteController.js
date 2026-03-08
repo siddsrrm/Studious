@@ -57,14 +57,8 @@ const updateNote = async (req, res) => {
     if (!note) return res.status(404).json({ message: "Note not found" });
     if (note.ownerID.toString() !== req.user.userId) return res.status(403).json({ message: "Forbidden" });
 
-    const { title, content, tags, folderId } = req.body;
-    if (title !== undefined) note.title = title || "Untitled";
-    if (content !== undefined) note.content = content;
-    if (tags !== undefined) note.tags = tags;
-    if (folderId !== undefined) note.folderId = folderId;
-
-    await note.save();
-    res.json(note);
+    const updated = await note.updateNote(req.body);
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: "Error updating note", error: err.message });
   }
