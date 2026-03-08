@@ -1,13 +1,157 @@
+const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+
 const authController = require("../controllers/authController");
 const User = require("../models/User");
 const sendEmail = require("../utils/email");
 
+// mock database calls to avoid affecting the real database during testing
 jest.mock("../models/User");
 jest.mock("../utils/email");
 
+// simulat bcrypt hashing and comparing
 jest.mock("bcryptjs", () => ({
-    hash: jest.fn().mockResolvedValue("hashedpassword")
+    hash: jest.fn().mockResolvedValue("hashedpassword"),
+    compare: jest.fn()
 }));
+
+// simulate jwt generation
+jest.mock("jsonwebtoken", () => ({
+    sign: jest.fn().mockReturnValue("token")
+}))
+
+
+// register tests
+describe("Register Controller", () => {
+    let req, res
+
+    beforeEach(() => {
+        // create the req
+        req = {
+            body: {
+                username: "user",
+                email: "test@example.com",
+                password: "password"
+            }
+        };
+
+        res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        }
+
+        jest.clearAllMocks()
+    })
+
+    test("should return 409 if existing email", async () => {
+        // simulate email found in db
+        User.findOne.mockResolvedValue({ _id: "123", email: "test@example.com" })
+
+        await authController.register(req, res)
+
+        expect(User.findOne).toHaveBeenCalled()
+        expect(res.status).toHaveBeenCalledWith(409)
+        expect(res.json).toHaveBeenCalledWith({ message: "Email already in use" })
+    })
+
+    test("should return 409 if existing username", async () => {
+        // simulate email not found
+        User.findOne.mockResolvedValueOnce(null)
+        // simulate username found
+        User.findOne.mockResolvedValueOnce({ _id: "123", username: "user" }) 
+
+        await authController.register(req, res)
+
+        expect(User.findOne).toHaveBeenCalled()
+        expect(User.findOne).toHaveBeenCalled()
+        expect(res.status).toHaveBeenCalledWith(409)
+        expect(res.json).toHaveBeenCalledWith({ message: "Username already in use" })
+    })
+
+    test("should register a user", async () => {
+        // simulate email not found
+        User.findOne.mockResolvedValueOnce(null) 
+        // simulate username not found
+        User.findOne.mockResolvedValueOnce(null) 
+        // create user
+        User.create.mockResolvedValue({ _id: "123", username: "user", email: "test@example.com", password: "password" })        
+
+        await authController.register(req, res)
+
+        expect(User.findOne).toHaveBeenCalled()
+        expect(User.findOne).toHaveBeenCalled()
+        expect(bcrypt.hash).toHaveBeenCalled()
+        expect(User.create).toHaveBeenCalled()
+        expect(res.json).toHaveBeenCalledWith({
+            message: "User successfully created",
+            userId: "123",
+        })
+    })
+})
+
+// login tests
+describe("Login Controller", () => {
+    let req, res
+
+    beforeEach(() => {
+        // create the req
+        req = {
+            body: {
+                username: "user",
+                password: "password"
+            }
+        };
+
+        res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        }
+
+        jest.clearAllMocks()
+    })
+
+    test("should return 404 if user is not found", async () => {
+        // simulate user not found in db
+        User.findOne.mockResolvedValue(null)
+
+        await authController.login(req, res)
+
+        expect(User.findOne).toHaveBeenCalled()
+        expect(res.status).toHaveBeenCalledWith(404)
+        expect(res.json).toHaveBeenCalledWith({ message: "User not found" })
+    })
+
+    test("should return 401 if invalid credentials", async () => {
+        // simulate user found in db
+        User.findOne.mockResolvedValue({ _id: "123", username: "user", password: "password" }) 
+        // simulate password check is invalid
+        bcrypt.compare.mockResolvedValue(false)
+        await authController.login(req, res)
+
+        expect(User.findOne).toHaveBeenCalled()
+        expect(bcrypt.compare).toHaveBeenCalled()
+        expect(res.status).toHaveBeenCalledWith(401)
+        expect(res.json).toHaveBeenCalledWith({ message: "Invalid credentials" })
+    })
+
+    test("should generate token and login", async () => {
+        // simulate user found in db
+        User.findOne.mockResolvedValue({ _id: "123", username: "user", password: "password" }) 
+        // simulate password check is valid
+        bcrypt.compare.mockResolvedValue(true)        
+
+        await authController.login(req, res)
+
+        expect(User.findOne).toHaveBeenCalled()
+        expect(jwt.sign).toHaveBeenCalled()
+        expect(res.json).toHaveBeenCalledWith({
+            message: "User successfully logged in",
+            userId: "123",
+            token: "token",
+            username: "user"
+        })
+    })
+})
 
 describe("Forgot Password Controller", () => {
 
