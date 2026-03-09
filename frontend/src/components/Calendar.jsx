@@ -17,7 +17,6 @@ const Calendar = () => {
   const token = localStorage.getItem("token");
   const authHeaders = { Authorization: `Bearer ${token}` };
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     fetch(`${API}/events`, { headers: authHeaders })
       .then((r) => r.json())
@@ -25,7 +24,6 @@ const Calendar = () => {
       .catch((err) => console.error("Error loading events:", err));
   }, []);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   const openCreate = (dateStr) => {
     setError("");
     setModal({
@@ -54,7 +52,7 @@ const Calendar = () => {
   const handleFormChange = (e) =>
     setModal((prev) => ({ ...prev, form: { ...prev.form, [e.target.name]: e.target.value } }));
 
-  // ── Create ─────────────────────────────────────────────────────────────────
+  // Create calendar event
   const handleCreate = async () => {
     if (!modal.form.title.trim()) { setError("Title is required."); return; }
     setSaving(true);
@@ -74,7 +72,7 @@ const Calendar = () => {
     }
   };
 
-  // ── Edit ───────────────────────────────────────────────────────────────────
+  // Edit calendar event
   const handleEdit = async () => {
     if (!modal.form.title.trim()) { setError("Title is required."); return; }
     setSaving(true);
@@ -94,7 +92,7 @@ const Calendar = () => {
     }
   };
 
-  // ── Delete ─────────────────────────────────────────────────────────────────
+  // Delete calendar event
   const handleDelete = async () => {
     setSaving(true);
     try {
@@ -108,7 +106,7 @@ const Calendar = () => {
     }
   };
 
-  // ── Drag / Resize ──────────────────────────────────────────────────────────
+  // Drag event to different day/time
   const handleEventChange = async (changeInfo) => {
     const ev = changeInfo.event;
     const pad = (d) => d.toISOString().slice(0, 16);
@@ -126,7 +124,6 @@ const Calendar = () => {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="relative">
       <FullCalendar
@@ -146,7 +143,6 @@ const Calendar = () => {
         eventResize={handleEventChange}
       />
 
-      {/* ── Modal ── */}
       {modal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -162,7 +158,6 @@ const Calendar = () => {
 
             {error && <p className="text-sm text-red-500">{error}</p>}
 
-            {/* Title */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
               <input
@@ -176,7 +171,6 @@ const Calendar = () => {
               />
             </div>
 
-            {/* Start */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Start</label>
               <input
@@ -188,7 +182,6 @@ const Calendar = () => {
               />
             </div>
 
-            {/* End */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">End</label>
               <input
@@ -200,7 +193,6 @@ const Calendar = () => {
               />
             </div>
 
-            {/* Actions */}
             <div className="flex items-center justify-between pt-2">
               {modal.mode === "edit" ? (
                 <button
