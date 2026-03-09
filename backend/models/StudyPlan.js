@@ -13,6 +13,7 @@ const studyPlanSchema = new mongoose.Schema({
 
 studyPlanSchema.methods.addPracticeQuestion = function (questionData) {
   //logic TBD once we implement AI question generation
+  //test
 }
 
 module.exports = mongoose.model("StudyPlan", studyPlanSchema)
