@@ -160,7 +160,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-800">Studious</h1>
 
           <div className="flex items-center gap-3">
@@ -262,46 +262,54 @@ const HomePage = () => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="w-full lg:w-3/4 bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
-            Calendar
-          </h2>
-          <div className="calendar-container">
-            <Calendar />
-          </div>
-        </div>
-
-
-        {studyPlans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-6xl mb-4">&#128214;</span>
-            <h2 className="text-xl font-semibold text-gray-700">
-              No study plans yet
+      {/* Main Container updated to max-w-7xl for more horizontal room */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/*Calendar */}
+          <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
+            <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
+              Calendar
             </h2>
-            <p className="text-gray-500 mt-1 mb-6 max-w-sm">
-              Create your first study plan to start organising your notes,
-              tasks, and practice questions.
-            </p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow"
-            >
-              + Create Study Plan
-            </button>
+            <div className="calendar-container">
+              <Calendar />
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {studyPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                onSelect={handleSelectPlan}
-                onDelete={handleDeletePlan}
-              />
-            ))}
+
+          {/*Study Plans */}
+          <div className="w-full lg:flex-1">
+            {studyPlans.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-lg shadow-sm border border-gray-100 h-full">
+                <span className="text-6xl mb-4">&#128214;</span>
+                <h2 className="text-xl font-semibold text-gray-700">
+                  No study plans yet
+                </h2>
+                <p className="text-gray-500 mt-1 mb-6 max-w-sm">
+                  Create your first study plan to start organising your notes,
+                  tasks, and practice questions.
+                </p>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow"
+                >
+                  + Create Study Plan
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {studyPlans.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onSelect={handleSelectPlan}
+                    onDelete={handleDeletePlan}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+          
+        </div>
       </main>
 
       {showCreateForm && (
@@ -309,19 +317,6 @@ const HomePage = () => {
           onCreatePlan={handleCreatePlan}
           onCancel={() => setShowCreateForm(false)}
         />
-      )}
-
-      {showToken && (
-        <div
-          className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 w-72 border border-gray-200 transition-opacity duration-1000 ${tokenOpacity ? "opacity-100" : "opacity-0"}`}
-        >
-          <p className="text-sm font-semibold text-gray-700 mb-1">
-            Session Active
-          </p>
-          <p className="text-xs text-gray-400 truncate">
-            {localStorage.getItem("token")}
-          </p>
-        </div>
       )}
 
       {showToken && (
