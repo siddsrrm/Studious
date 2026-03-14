@@ -109,3 +109,27 @@ exports.toggle2FA = async (req, res) => {
     res.status(500).json({ message: "Failed to update 2FA setting" });
   }
 }
+
+exports.getNotificationSettings = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select("notificationSettings");
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json(user.notificationSettings);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching settings", error: err.message });
+    }
+};
+
+exports.updateNotificationSettings = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+        const { remindersEnabled, reminderDaysBefore } = req.body;
+        if (remindersEnabled !== undefined) user.notificationSettings.remindersEnabled = remindersEnabled;
+        if (reminderDaysBefore !== undefined) user.notificationSettings.reminderDaysBefore = reminderDaysBefore;
+        await user.save();
+        res.json(user.notificationSettings);
+    } catch (err) {
+        res.status(500).json({ message: "Error updating settings", error: err.message });
+    }
+};

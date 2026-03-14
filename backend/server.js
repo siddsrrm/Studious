@@ -13,10 +13,12 @@ const taskRoutes = require("./routes/taskRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const { startReminderJob } = require("./utils/reminderJob");
 
 const app = express();
 
 connectDB();
+startReminderJob();
 
 app.use(cors());
 app.use(express.json());
