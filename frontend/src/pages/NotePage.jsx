@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import NoteEditor from '../components/NoteEditor';
+import FileUploadModal from '../components/FileUploadModal';
 
 const UNFILED_ID = '__unfiled__';
 
@@ -26,6 +27,7 @@ const NotesPage = ({ studyPlanId }) => {
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [moveMenuNoteId, setMoveMenuNoteId] = useState(null);
   const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const activeNote = notes.find(n => n._id === activeNoteId);
   const saveTimerRef = useRef(null);
 
@@ -338,6 +340,11 @@ const handleSearch = async (term) => {
   ? notes.filter(n => n.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   : notes;
 
+  const handleFileUpload = (file) => {
+    // TODO: send file to AI endpoint and insert generated note
+    setShowUploadModal(false);
+  };
+
   // Render page
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -349,6 +356,16 @@ const handleSearch = async (term) => {
         <div className="p-4 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-800">My Notes</h2>
           <div className="flex items-center gap-1">
+            {/* Upload file for AI notes */}
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="text-gray-400 hover:text-indigo-600 transition-colors p-1"
+              title="Upload file to generate AI notes"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+            </button>
             <button
               onClick={() => setCreatingFolder(true)}
               className="text-gray-400 hover:text-blue-600 transition-colors p-1"
@@ -486,6 +503,13 @@ const handleSearch = async (term) => {
         )}
         
       </div>
+
+      {showUploadModal && (
+        <FileUploadModal
+          onClose={() => setShowUploadModal(false)}
+          onUpload={handleFileUpload}
+        />
+      )}
     </div>
   );
 };
