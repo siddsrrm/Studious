@@ -1,0 +1,64 @@
+.questionBox {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.answerForm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.answerInput {
+  padding: 8px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+}
+
+.checkButton {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #6366f1;
+  color: white;
+  cursor: pointer;
+}
+
+.checkButton:hover {
+  background-color: #4f46e5;
+}
+
+.checkButton:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.resultIcon {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Correct styling */
+
+.answerInput.correct {
+  border-color: green;
+  background-color: #e8fbe8;
+}
+
+.resultIcon.correct {
+  color: green;
+}
+
+/* Incorrect styling */
+
+.answerInput.incorrect {
+  border-color: red;
+  background-color: #fdeaea;
+}
+
+.resultIcon.incorrect {
+  color: red;
+}
