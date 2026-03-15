@@ -3,6 +3,8 @@ const {
   nameChange,
   deleteAccount,
   emailChange,
+  getNotificationSettings,
+  updateNotificationSettings,
 } = require("../controllers/userController.js");
 
 jest.mock("../models/User");
@@ -241,4 +243,134 @@ describe("emailChange", () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ message: "Failed to update email" });
   });
+});
+
+describe("getNotificationSettings", () => {
+    let res;
+    beforeEach(() => {
+        res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+        jest.clearAllMocks();
+    });
+
+    test("returns notification settings for the user", async () => {
+        const mockSettings = { remindersEnabled: true, reminderDaysBefore: 1 };
+        User.findById.mockReturnValue({
+            select: jest.fn().mockResolvedValue({
+                notificationSettings: mockSettings
+            })
+        });
+        const req = { user: { userId: "user123" } };
+        await getNotificationSettings(req, res);
+        expect(res.json).toHaveBeenCalledWith(mockSettings);
+    });
+
+    test("returns 404 if user is not found", async () => {
+        User.findById.mockReturnValue({
+            select: jest.fn().mockResolvedValue(null)
+        });
+        const req = { user: { userId: "user123" } };
+        await getNotificationSettings(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ message: "User not found" });
+    });
+
+    test("returns 500 on server error", async () => {
+        User.findById.mockReturnValue({
+            select: jest.fn().mockRejectedValue(new Error("DB error"))
+        });
+        const req = { user: { userId: "user123" } };
+        await getNotificationSettings(req, res);
+        expect(res.status).toHaveBeenCalledWith(500);
+    });
+});
+
+describe("updateNotificationSettings", () => {
+    let res;
+    beforeEach(() => {
+        res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+        jest.clearAllMocks();
+    });
+
+    test("returns 404 if user is not found", async () => {
+        User.findById.mockResolvedValue(null);
+        const req = {
+            body: { remindersEnabled: false },
+            user: { userId: "user123" }
+        };
+        await updateNotificationSettings(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ message: "User not found" });
+    });
+
+    test("updates remindersEnabled and saves", async () => {
+        const mockUser = {
+            notificationSettings: { remindersEnabled: true, reminderDaysBefore: 1 },
+            save: jest.fn().mockResolvedValue(true)
+        };
+        User.findById.mockResolvedValue(mockUser);
+        const req = {
+            body: { remindersEnabled: false },
+            user: { userId: "user123" }
+        };
+        await updateNotificationSettings(req, res);
+        expect(mockUser.notificationSettings.remindersEnabled).toBe(false);
+        expect(mockUser.notificationSettings.reminderDaysBefore).toBe(1); // unchanged
+        expect(mockUser.save).toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith(mockUser.notificationSettings);
+    });
+
+    test("updates reminderDaysBefore and saves", async () => {
+        const mockUser = {
+            notificationSettings: { remindersEnabled: true, reminderDaysBefore: 1 },
+            save: jest.fn().mockResolvedValue(true)
+        };
+        User.findById.mockResolvedValue(mockUser);
+        const req = {
+            body: { reminderDaysBefore: 3 },
+            user: { userId: "user123" }
+        };
+        await updateNotificationSettings(req, res);
+        expect(mockUser.notificationSettings.reminderDaysBefore).toBe(3);
+        expect(mockUser.notificationSettings.remindersEnabled).toBe(true); // unchanged
+        expect(mockUser.save).toHaveBeenCalled();
+    });
+
+    test("updates both fields at once", async () => {
+        const mockUser = {
+            notificationSettings: { remindersEnabled: true, reminderDaysBefore: 1 },
+            save: jest.fn().mockResolvedValue(true)
+        };
+        User.findById.mockResolvedValue(mockUser);
+        const req = {
+            body: { remindersEnabled: false, reminderDaysBefore: 7 },
+            user: { userId: "user123" }
+        };
+        await updateNotificationSettings(req, res);
+        expect(mockUser.notificationSettings.remindersEnabled).toBe(false);
+        expect(mockUser.notificationSettings.reminderDaysBefore).toBe(7);
+        expect(mockUser.save).toHaveBeenCalled();
+    });
+
+    test("does not update fields that are not provided", async () => {
+        const mockUser = {
+            notificationSettings: { remindersEnabled: true, reminderDaysBefore: 3 },
+            save: jest.fn().mockResolvedValue(true)
+        };
+        User.findById.mockResolvedValue(mockUser);
+        const req = { body: {}, user: { userId: "user123" } };
+        await updateNotificationSettings(req, res);
+        expect(mockUser.notificationSettings.remindersEnabled).toBe(true);
+        expect(mockUser.notificationSettings.reminderDaysBefore).toBe(3);
+        expect(mockUser.save).toHaveBeenCalled();
+    });
+
+    test("returns 500 on server error", async () => {
+        User.findById.mockRejectedValue(new Error("DB error"));
+        const req = {
+            body: { remindersEnabled: false },
+            user: { userId: "user123" }
+        };
+        await updateNotificationSettings(req, res);
+        expect(res.status).toHaveBeenCalledWith(500);
+    });
 });
