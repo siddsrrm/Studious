@@ -1,8 +1,11 @@
 .questionBox {
-  background: white;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  margin: 20px auto;
+  width: 85%;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+  color: #0f172a;
 }
 
 .answerForm {
@@ -16,6 +19,28 @@
   font-size: 16px;
   border: 2px solid #ccc;
   border-radius: 4px;
+}
+
+/* Correct styling */
+
+.answerInput.correct {
+  border-color: green;
+  background-color: #e8fbe8;
+}
+
+.resultIcon.correct {
+  color: green;
+}
+
+/* Incorrect styling */
+
+.answerInput.incorrect {
+  border-color: red;
+  background-color: #fdeaea;
+}
+
+.resultIcon.incorrect {
+  color: red;
 }
 
 .checkButton {
@@ -41,24 +66,30 @@
   font-weight: bold;
 }
 
-/* Correct styling */
-
-.answerInput.correct {
-  border-color: green;
-  background-color: #e8fbe8;
+.addQuestionForm {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.resultIcon.correct {
-  color: green;
+.addQuestionForm input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  color: inherit; /* inherit the card text color */
+  background: #fff;
 }
 
-/* Incorrect styling */
-
-.answerInput.incorrect {
-  border-color: red;
-  background-color: #fdeaea;
+.addQuestionForm button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #6366f1;
+  color: white;
+  cursor: pointer;
 }
 
-.resultIcon.incorrect {
-  color: red;
+.addQuestionForm button:hover {
+  background-color: #4f46e5;
 }

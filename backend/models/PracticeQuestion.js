@@ -1,29 +1,29 @@
-/* Mock Data*/
-export async function getPracticeQuestions() {
-  return [
-    {
-      studyPlanId: "1",
-      question: "What is React?",
-      answer: "A JS library for UI.",
-    },
-    {
-      studyPlanId: "2",
-      question: "What is a component?",
-      answer: "Reusable UI block.",
-    },
-  ];
-}
-
-/*const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 const practiceQuestionSchema = new mongoose.Schema({
-  studyPlanID: {  type: mongoose.Schema.Types.ObjectId, ref: "StudyPlan", required: true},
-  question: {type: String, required: true},
-  answer: {type: String, required: true},
-}, { timestamps: true });
+  ownerID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  studyPlanId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StudyPlan",
+    required: true,
+  },
+  question: { type: String, required: true },
+  answer: { type: String, required: true },
+});
 
-practiceQuestionSchema.methods.checkAnswer = function() {
-  
-}
+practiceQuestionSchema.methods.updatePracticeQuestions = async function (
+  updates,
+) {
+  const allowed = ["question", "answer"];
+  allowed.forEach((field) => {
+    if (updates[field] !== undefined) this[field] = updates[field];
+  });
+  await this.save();
+  return this;
+};
 
-module.exports = mongoose.model("PracticeQuestion", practiceQuestionSchema);*/
+module.exports = mongoose.model("PracticeQuestion", practiceQuestionSchema);

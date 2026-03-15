@@ -124,9 +124,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
         )}
 
         {activeTab === "PracticeQuestions" && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <PracticeQuestionsPage studyPlanId={plan.id} />
-          </div>
+          <PracticeQuestionsPage studyPlanId={plan.id} />
         )}
       </div>
     </div>
