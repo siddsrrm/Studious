@@ -18,6 +18,11 @@ const makeUser = (overrides = {}) => ({
     }
 });
 
+// helper to mock Task.find().populate() chain
+const mockFind = (results) => ({
+    populate: jest.fn().mockResolvedValue(results)
+});
+
 beforeEach(() => jest.clearAllMocks());
 
 describe("sendReminders", () => {
@@ -32,7 +37,7 @@ describe("sendReminders", () => {
 
     test("does not send email when user has no upcoming or overdue tasks", async () => {
         User.find.mockResolvedValue([makeUser()]);
-        Task.find.mockResolvedValue([]); // both queries return empty
+        Task.find.mockReturnValue(mockFind([]));
         await sendReminders();
         expect(sendEmail).not.toHaveBeenCalled();
     });
@@ -42,32 +47,33 @@ describe("sendReminders", () => {
     test("sends email when user has upcoming tasks", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([{ title: "Study for exam", dueDate: new Date() }]) // upcoming
-            .mockResolvedValueOnce([]); // overdue
+            .mockReturnValueOnce(mockFind([{ title: "Study for exam", dueDate: new Date(), studyPlanID: { title: "Biology Notes" } }]))
+            .mockReturnValueOnce(mockFind([]));
         await sendReminders();
         expect(sendEmail).toHaveBeenCalledTimes(1);
         expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({
             to: "test@example.com",
-            subject: "Studious — Task Reminders"
+            subject: "Studious - Task Reminders"
         }));
     });
 
     test("email body includes upcoming task title", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([{ title: "Study for exam", dueDate: new Date() }])
-            .mockResolvedValueOnce([]);
+            .mockReturnValueOnce(mockFind([{ title: "Study for exam", dueDate: new Date(), studyPlanID: { title: "Biology Notes" } }]))
+            .mockReturnValueOnce(mockFind([]));
         await sendReminders();
         const emailText = sendEmail.mock.calls[0][0].text;
         expect(emailText).toContain("Study for exam");
         expect(emailText).toContain("UPCOMING TASKS");
+        expect(emailText).toContain("Biology Notes");
     });
 
     test("email body includes correct reminder window in days", async () => {
         User.find.mockResolvedValue([makeUser({ reminderDaysBefore: 7 })]);
         Task.find
-            .mockResolvedValueOnce([{ title: "Task 1", dueDate: new Date() }])
-            .mockResolvedValueOnce([]);
+            .mockReturnValueOnce(mockFind([{ title: "Task 1", dueDate: new Date(), studyPlanID: { title: "Plan A" } }]))
+            .mockReturnValueOnce(mockFind([]));
         await sendReminders();
         const emailText = sendEmail.mock.calls[0][0].text;
         expect(emailText).toContain("7 day(s)");
@@ -78,8 +84,8 @@ describe("sendReminders", () => {
     test("sends email when user has overdue tasks", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([]) // upcoming
-            .mockResolvedValueOnce([{ title: "Late assignment", dueDate: new Date("2026-01-01") }]); // overdue
+            .mockReturnValueOnce(mockFind([]))
+            .mockReturnValueOnce(mockFind([{ title: "Late assignment", dueDate: new Date("2026-01-01"), studyPlanID: { title: "Math Study Plan" } }]));
         await sendReminders();
         expect(sendEmail).toHaveBeenCalledTimes(1);
     });
@@ -87,12 +93,13 @@ describe("sendReminders", () => {
     test("email body includes overdue task title", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([{ title: "Late assignment", dueDate: new Date("2026-01-01") }]);
+            .mockReturnValueOnce(mockFind([]))
+            .mockReturnValueOnce(mockFind([{ title: "Late assignment", dueDate: new Date("2026-01-01"), studyPlanID: { title: "Math Study Plan" } }]));
         await sendReminders();
         const emailText = sendEmail.mock.calls[0][0].text;
         expect(emailText).toContain("Late assignment");
         expect(emailText).toContain("OVERDUE TASKS");
+        expect(emailText).toContain("Math Study Plan");
     });
 
     // --- both lists ---
@@ -100,21 +107,23 @@ describe("sendReminders", () => {
     test("email body includes both sections when user has upcoming and overdue tasks", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([{ title: "Upcoming task", dueDate: new Date() }])
-            .mockResolvedValueOnce([{ title: "Overdue task", dueDate: new Date("2026-01-01") }]);
+            .mockReturnValueOnce(mockFind([{ title: "Upcoming task", dueDate: new Date(), studyPlanID: { title: "Plan A" } }]))
+            .mockReturnValueOnce(mockFind([{ title: "Overdue task", dueDate: new Date("2026-01-01"), studyPlanID: { title: "Plan B" } }]));
         await sendReminders();
         const emailText = sendEmail.mock.calls[0][0].text;
         expect(emailText).toContain("UPCOMING TASKS");
         expect(emailText).toContain("OVERDUE TASKS");
         expect(emailText).toContain("Upcoming task");
         expect(emailText).toContain("Overdue task");
+        expect(emailText).toContain("Plan A");
+        expect(emailText).toContain("Plan B");
     });
 
     test("email does not include overdue section when there are no overdue tasks", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([{ title: "Upcoming task", dueDate: new Date() }])
-            .mockResolvedValueOnce([]);
+            .mockReturnValueOnce(mockFind([{ title: "Upcoming task", dueDate: new Date(), studyPlanID: { title: "Plan A" } }]))
+            .mockReturnValueOnce(mockFind([]));
         await sendReminders();
         const emailText = sendEmail.mock.calls[0][0].text;
         expect(emailText).not.toContain("OVERDUE TASKS");
@@ -123,8 +132,8 @@ describe("sendReminders", () => {
     test("email does not include upcoming section when there are no upcoming tasks", async () => {
         User.find.mockResolvedValue([makeUser()]);
         Task.find
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([{ title: "Overdue task", dueDate: new Date("2026-01-01") }]);
+            .mockReturnValueOnce(mockFind([]))
+            .mockReturnValueOnce(mockFind([{ title: "Overdue task", dueDate: new Date("2026-01-01"), studyPlanID: { title: "Plan A" } }]));
         await sendReminders();
         const emailText = sendEmail.mock.calls[0][0].text;
         expect(emailText).not.toContain("UPCOMING TASKS");
@@ -133,8 +142,11 @@ describe("sendReminders", () => {
     // --- multiple users ---
 
     test("sends separate emails for each user with tasks", async () => {
-        User.find.mockResolvedValue([makeUser(), { ...makeUser(), _id: "user456", email: "other@example.com" }]);
-        Task.find.mockResolvedValue([{ title: "Task 1", dueDate: new Date() }]);
+        User.find.mockResolvedValue([
+            makeUser(),
+            { ...makeUser(), _id: "user456", email: "other@example.com" }
+        ]);
+        Task.find.mockReturnValue(mockFind([{ title: "Task 1", dueDate: new Date(), studyPlanID: { title: "Plan A" } }]));
         await sendReminders();
         expect(sendEmail).toHaveBeenCalledTimes(2);
     });
@@ -145,10 +157,10 @@ describe("sendReminders", () => {
             { ...makeUser(), _id: "user456", email: "other@example.com" }
         ]);
         Task.find
-            .mockResolvedValueOnce([{ title: "Task 1", dueDate: new Date() }]) // user1 upcoming
-            .mockResolvedValueOnce([]) // user1 overdue
-            .mockResolvedValueOnce([]) // user2 upcoming
-            .mockResolvedValueOnce([]); // user2 overdue
+            .mockReturnValueOnce(mockFind([{ title: "Task 1", dueDate: new Date(), studyPlanID: { title: "Plan A" } }]))
+            .mockReturnValueOnce(mockFind([]))
+            .mockReturnValueOnce(mockFind([]))
+            .mockReturnValueOnce(mockFind([]));
         await sendReminders();
         expect(sendEmail).toHaveBeenCalledTimes(1);
         expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({
