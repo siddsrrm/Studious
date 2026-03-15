@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema({
   notificationSettings: {
     remindersEnabled: { type: Boolean, default: false },
     reminderDaysBefore: { type: Number, default: 1 },
-}
-googleId: { type: String, default: null }
+},
+  googleId: { type: String, default: null }
 })
 
 userSchema.methods.createStudyPlan = function(title, description) {
