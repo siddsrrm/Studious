@@ -8,6 +8,7 @@ const SECTIONS = {
   USERNAME: "username",
   EMAIL: "email",
   TWO_FACTOR: "two_factor",
+  GOOGLE: "google",
   DELETE: "delete"
 };
 
@@ -326,6 +327,82 @@ function NotificationSection() {
   );
 }
 
+function GoogleSection() {
+  const [connected, setConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    async function checkGoogleStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setConnected(!!data.googleId);
+      } catch {
+        setError("Failed to load Google account status.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkGoogleStatus();
+  }, []);
+
+  function handleConnect() {
+    window.location.href = `${API_BASE}/auth/google`;
+  }
+
+  async function handleDisconnect() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/google/disconnect`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setConnected(false);
+      else setError(data.message || "Failed to disconnect Google account.");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Google Account</h2>
+      <p className={styles.contentDescription}>
+        Connect your Google account to enable signing in with Google.
+      </p>
+      <hr className={styles.contentDivider} />
+      {loading ? (
+        <p style={{ fontSize: "14px", color: "#6b7280" }}>Loading...</p>
+      ) : (
+        <>
+          <p className={styles.fieldLabel}>Status</p>
+          <p style={{ fontSize: "14px", color: connected ? "#16a34a" : "#6b7280", marginBottom: "20px" }}>
+            {connected ? "✓ Connected" : "Not connected"}
+          </p>
+          {error && <p className={styles.error}>{error}</p>}
+          {connected ? (
+            <button className={styles.buttonDanger} onClick={handleDisconnect} disabled={loading}>
+              Disconnect Google Account
+            </button>
+          ) : (
+            <button className={styles.button} onClick={handleConnect}>
+              Connect Google Account
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function DeleteSection() {
   const [showModal, setShowModal] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState("");
@@ -438,6 +515,13 @@ export default function SettingsPage() {
           Two-Factor Authentication
         </button>
 
+        <button
+  className={`${styles.sidebarItem} ${activeSection === SECTIONS.GOOGLE ? styles.sidebarItemActive : ""}`}
+  onClick={() => setActiveSection(SECTIONS.GOOGLE)}
+>
+  Google Account
+</button>
+
         {/* Notification Settings */}
         <button
           className={`${styles.sidebarItem} ${activeSection === SECTIONS.NOTIFICATION ? styles.sidebarItemActive : ""}`}
@@ -465,6 +549,7 @@ export default function SettingsPage() {
         )}
         {activeSection === SECTIONS.EMAIL && <EmailSection />}
         {activeSection === SECTIONS.TWO_FACTOR && <TwoFactorSection />}
+        {activeSection === SECTIONS.GOOGLE && <GoogleSection />}
         {activeSection === SECTIONS.NOTIFICATION && <NotificationSection />}
         {activeSection === SECTIONS.DELETE && (
           <DeleteSection />
