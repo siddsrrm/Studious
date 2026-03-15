@@ -272,11 +272,14 @@ function NotificationSection() {
     <div>
       <h2 className={styles.contentTitle}>Notification Settings</h2>
       <p className={styles.contentDescription}>
-        Configure when and how you receive task reminder emails.
+        Configure when you receive daily task reminder emails. Reminders include
+        any incomplete tasks due within your selected window, as well as any
+        overdue tasks.
       </p>
       <hr className={styles.contentDivider} />
       {statusMessage && <p className={styles.success}>{statusMessage}</p>}
       {error && <p className={styles.error}>{error}</p>}
+
       <p className={styles.fieldLabel}>Email reminders</p>
       <select
         className={styles.input}
@@ -286,18 +289,37 @@ function NotificationSection() {
         <option value="true">Enabled</option>
         <option value="false">Disabled</option>
       </select>
-      <p className={styles.fieldLabel}>Remind me this many days before due date</p>
-      <select
-        className={styles.input}
-        value={settings.reminderDaysBefore}
-        onChange={(e) => setSettings({ ...settings, reminderDaysBefore: parseInt(e.target.value) })}
+
+      <p className={styles.fieldLabel}>Remind me about tasks due within</p>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input
+          type="number"
+          className={styles.input}
+          value={settings.reminderDaysBefore}
+          min={1}
+          max={30}
+          disabled={!settings.remindersEnabled}
+          onChange={(e) => {
+            const value = parseInt(e.target.value);
+            if (value >= 1 && value <= 30) {
+              setSettings({ ...settings, reminderDaysBefore: value });
+            }
+          }}
+          style={{ width: "80px" }}
+        />
+        <span style={{ color: "#475569", fontSize: "14px" }}>days</span>
+      </div>
+      {settings.reminderDaysBefore > 14 && settings.remindersEnabled && (
+        <p style={{ color: "#f59e0b", fontSize: "13px", marginTop: "4px" }}>
+          Note: setting a large window may result in many tasks being included in each reminder.
+        </p>
+      )}
+
+      <button
+        className={styles.button}
+        onClick={handleSave}
+        disabled={loading}
       >
-        <option value={1}>1 day before</option>
-        <option value={2}>2 days before</option>
-        <option value={3}>3 days before</option>
-        <option value={7}>1 week before</option>
-      </select>
-      <button className={styles.button} onClick={handleSave} disabled={loading}>
         {loading ? "Saving..." : "Save Settings"}
       </button>
     </div>
