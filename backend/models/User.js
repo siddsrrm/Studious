@@ -14,7 +14,11 @@ const userSchema = new mongoose.Schema({
   twoFactorExpires: Date,
   twoFactorEnabled: {type: Boolean, default: false},
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  progressTracker: { type: mongoose.Schema.Types.ObjectId, ref: "ProgressTracker" }
+  progressTracker: { type: mongoose.Schema.Types.ObjectId, ref: "ProgressTracker" },
+  notificationSettings: {
+    remindersEnabled: { type: Boolean, default: false },
+    reminderDaysBefore: { type: Number, default: 1 },
+}
 })
 
 userSchema.methods.createStudyPlan = function(title, description) {
