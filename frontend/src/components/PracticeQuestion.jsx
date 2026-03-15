@@ -34,12 +34,16 @@ const PracticeQuestion = ({
         <input
           type="text"
           value={userAnswer}
-          disabled={isCorrect}
+          disabled={isCorrect === true}
           onChange={(e) => setUserAnswer(e.target.value)}
           className={`answerInput ${statusClass}`}
         />
 
-        <button type="submit" className="checkButton" disabled={isCorrect}>
+        <button
+          type="submit"
+          className="checkButton"
+          disabled={isCorrect === true}
+        >
           Check
         </button>
 
@@ -68,6 +72,7 @@ const PracticeQuestion = ({
                   question: editQuestion,
                   answer: editAnswer,
                 });
+                setIsCorrect(null);
                 setEditing(false);
               }}
             >

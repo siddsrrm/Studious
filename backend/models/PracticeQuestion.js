@@ -15,7 +15,7 @@ const practiceQuestionSchema = new mongoose.Schema({
   answer: { type: String, required: true },
 });
 
-practiceQuestionSchema.methods.updatePracticeQuestions = async function (
+practiceQuestionSchema.methods.updatePracticeQuestion = async function (
   updates,
 ) {
   const allowed = ["question", "answer"];

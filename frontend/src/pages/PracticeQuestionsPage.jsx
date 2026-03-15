@@ -30,9 +30,10 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
       }
     }
     fetchPracticeQuestions();
-  }, [studyPlanId]);
+  }, [studyPlanId, token]);
 
   const handleAddPracticeQuestion = async ({ question, answer }) => {
+    if (!question.trim() || !answer.trim()) return;
     try {
       const res = await fetch(`${API}/practice-questions`, {
         method: "POST",
@@ -50,21 +51,38 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
     }
   };
 
-  const handleUpdatePracticeQuestion = (id, updatedPracticeQuestion) => {
-    setQuestions(
-      questions.map((q) => (q._id === id ? updatedPracticeQuestion : q)),
-    );
+  const handleUpdatePracticeQuestion = async (id, { question, answer }) => {
+    if (!question.trim() || !answer.trim()) return;
+    try {
+      const res = await fetch(`${API}/practice-questions/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ studyPlanId: studyPlanId, question, answer }),
+      });
+      const data = await res.json();
+      if (res.ok) setQuestions(questions.map((q) => (q._id === id ? data : q)));
+      else setError(data.message || "Failed to update practice question.");
+    } catch {
+      setError("Network error. Please try again.");
+    }
   };
 
-  {
-    /*
-  const handleDeletePracticeQuestion = async (_id) => {
-    await deletePracticeQuestion(_id);
-
-    setQuestions(questions.filter((q) => q._id !== _id));
+  const handleDeletePracticeQuestion = async (id) => {
+    try {
+      const res = await fetch(`${API}/practice-questions/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setQuestions(questions.filter((p) => p._id !== id));
+      else setError("Failed to delete practice question.");
+    } catch {
+      setError("Network error. Please try again.");
+    }
   };
-*/
-  }
+
   return (
     <>
       <div
@@ -84,7 +102,6 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
             e.preventDefault();
 
             handleAddPracticeQuestion({
-              studyPlanId: "CURRENT_PLAN_ID",
               question: newQuestion,
               answer: newAnswer,
             });
@@ -117,7 +134,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
             question={q.question}
             answer={q.answer}
             onUpdate={handleUpdatePracticeQuestion}
-            /*onDelete={handleDeletePracticeQuestion}*/
+            onDelete={handleDeletePracticeQuestion}
           />
         ))}
       </div>
