@@ -3,6 +3,7 @@ const Task = require("../models/Task");
 const User = require("../models/User");
 const sendEmail = require("./email");
 
+//sendReminders - find all tasks due within next X days for users with reminders enabled, send email summary of upcoming and overdue tasks
 async function sendReminders() {
     try {
         const users = await User.find({ "notificationSettings.remindersEnabled": true });
@@ -14,25 +15,53 @@ async function sendReminders() {
             const targetDate = new Date();
             targetDate.setDate(now.getDate() + daysBefore);
 
-            const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
 
-            const tasks = await Task.find({
+            const endOfWindow = new Date();
+            endOfWindow.setDate(endOfWindow.getDate() + daysBefore);
+            endOfWindow.setHours(23, 59, 59, 999);
+            console.log("Checking tasks for user:", user._id, "window:", startOfToday, "to", endOfWindow);
+
+            const upcomingTasks = await Task.find({
                 ownerID: user._id,
                 completed: false,
-                dueDate: { $gte: startOfDay, $lte: endOfDay }
+                dueDate: { $gte: startOfToday, $lte: endOfWindow }
             });
+            //test
+            console.log(upcomingTasks);
 
-            if (tasks.length === 0) continue;
+            const overdueTasks = await Task.find({
+                ownerID: user._id,
+                completed: false,
+                dueDate: { $lt: startOfToday }
+            });
+            console.log(overdueTasks);
 
-            const taskList = tasks
-                .map(t => `- ${t.title} (due: ${new Date(t.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })})`)
-                .join("\n");
+            if (upcomingTasks.length === 0 && overdueTasks.length === 0) continue;
+
+            let emailBody = `Hi ${user.username},\n\nBelow is a summary of your tasks that are either overdue or due within the next ${daysBefore} day(s):\n\n`;
+
+            if (overdueTasks.length > 0) {
+                const overdueList = overdueTasks
+                    .map(t => `- ${t.title} (was due: ${new Date(t.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })})`)
+                    .join("\n");
+                emailBody += `OVERDUE TASKS:\n${overdueList}\n\n`;
+            }
+
+            if (upcomingTasks.length > 0) {
+                const upcomingList = upcomingTasks
+                    .map(t => `- ${t.title} (due: ${new Date(t.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })})`)
+                    .join("\n");
+                emailBody += `UPCOMING TASKS (due within ${daysBefore} day(s)):\n${upcomingList}\n\n`;
+            }
+
+            emailBody += `Log in to Studious to complete them and stay on track.\nTo update your notification preferences, visit your account settings.\n\nBest,\nThe Studious Team`;
 
             await sendEmail({
                 to: user.email,
-                subject: "Studious — Upcoming Task Reminders",
-                text: `Hi ${user.username},\n\nYou have the following tasks due in ${daysBefore} day(s):\n\n${taskList}\n\nLog in to Studious to stay on track.`
+                subject: "Studious — Task Reminders",
+                text: emailBody
             });
         }
     } catch (err) {

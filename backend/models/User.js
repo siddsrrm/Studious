@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   progressTracker: { type: mongoose.Schema.Types.ObjectId, ref: "ProgressTracker" },
   notificationSettings: {
-    remindersEnabled: { type: Boolean, default: true },
+    remindersEnabled: { type: Boolean, default: false },
     reminderDaysBefore: { type: Number, default: 1 },
 }
 })
