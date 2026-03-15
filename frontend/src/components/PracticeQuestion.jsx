@@ -2,6 +2,7 @@ import { useState } from "react";
 import "../css/PracticeQuestion.css";
 
 const PracticeQuestion = ({
+  id,
   studyPlanId,
   question,
   answer,
@@ -61,6 +62,7 @@ const PracticeQuestion = ({
             />
 
             <button
+              type="button"
               onClick={() => {
                 onUpdate(id, {
                   question: editQuestion,
@@ -72,7 +74,9 @@ const PracticeQuestion = ({
               Save
             </button>
 
-            <button onClick={() => setEditing(false)}>Cancel</button>
+            <button type="button" onClick={() => setEditing(false)}>
+              Cancel
+            </button>
           </>
         ) : (
           <>

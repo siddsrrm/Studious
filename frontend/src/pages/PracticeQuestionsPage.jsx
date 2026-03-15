@@ -3,38 +3,68 @@ import PracticeQuestion from "../components/PracticeQuestion";
 
 const API = import.meta.env.VITE_API_URL;
 
-const PracticeQuestionsPage = () => {
+const PracticeQuestionsPage = ({ studyPlanId }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
 
   useEffect(() => {
-    async function loadQuestions() {
-      const data = await getPracticeQuestions();
-      setQuestions(data);
+    async function fetchPracticeQuestions() {
+      try {
+        const res = await fetch(
+          `${API}/practice-questions?studyPlanId=${studyPlanId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const data = await res.json();
+        if (res.ok) setQuestions(data);
+        else setError(data.message || "Failed to load practice questions.");
+      } catch {
+        setError("Network error. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     }
+    fetchPracticeQuestions();
+  }, [studyPlanId]);
 
-    loadQuestions();
-  }, []);
-
-  const handleAddPracticeQuestion = async (newQuestion) => {
-    const created = await createPracticeQuestion(newQuestion);
-
-    setQuestions((prev) => [...prev, created]);
+  const handleAddPracticeQuestion = async ({ question, answer }) => {
+    try {
+      const res = await fetch(`${API}/practice-questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ studyPlanId: studyPlanId, question, answer }),
+      });
+      const data = await res.json();
+      if (res.ok) setQuestions((prev) => [...prev, data]);
+      else setError(data.message || "Failed to create practice question.");
+    } catch {
+      setError("Network error. Please try again.");
+    }
   };
 
-  const handleUpdatePracticeQuestion = async (_id, updatedQuestion) => {
-    const updated = await updatePracticeQuestion(_id, updatedQuestion);
-    s;
-    setQuestions(questions.map((q) => (q._id === _id ? updated : q)));
+  const handleUpdatePracticeQuestion = (id, updatedPracticeQuestion) => {
+    setQuestions(
+      questions.map((q) => (q._id === id ? updatedPracticeQuestion : q)),
+    );
   };
 
+  {
+    /*
   const handleDeletePracticeQuestion = async (_id) => {
     await deletePracticeQuestion(_id);
 
     setQuestions(questions.filter((q) => q._id !== _id));
   };
-
+*/
+  }
   return (
     <>
       <div
@@ -82,11 +112,12 @@ const PracticeQuestionsPage = () => {
         {questions.map((q) => (
           <PracticeQuestion
             key={q._id}
+            id={q._id}
             studyPlanId={q.studyPlanId}
             question={q.question}
             answer={q.answer}
             onUpdate={handleUpdatePracticeQuestion}
-            onDelete={handleDeletePracticeQuestion}
+            /*onDelete={handleDeletePracticeQuestion}*/
           />
         ))}
       </div>

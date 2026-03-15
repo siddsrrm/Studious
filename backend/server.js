@@ -29,7 +29,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/folders", folderRoutes);
 app.use("/api/events", eventRoutes);
-app.use("/api/practice-question", practiceQuestionRoutes);
+app.use("/api/practice-questions", practiceQuestionRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
