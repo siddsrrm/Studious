@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PracticeQuestion from "../components/PracticeQuestion";
+import "../css/PracticeQuestionsPage.css";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -97,7 +98,16 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         }}
       >
         Practice Questions
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {loading ? (
+          <p>Loading practice questions...</p>
+        ) : (
+          questions.length === 0 && (
+            <p>No practice questions yet. Add one below!</p>
+          )
+        )}
         <form
+          className="addQuestionForm"
           onSubmit={(e) => {
             e.preventDefault();
 
@@ -111,18 +121,22 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
           }}
         >
           <input
+            className="addInput"
             placeholder="Question"
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
           />
 
           <input
+            className="addInput"
             placeholder="Answer"
             value={newAnswer}
             onChange={(e) => setNewAnswer(e.target.value)}
           />
 
-          <button>Add Question</button>
+          <button type="submit" className="addButton">
+            Add Question
+          </button>
         </form>
       </div>
       <div>

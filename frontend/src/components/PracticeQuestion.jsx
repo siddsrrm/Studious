@@ -28,68 +28,94 @@ const PracticeQuestion = ({
 
   return (
     <div className="questionBox">
-      <h3>{question}</h3>
+      {editing ? (
+        <>
+          <h3>Editing</h3>
+          <form className="editForm">
+            <div className="inputRow">
+              <input
+                value={editQuestion}
+                onChange={(e) => setEditQuestion(e.target.value)}
+              />
 
-      <form onSubmit={handleSubmit} className="answerForm">
-        <input
-          type="text"
-          value={userAnswer}
-          disabled={isCorrect === true}
-          onChange={(e) => setUserAnswer(e.target.value)}
-          className={`answerInput ${statusClass}`}
-        />
+              <input
+                value={editAnswer}
+                onChange={(e) => setEditAnswer(e.target.value)}
+              />
+            </div>
 
-        <button
-          type="submit"
-          className="checkButton"
-          disabled={isCorrect === true}
-        >
-          Check
-        </button>
+            <div className="buttonRow">
+              <button
+                type="button"
+                className="saveButton"
+                onClick={() => {
+                  onUpdate(id, {
+                    question: editQuestion,
+                    answer: editAnswer,
+                  });
+                  setIsCorrect(null);
+                  setEditing(false);
+                }}
+              >
+                Save
+              </button>
 
-        {isCorrect !== null && (
-          <span className={`resultIcon ${statusClass}`}>
-            {isCorrect ? "✔" : "✖"}
-          </span>
-        )}
+              <button
+                type="button"
+                className="cancelButton"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <>
+          <h3>{question}</h3>
+          <form onSubmit={handleSubmit} className="answerForm">
+            <div className="inputRow">
+              <input
+                type="text"
+                value={userAnswer}
+                disabled={isCorrect === true}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                className={`answerInput ${statusClass}`}
+              />
 
-        {editing ? (
-          <>
-            <input
-              value={editQuestion}
-              onChange={(e) => setEditQuestion(e.target.value)}
-            />
+              <button
+                type="submit"
+                className="checkButton"
+                disabled={isCorrect === true}
+              >
+                Check
+              </button>
+            </div>
 
-            <input
-              value={editAnswer}
-              onChange={(e) => setEditAnswer(e.target.value)}
-            />
-
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(id, {
-                  question: editQuestion,
-                  answer: editAnswer,
-                });
-                setIsCorrect(null);
-                setEditing(false);
-              }}
-            >
-              Save
-            </button>
-
-            <button type="button" onClick={() => setEditing(false)}>
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => setEditing(true)}>Edit</button>
-            <button onClick={() => onDelete(id)}>Delete</button>
-          </>
-        )}
-      </form>
+            {isCorrect !== null && (
+              <span className={`resultIcon ${statusClass}`}>
+                {isCorrect ? "✔" : "✖"}
+              </span>
+            )}
+            <div className="buttonRow">
+              <button
+                type="button"
+                className="editButton"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="deleteButton"
+                onClick={() => onDelete(id)}
+              >
+                Delete
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </div>
   );
 };
