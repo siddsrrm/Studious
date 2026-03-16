@@ -6,7 +6,7 @@ import PracticeQuestionsPage from "./PracticeQuestionsPage";
 
 const StudyPlanPage = ({ plan, onBack }) => {
   const [activeTab, setActiveTab] = useState("To-Do List");
-  const allTabs = ["To-Do List", "Notes", "PracticeQuestions"];
+  const allTabs = ["To-Do List", "Notes", "Practice Questions"];
   const [progress, setProgress] = useState(0);
 
   return (
@@ -123,7 +123,7 @@ const StudyPlanPage = ({ plan, onBack }) => {
           </div>
         )}
 
-        {activeTab === "PracticeQuestions" && (
+        {activeTab === "Practice Questions" && (
           <PracticeQuestionsPage studyPlanId={plan.id} />
         )}
       </div>

@@ -13,6 +13,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
   const [newAnswer, setNewAnswer] = useState("");
 
   useEffect(() => {
+    setLoading(true);
     async function fetchPracticeQuestions() {
       try {
         const res = await fetch(
