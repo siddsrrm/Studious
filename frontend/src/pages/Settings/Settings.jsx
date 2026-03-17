@@ -85,19 +85,19 @@ function EmailSection() {
   const [currentEmail, setCurrentEmail] = useState("Loading...");
 
   useEffect(() => {
-  const fetchUserInfo = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setCurrentEmail(data.email);
-    } catch {
-      console.error("Failed to fetch user info");
-    }
-  };
-  fetchUserInfo();
-}, []);
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setCurrentEmail(data.email);
+      } catch {
+        console.error("Failed to fetch user info");
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   async function handleEmailChange() {
     if (!newEmail.trim()) { setEmailError("Email cannot be empty."); return; }
@@ -133,29 +133,29 @@ function EmailSection() {
   }
 
   return (
-  <div>
-    <h2 className={styles.contentTitle}>Change Email</h2>
-    <p className={styles.contentDescription}>Update the email address associated with your account.</p>
-    <hr className={styles.contentDivider} />
-    <p className={styles.fieldLabel}>Current email</p>
-    <p style={{ fontSize: "14px", color: "#374151", marginBottom: "20px" }}>{currentEmail}</p>
-    <p className={styles.fieldLabel}>New email</p>
-    <input
-      type="email"
-      placeholder="New email address"
-      value={newEmail}
-      onChange={(e) => setNewEmail(e.target.value)}
-      onFocus={() => { setEmailError(""); setEmailSuccess(""); }}
-      disabled={loading}
-      className={styles.input + (emailError ? " " + styles.inputError : "")}
-    />
-    {emailError && <p className={styles.error}>{emailError}</p>}
-    {emailSuccess && <p className={styles.success}>{emailSuccess}</p>}
-    <button className={styles.button} onClick={handleEmailChange} disabled={loading}>
-      {loading ? "Saving..." : "Save Email"}
-    </button>
-  </div>
-);
+    <div>
+      <h2 className={styles.contentTitle}>Change Email</h2>
+      <p className={styles.contentDescription}>Update the email address associated with your account.</p>
+      <hr className={styles.contentDivider} />
+      <p className={styles.fieldLabel}>Current email</p>
+      <p style={{ fontSize: "14px", color: "#374151", marginBottom: "20px" }}>{currentEmail}</p>
+      <p className={styles.fieldLabel}>New email</p>
+      <input
+        type="email"
+        placeholder="New email address"
+        value={newEmail}
+        onChange={(e) => setNewEmail(e.target.value)}
+        onFocus={() => { setEmailError(""); setEmailSuccess(""); }}
+        disabled={loading}
+        className={styles.input + (emailError ? " " + styles.inputError : "")}
+      />
+      {emailError && <p className={styles.error}>{emailError}</p>}
+      {emailSuccess && <p className={styles.success}>{emailSuccess}</p>}
+      <button className={styles.button} onClick={handleEmailChange} disabled={loading}>
+        {loading ? "Saving..." : "Save Email"}
+      </button>
+    </div>
+  );
 }
 
 function TwoFactorSection() {
@@ -209,6 +209,118 @@ function TwoFactorSection() {
         disabled={loading}
       >
         {loading ? "Saving..." : enabled ? "Disable 2FA" : "Enable 2FA"}
+      </button>
+    </div>
+  );
+}
+
+function NotificationSection() {
+  const [settings, setSettings] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/users/notification-settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) setSettings(data);
+        else setError("Failed to load notification settings.");
+      } catch {
+        setError("Network error.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  async function handleSave() {
+    setLoading(true);
+    setStatusMessage("");
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/notification-settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(settings)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSettings(data);
+        setStatusMessage("Notification settings saved.");
+      } else {
+        setError(data.message || "Failed to save settings.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) return <p>Loading...</p>;
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Notification Settings</h2>
+      <p className={styles.contentDescription}>
+        Configure when you receive daily task reminder emails. Reminders include
+        any incomplete tasks due within your selected window, as well as any
+        overdue tasks.
+      </p>
+      <hr className={styles.contentDivider} />
+      {statusMessage && <p className={styles.success}>{statusMessage}</p>}
+      {error && <p className={styles.error}>{error}</p>}
+
+      <p className={styles.fieldLabel}>Email reminders</p>
+      <select
+        className={styles.input}
+        value={settings.remindersEnabled}
+        onChange={(e) => setSettings({ ...settings, remindersEnabled: e.target.value === "true" })}
+      >
+        <option value="true">Enabled</option>
+        <option value="false">Disabled</option>
+      </select>
+
+      <p className={styles.fieldLabel}>Remind me about tasks due within</p>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input
+          type="number"
+          className={styles.input}
+          value={settings.reminderDaysBefore}
+          min={1}
+          max={30}
+          disabled={!settings.remindersEnabled}
+          onChange={(e) => {
+            const value = parseInt(e.target.value);
+            if (value >= 1 && value <= 30) {
+              setSettings({ ...settings, reminderDaysBefore: value });
+            }
+          }}
+          style={{ width: "80px" }}
+        />
+        <span style={{ color: "#475569", fontSize: "14px" }}>days</span>
+      </div>
+      {settings.reminderDaysBefore > 14 && settings.remindersEnabled && (
+        <p style={{ color: "#f59e0b", fontSize: "13px", marginTop: "4px" }}>
+          Note: setting a large window may result in many tasks being included in each reminder.
+        </p>
+      )}
+
+      <button
+        className={styles.button}
+        onClick={handleSave}
+        disabled={loading}
+      >
+        {loading ? "Saving..." : "Save Settings"}
       </button>
     </div>
   );
@@ -326,6 +438,14 @@ export default function SettingsPage() {
           Two-Factor Authentication
         </button>
 
+        {/* Notification Settings */}
+        <button
+          className={`${styles.sidebarItem} ${activeSection === SECTIONS.NOTIFICATION ? styles.sidebarItemActive : ""}`}
+          onClick={() => setActiveSection(SECTIONS.NOTIFICATION)}
+        >
+          Notification Settings
+        </button>
+
         <hr className={styles.sidebarDivider} />
 
         <p className={styles.sidebarHeading}>Danger Zone</p>
@@ -345,6 +465,7 @@ export default function SettingsPage() {
         )}
         {activeSection === SECTIONS.EMAIL && <EmailSection />}
         {activeSection === SECTIONS.TWO_FACTOR && <TwoFactorSection />}
+        {activeSection === SECTIONS.NOTIFICATION && <NotificationSection />}
         {activeSection === SECTIONS.DELETE && (
           <DeleteSection />
         )}

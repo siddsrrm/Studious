@@ -24,8 +24,8 @@ exports.register = async (req, res) => {
     // encrypt password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    const newUser = await User.create({ username, email, password: hashedPassword })
-    res.json({ message: "User succcessfully created", userId: newUser._id })
+    const newUser = await User.create({ username, email, password: hashedPassword})
+    res.json({message: "User successfully created", userId: newUser._id})
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
@@ -71,7 +71,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" })
 
-    res.json({ message: "User succcessfully logged in", userId: user._id, token: token, username: user.username, twoFactorEnabled: user.twoFactorEnabled })
+    res.json({message: "User successfully logged in", userId: user._id, token: token, username: user.username})
   } catch (error) {
     res.status(500).json({ error: error.message })
   }

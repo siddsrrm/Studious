@@ -1,29 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const Event = require("../models/Event");
+const authToken = require("../middleware/authMiddleware");
+const { getEvents, createEvent, updateEvent, deleteEvent } = require("../controllers/eventController");
 
-router.get("/", async (req, res) => {
-  try {
-    const events = await Event.find();
-    res.json(events);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.post("/", async (req, res) => {
-  try {
-    const event = new Event({
-      title: req.body.title,
-      start: req.body.start,
-      end: req.body.end,
-    });
-
-    const savedEvent = await event.save();
-    res.json(savedEvent);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+router.get("/", authToken, getEvents);
+router.post("/", authToken, createEvent);
+router.put("/:id", authToken, updateEvent);
+router.delete("/:id", authToken, deleteEvent);
 
 module.exports = router;

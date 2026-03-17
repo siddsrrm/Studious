@@ -6,9 +6,30 @@ const API = import.meta.env.VITE_API_URL;
 const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(taskObj.title);
+  const [editDescription, setEditDescription] = useState(taskObj.description);
+  const [editingSubTaskId, setEditingSubTaskId] = useState(null);
+  const [editSubTitle, setEditSubTitle] = useState("");
+  const [editSubDescription, setEditSubDescription] = useState("");
+  const [editPriority, setEditPriority] = useState(taskObj.priority);
 
   const handleMarkCompleted = async () => {
     try {
+      const incompleteSubTasks = taskObj.subTasks.filter((st) => !st.completed);
+      await Promise.all(
+        incompleteSubTasks.map((st) =>
+          fetch(`${API}/tasks/${taskObj._id}/subtasks/${st._id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ completed: true }),
+          }),
+        ),
+      );
+
       const res = await fetch(`${API}/tasks/${taskObj._id}`, {
         method: "PUT",
         headers: {
@@ -23,6 +44,40 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     } catch {
       setError("Network error. Please try again.");
     }
+  };
+
+  const handleEditSave = async () => {
+    if (!editTitle.trim()) return;
+    try {
+      const res = await fetch(`${API}/tasks/${taskObj._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDescription,
+          priority: editPriority,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onUpdate(data);
+        setIsEditing(false);
+      } else {
+        setError("Failed to update task.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditTitle(taskObj.title);
+    setEditDescription(taskObj.description);
+    setIsEditing(false);
+    setEditPriority(taskObj.priority);
   };
 
   const handleAddSubTask = async ({ title, description }) => {
@@ -43,6 +98,28 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     }
   };
 
+  const handleEditSubTaskSave = async (subTaskId) => {
+    const res = await fetch(
+      `${API}/tasks/${taskObj._id}/subtasks/${subTaskId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editSubTitle,
+          description: editSubDescription,
+        }),
+      },
+    );
+    const data = await res.json();
+    if (res.ok) {
+      onUpdate(data);
+      setEditingSubTaskId(null);
+    } else setError("Failed to update subtask.");
+  };
+
   const handleMarkSubTaskCompleted = async (subTaskId) => {
     try {
       const res = await fetch(
@@ -57,30 +134,8 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
       );
       const data = await res.json();
-      if (!res.ok) {
-        setError("Failed to update subtask.");
-        return;
-      }
-
-      //check if all subtasks are now complete
-      const allComplete = data.subTasks.every((st) => st.completed);
-      if (allComplete && data.subTasks.length > 0) {
-        const taskRes = await fetch(`${API}/tasks/${taskObj._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ completed: true }),
-        });
-        const taskData = await taskRes.json();
-        if (taskRes.ok) {
-          onUpdate(taskData);
-          return;
-        }
-      }
-
-      onUpdate(data);
+      if (res.ok) onUpdate(data);
+      else setError("Failed to update subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -106,8 +161,35 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   return (
     <>
       <div className="task-card">
-        <h2>{taskObj.title}</h2>
-        <p>Description: {taskObj.description}</p>
+        {isEditing ? (
+          <>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+            />
+            <input
+              type="text"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+            />
+            <select
+              value={editPriority}
+              onChange={(e) => setEditPriority(e.target.value)}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <button onClick={handleEditSave}>Save</button>
+            <button onClick={handleEditCancel}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <h2>{taskObj.title}</h2>
+            <p>Description: {taskObj.description}</p>
+          </>
+        )}
         <p>Priority: {taskObj.priority}</p>
         <p>
           Due:{" "}
@@ -120,6 +202,12 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         {error && <p style={{ color: "red" }}>{error}</p>}
         <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
           {taskObj.completed ? "Completed" : "Mark Complete"}
+        </button>
+        <button
+          onClick={() => setIsEditing(true)}
+          disabled={taskObj.completed || isEditing}
+        >
+          Edit
         </button>
         <button className="delete-btn" onClick={() => onDelete(taskObj._id)}>
           Delete Task
@@ -134,8 +222,36 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
       </div>
       {taskObj.subTasks.map((subTask) => (
         <div className="subtask-card" key={subTask._id}>
-          <h2>{subTask.title}</h2>
-          <p>{subTask.description}</p>
+          {editingSubTaskId === subTask._id ? (
+            <>
+              <input
+                value={editSubTitle}
+                onChange={(e) => setEditSubTitle(e.target.value)}
+              />
+              <input
+                value={editSubDescription}
+                onChange={(e) => setEditSubDescription(e.target.value)}
+              />
+              <button onClick={() => handleEditSubTaskSave(subTask._id)}>
+                Save
+              </button>
+              <button onClick={() => setEditingSubTaskId(null)}>Cancel</button>
+            </>
+          ) : (
+            <>
+              <h2>{subTask.title}</h2>
+              <p>{subTask.description}</p>
+              <button
+                onClick={() => {
+                  setEditingSubTaskId(subTask._id);
+                  setEditSubTitle(subTask.title);
+                  setEditSubDescription(subTask.description);
+                }}
+              >
+                Edit
+              </button>
+            </>
+          )}
           <button
             onClick={() => handleMarkSubTaskCompleted(subTask._id)}
             disabled={subTask.completed}

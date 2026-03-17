@@ -4,7 +4,7 @@ import "../css/ToDoList.css";
 
 const API = import.meta.env.VITE_API_URL;
 
-const ToDoList = ({ studyPlanId }) => {
+const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,6 +43,14 @@ const ToDoList = ({ studyPlanId }) => {
     }
     fetchTasks();
   }, [studyPlanId]);
+
+  // watches for when any values in tasks changes
+  useEffect(() => {
+    const total = tasks.length;
+    const completed = tasks.filter((task) => task.completed == true).length
+    const progress = total === 0 ? 100 : (completed / total) * 100
+    if (onProgressChange) onProgressChange(progress)
+  }, [tasks])
 
   const handleAddTask = async ({ title, description, priority, dueDate }) => {
     try {
@@ -91,13 +99,11 @@ const ToDoList = ({ studyPlanId }) => {
     setFilterDueDateTo("");
   };
 
-  const progress = 0; //placeholder for progress tracker later
-
   return (
     <>
       <div className="todolist-card">
         <h2>To-Do List</h2>
-        <p>Progress: {progress}% </p>
+        {/* <p>Progress: {progress}% </p> */}
         <div className="filter-bar">
           <select
             value={filterPriority}
