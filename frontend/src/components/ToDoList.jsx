@@ -47,10 +47,10 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   // watches for when any values in tasks changes
   useEffect(() => {
     const total = tasks.length;
-    const completed = tasks.filter((task) => task.completed == true).length
-    const progress = total === 0 ? 100 : (completed / total) * 100
-    if (onProgressChange) onProgressChange(progress)
-  }, [tasks])
+    const completed = tasks.filter((task) => task.completed == true).length;
+    const progress = total === 0 ? 100 : (completed / total) * 100;
+    if (onProgressChange) onProgressChange(progress);
+  }, [tasks]);
 
   const handleAddTask = async ({ title, description, priority, dueDate }) => {
     try {

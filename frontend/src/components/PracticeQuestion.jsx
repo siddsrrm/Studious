@@ -1,34 +1,123 @@
-/*import { useState } from "react";
+import { useState } from "react";
 import "../css/PracticeQuestion.css";
 
-interface Props {
-  questionID: string;
-  question: string;
-  answer: string;
-  studyPlanID: string;
-}
-
 const PracticeQuestion = ({
-  questionID,
+  id,
+  studyPlanId,
   question,
   answer,
-  studyPlanID,
-}: Props) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+  onUpdate,
+  onDelete,
+}) => {
+  const [userAnswer, setUserAnswer] = useState("");
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editQuestion, setEditQuestion] = useState(question);
+  const [editAnswer, setEditAnswer] = useState(answer);
 
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const correct = userAnswer.trim().toLowerCase() === answer.toLowerCase();
+
+    setIsCorrect(correct);
   };
 
+  const statusClass =
+    isCorrect === null ? "" : isCorrect ? "correct" : "incorrect";
+
   return (
-    <div className="flashcard-container" onClick={handleFlip}>
-      <div className={`flashcard ${isFlipped ? "flipped" : ""}`}>
-        <div className="flashcard-face flashcard-front">{question}</div>
-        <div className="flashcard-face flashcard-back">{answer}</div>
-      </div>
+    <div className="questionBox">
+      {editing ? (
+        <>
+          <h3>Editing</h3>
+          <form className="editForm">
+            <div className="inputRow">
+              <input
+                value={editQuestion}
+                onChange={(e) => setEditQuestion(e.target.value)}
+              />
+
+              <input
+                value={editAnswer}
+                onChange={(e) => setEditAnswer(e.target.value)}
+              />
+            </div>
+
+            <div className="buttonRow">
+              <button
+                type="button"
+                className="saveButton"
+                onClick={() => {
+                  onUpdate(id, {
+                    question: editQuestion,
+                    answer: editAnswer,
+                  });
+                  setIsCorrect(null);
+                  setEditing(false);
+                }}
+              >
+                Save
+              </button>
+
+              <button
+                type="button"
+                className="cancelButton"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <>
+          <h3>{question}</h3>
+          <form onSubmit={handleSubmit} className="answerForm">
+            <div className="inputRow">
+              <input
+                type="text"
+                value={userAnswer}
+                disabled={isCorrect === true}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                className={`answerInput ${statusClass}`}
+              />
+
+              <button
+                type="submit"
+                className="checkButton"
+                disabled={isCorrect === true}
+              >
+                Check
+              </button>
+            </div>
+
+            {isCorrect !== null && (
+              <span className={`resultIcon ${statusClass}`}>
+                {isCorrect ? "✔" : "✖"}
+              </span>
+            )}
+            <div className="buttonRow">
+              <button
+                type="button"
+                className="editButton"
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="deleteButton"
+                onClick={() => onDelete(id)}
+              >
+                Delete
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </div>
   );
 };
 
 export default PracticeQuestion;
-*/

@@ -1,4 +1,4 @@
-const { setServers } = require("dns/promises")
+const { setServers } = require("dns/promises");
 setServers(["1.1.1.1", "8.8.8.8"]);
 
 const express = require("express");
@@ -13,6 +13,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const practiceQuestionRoutes = require("./routes/practiceQuestionRoutes");
 const { startReminderJob } = require("./utils/reminderJob");
 
 const app = express();
@@ -30,10 +31,11 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/folders", folderRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/practice-questions", practiceQuestionRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
-});  
+});
 
 const PORT = process.env.PORT || 5000;
 

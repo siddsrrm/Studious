@@ -1,0 +1,149 @@
+.questionBox {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 22px;
+  margin: 20px auto;
+  width: 85%;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Question text */
+.questionBox h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Answer form */
+.answerForm,
+.editForm {
+  display: flex;
+  flex-direction: column; /* Stack input row and button row */
+  gap: 8px;
+}
+
+/* Input row */
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Buttons row */
+.buttonRow {
+  display: flex;
+  gap: 8px;
+}
+
+/* Inputs */
+.answerInput,
+.editForm input {
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  transition:
+    border 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.answerInput:focus,
+.editForm input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Correct styling */
+.answerInput.correct {
+  border-color: #16a34a;
+  background-color: #ecfdf5;
+}
+
+.resultIcon.correct {
+  color: #16a34a;
+}
+
+/* Incorrect styling */
+.answerInput.incorrect {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.resultIcon.incorrect {
+  color: #dc2626;
+}
+
+/* Check button */
+.checkButton {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #6366f1;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+.checkButton:hover {
+  background-color: #4f46e5;
+}
+
+.checkButton:active {
+  transform: scale(0.96);
+}
+
+.checkButton:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Result icon */
+.resultIcon {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Edit form buttons */
+.editButton,
+.deleteButton,
+.saveButton,
+.cancelButton {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Save button (primary action) */
+.editButton,
+.saveButton {
+  background-color: #10b981; /* green */
+  color: white;
+}
+
+.editButton:hover,
+.saveButton:hover {
+  background-color: #059669;
+}
+
+/* Cancel button (secondary action) */
+.deleteButton,
+.cancelButton {
+  background-color: #ef4444; /* red */
+  color: white;
+}
+
+.deleteButton:hover,
+.cancelButton:hover {
+  background-color: #dc2626;
+}
