@@ -1,0 +1,241 @@
+.page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding-top: 64px;
+}
+
+.topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+}
+
+.topBarTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.topBarWelcome {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.backButton {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s;
+}
+
+.backButton:hover {
+  background-color: #f9fafb;
+}
+
+.content {
+  max-width: 620px;
+  padding: 36px 40px;
+}
+
+.contentTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.contentDescription {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 24px 0;
+}
+
+.contentDivider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0 0 24px 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  position: relative;
+  transition: background-color 0.15s;
+}
+
+.tab:hover {
+  background-color: #f3f4f6;
+}
+
+.activeTab {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border-color: #c7d2fe;
+  font-weight: 600;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 540px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin: 0;
+}
+
+.email {
+  color: #6b7280;
+  font-size: 12px;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.outlineButton {
+  padding: 7px 14px;
+  background-color: white;
+  color: #4f46e5;
+  border: 1px solid #4f46e5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.outlineButton:hover {
+  background-color: #eef2ff;
+}
+
+.acceptButton {
+  padding: 7px 14px;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.acceptButton:hover {
+  background-color: #4338ca;
+}
+
+.declineButton {
+  padding: 7px 14px;
+  background-color: white;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.declineButton:hover {
+  background-color: #fef2f2;
+}
+
+.cancelButton {
+  padding: 7px 14px;
+  background-color: white;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.cancelButton:hover {
+  background-color: #fef2f2;
+}
+
+.empty {
+  font-size: 13px;
+  color: #6b7280;
+  padding: 24px 0;
+}

@@ -15,6 +15,7 @@ const folderRoutes = require("./routes/folderRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const practiceQuestionRoutes = require("./routes/practiceQuestionRoutes");
 const { startReminderJob } = require("./utils/reminderJob");
+const friendRequestRoutes = require("./routes/friendRequestRoutes");
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/folders", folderRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/practice-questions", practiceQuestionRoutes);
+app.use("/api/friendrequests", friendRequestRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");

@@ -133,3 +133,22 @@ exports.updateNotificationSettings = async (req, res) => {
         res.status(500).json({ message: "Error updating settings", error: err.message });
     }
 };
+
+exports.searchUsers = async (req, res) => {
+  const { q } = req.query
+
+  if (!q) {
+    return res.json([])
+  }
+
+  try {
+    const users = await User.find({
+      username: { $regex: q, $options: "i" }, // case-insensitive
+      _id: { $ne: req.user.userId } // not equal to the user
+    }).select("username").limit(20) // limit to 20 results
+    
+    res.json(users)
+  } catch (err) {
+    res.status(500).json({ message: "Failed to search users" })
+  }
+}

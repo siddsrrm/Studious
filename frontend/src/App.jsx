@@ -7,6 +7,8 @@ import SettingsPage from "./pages/Settings/Settings";
 import HomePage from "./pages/HomePage/HomePage";
 import NotesPage from "./pages/NotePage";
 import Verify2FA from "./pages/Verify2FA/Verify2FA";
+import PeoplePage from "./pages/PeoplePage/PeoplePage";
+import FriendsPage from "./pages/FriendsPage/FriendsPage";
 
 function App() {
   return (
@@ -21,8 +23,9 @@ function App() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notes" element={<NotesPage />} />
-        {/* Your main page route can go here later */}
         <Route path="/home" element={<HomePage />} />
+        <Route path="/people" element={<PeoplePage />} />
+        <Route path="/friends" element={<FriendsPage />} />
       </Routes>
     </BrowserRouter>
   );
