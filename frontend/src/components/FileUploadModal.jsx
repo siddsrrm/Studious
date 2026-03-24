@@ -1,13 +1,8 @@
 import React, { useState, useRef } from "react";
 
-const ACCEPTED_TYPES = [
-  "application/pdf",
-  "text/plain",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/msword",
-];
+const ACCEPTED_TYPES = ["application/pdf"];
 
-const ACCEPTED_EXTENSIONS = ".pdf,.txt,.doc,.docx";
+const ACCEPTED_EXTENSIONS = ".pdf";
 
 const FileUploadModal = ({ onClose, onUpload }) => {
   const [dragOver, setDragOver] = useState(false);
@@ -16,8 +11,8 @@ const FileUploadModal = ({ onClose, onUpload }) => {
   const inputRef = useRef(null);
 
   const validateFile = (f) => {
-    if (!ACCEPTED_TYPES.includes(f.type) && !f.name.match(/\.(pdf|txt|docx?)$/i)) {
-      setError("Unsupported file type. Please upload a PDF, TXT, DOC, or DOCX.");
+    if (!ACCEPTED_TYPES.includes(f.type) && !f.name.match(/\.(pdf)$/i)) {
+        setError("Unsupported file type. Please upload a PDF.");
       return false;
     }
     if (f.size > 20 * 1024 * 1024) {
@@ -64,13 +59,13 @@ const FileUploadModal = ({ onClose, onUpload }) => {
         className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">Upload File to Generate Notes</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Upload a PDF, Word doc, or plain text file and AI will generate notes from it.
-            </p>
+            <h2 className="text-lg font-semibold text-gray-800">Upload PDF to Generate Notes</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Upload a PDF file and AI will generate notes from it.
+              </p>
           </div>
           <button
             onClick={onClose}
@@ -82,7 +77,6 @@ const FileUploadModal = ({ onClose, onUpload }) => {
           </button>
         </div>
 
-        {/* Drop zone */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -102,7 +96,7 @@ const FileUploadModal = ({ onClose, onUpload }) => {
             </p>
             <p className="text-xs text-gray-400 mt-1">or click to browse</p>
           </div>
-          <p className="text-xs text-gray-400">Supported: PDF, TXT, DOC, DOCX &mdash; max 20 MB</p>
+          <p className="text-xs text-gray-400">Supported: PDF &mdash; max 20 MB</p>
           <input
             ref={inputRef}
             type="file"
@@ -112,7 +106,7 @@ const FileUploadModal = ({ onClose, onUpload }) => {
           />
         </div>
 
-        {/* Selected file preview */}
+   
         {file && (
           <div className="flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl">
             <div className="flex-shrink-0 p-2 bg-indigo-100 rounded-lg">
@@ -136,7 +130,7 @@ const FileUploadModal = ({ onClose, onUpload }) => {
           </div>
         )}
 
-        {/* Error message */}
+       
         {error && (
           <p className="text-sm text-red-500 flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -146,7 +140,7 @@ const FileUploadModal = ({ onClose, onUpload }) => {
           </p>
         )}
 
-        {/* Actions */}
+ 
         <div className="flex items-center justify-end gap-3 pt-1">
           <button
             onClick={onClose}

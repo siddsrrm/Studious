@@ -340,9 +340,39 @@ const handleSearch = async (term) => {
   ? notes.filter(n => n.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   : notes;
 
-  const handleFileUpload = (file) => {
-    // TODO: send file to AI endpoint and insert generated note
-    setShowUploadModal(false);
+  const handleFileUpload = async (file) => {
+    if (!token || !studyPlanId) {
+      setShowUploadModal(false);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/pdf`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        setShowUploadModal(false);
+        return;
+      }
+
+      const data = await res.json();
+      const extractedText = data.text || '';
+
+      console.log(extractedText)
+
+      // TODO: send extractedText to LocalAI to generate a summarized note
+      // and then either create a new note or append to the current one.
+
+      setShowUploadModal(false);
+    } catch (err) {
+      setShowUploadModal(false);
+    }
   };
 
   // Render page
