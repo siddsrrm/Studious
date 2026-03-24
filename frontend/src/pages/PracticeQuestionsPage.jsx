@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PracticeQuestion from "../components/PracticeQuestion";
+import Flashcard from "../components/Flashcard";
 import "../css/PracticeQuestionsPage.css";
 
 const API = import.meta.env.VITE_API_URL;
@@ -11,6 +12,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [displayAsFlashcards, setDisplayAsFlashcards] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -85,6 +87,10 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
     }
   };
 
+  const handleChangeDisplay = (e) => {
+    setDisplayAsFlashcards(e.target.checked);
+  };
+
   return (
     <>
       <div
@@ -139,19 +145,39 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
             Add Question
           </button>
         </form>
+        <label className="checkboxItem">
+          <input
+            type="checkbox"
+            checked={displayAsFlashcards}
+            onChange={handleChangeDisplay}
+          />
+          <span className="checkboxLabel">Display as flashcards</span>
+        </label>
       </div>
       <div>
-        {questions.map((q) => (
-          <PracticeQuestion
-            key={q._id}
-            id={q._id}
-            studyPlanId={q.studyPlanId}
-            question={q.question}
-            answer={q.answer}
-            onUpdate={handleUpdatePracticeQuestion}
-            onDelete={handleDeletePracticeQuestion}
-          />
-        ))}
+        {questions.map((q) =>
+          displayAsFlashcards ? (
+            <Flashcard
+              key={q._id}
+              id={q._id}
+              studyPlanId={q.studyPlanId}
+              question={q.question}
+              answer={q.answer}
+              onUpdate={handleUpdatePracticeQuestion}
+              onDelete={handleDeletePracticeQuestion}
+            />
+          ) : (
+            <PracticeQuestion
+              key={q._id}
+              id={q._id}
+              studyPlanId={q.studyPlanId}
+              question={q.question}
+              answer={q.answer}
+              onUpdate={handleUpdatePracticeQuestion}
+              onDelete={handleDeletePracticeQuestion}
+            />
+          ),
+        )}
       </div>
     </>
   );
