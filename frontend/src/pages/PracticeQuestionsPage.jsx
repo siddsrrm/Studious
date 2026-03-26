@@ -67,7 +67,8 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         body: JSON.stringify({ studyPlanId: studyPlanId, question, answer }),
       });
       const data = await res.json();
-      if (res.ok) setQuestions(questions.map((q) => (q._id === id ? data : q)));
+      if (res.ok)
+        setQuestions((prev) => prev.map((q) => (q._id === id ? data : q)));
       else setError(data.message || "Failed to update practice question.");
     } catch {
       setError("Network error. Please try again.");
@@ -80,7 +81,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setQuestions(questions.filter((p) => p._id !== id));
+      if (res.ok) setQuestions((prev) => prev.filter((p) => p._id !== id));
       else setError("Failed to delete practice question.");
     } catch {
       setError("Network error. Please try again.");
