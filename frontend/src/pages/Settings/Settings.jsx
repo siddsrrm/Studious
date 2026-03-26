@@ -17,7 +17,8 @@ const SECTIONS = {
 const PRESET_AVATARS = [
   "/avatars/avatar1.png",
   "/avatars/avatar2.png",
-  "/avatars/avatar3.png"
+  "/avatars/avatar3.png",
+  "/avatars/avatar4.png"
 ];
 
 function ProfileSection() {
