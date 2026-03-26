@@ -51,6 +51,7 @@ const HomePage = () => {
           notes: p.notes || [],
           to_do_list: p.to_do_list || [],
           practiceQuestions: p.practiceQuestions || [],
+          milestones: p.milestones || [],
         }));
         setStudyPlans(normalized);
       } catch (err) {}
