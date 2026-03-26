@@ -320,3 +320,53 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.avatarPreview {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+  border: 3px solid #e5e7eb;
+}
+
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  max-width: 400px;
+}
+
+.avatarOption {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.avatarOption:hover {
+  border-color: #93c5fd;
+  transform: scale(1.05);
+}
+
+.avatarSelected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #bfdbfe;
+}
+.attribution {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 24px;
+}
+
+.attribution a {
+  color: #6b7280;
+  text-decoration: underline;
+}
+
+.attribution a:hover {
+  color: #374151;
+}

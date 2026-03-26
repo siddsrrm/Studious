@@ -5,12 +5,98 @@ import styles from "./Settings.module.css";
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const SECTIONS = {
+  PROFILE: "profile",
   USERNAME: "username",
   EMAIL: "email",
+  NOTIFICATION: "notification",
   TWO_FACTOR: "two_factor",
   GOOGLE: "google",
   DELETE: "delete"
 };
+
+const PRESET_AVATARS = [
+  "/avatars/avatar1.png",
+  "/avatars/avatar2.png",
+  "/avatars/avatar3.png"
+];
+
+function ProfileSection() {
+  const [selected, setSelected] = useState(localStorage.getItem("avatar") || PRESET_AVATARS[0]);
+  const [pending, setPending] = useState(selected);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+
+  async function handleSave() {
+    setLoading(true);
+    setSuccess(""); setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/updateProfile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatar: pending }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelected(pending);
+        localStorage.setItem("avatar", pending);
+        setSuccess("Profile photo updated.");
+      } else {
+        setError(data.message || "Failed to update profile photo.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Profile Photo</h2>
+      <p className={styles.contentDescription}>Choose a photo to represent your account.</p>
+      <hr className={styles.contentDivider} />
+
+      {/* Current avatar preview */}
+      <p className={styles.fieldLabel}>Current photo</p>
+      <img src={selected} alt="Current avatar" className={styles.avatarPreview} />
+
+      {/* Avatar grid */}
+      <p className={styles.fieldLabel}>Choose a new photo</p>
+      <div className={styles.avatarGrid}>
+        {PRESET_AVATARS.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt="Avatar option"
+            onClick={() => setPending(src)}
+            className={`${styles.avatarOption} ${pending === src ? styles.avatarSelected : ""}`}
+          />
+        ))}
+      </div>
+
+      {success && <p className={styles.success}>{success}</p>}
+      {error && <p className={styles.error}>{error}</p>}
+
+      <button
+        className={styles.button}
+        onClick={handleSave}
+        disabled={loading || pending === selected}
+      >
+        {loading ? "Saving..." : "Save Photo"}
+      </button>
+      <p className={styles.attribution}>
+  Avatars: <a href="https://www.dicebear.com/styles/fun-emoji/" target="_blank" rel="noopener noreferrer">Fun Emoji</a> style,
+  a remix of <a href="https://www.figma.com/@davisuche" target="_blank" rel="noopener noreferrer">Fun Emoji Set by Davis Uche</a>,
+  licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.
+</p>
+    </div>
+  );
+}
 
 function UsernameSection({ oldUsername, setOldUsername }) {
   const [newUsername, setNewUsername] = useState("");
@@ -473,7 +559,7 @@ function DeleteSection() {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState(SECTIONS.USERNAME);
+  const [activeSection, setActiveSection] = useState(SECTIONS.PROFILE);
   const [oldUsername, setOldUsername] = useState(localStorage.getItem("username") || "User");
 
   return (
@@ -488,9 +574,18 @@ export default function SettingsPage() {
         <p className={styles.topBarWelcome}>Welcome, {oldUsername}!</p>
       </div>
 
+
+
       {/* Sidebar */}
       <div className={styles.sidebar}>
         <p className={styles.sidebarHeading}>Account</p>
+
+        <button
+  className={`${styles.sidebarItem} ${activeSection === SECTIONS.PROFILE ? styles.sidebarItemActive : ""}`}
+  onClick={() => setActiveSection(SECTIONS.PROFILE)}
+>
+  Profile Photo
+</button>
 
         <button
           className={`${styles.sidebarItem} ${activeSection === SECTIONS.USERNAME ? styles.sidebarItemActive : ""}`}
@@ -544,6 +639,7 @@ export default function SettingsPage() {
 
       {/* Main content */}
       <div className={styles.content}>
+        {activeSection === SECTIONS.PROFILE && <ProfileSection />}
         {activeSection === SECTIONS.USERNAME && (
           <UsernameSection oldUsername={oldUsername} setOldUsername={setOldUsername} />
         )}
