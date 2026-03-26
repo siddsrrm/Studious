@@ -28,6 +28,7 @@ const NotesPage = ({ studyPlanId }) => {
   const [moveMenuNoteId, setMoveMenuNoteId] = useState(null);
   const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadProcessing, setUploadProcessing] = useState(false);
   const activeNote = notes.find(n => n._id === activeNoteId);
   const saveTimerRef = useRef(null);
 
@@ -346,6 +347,7 @@ const handleSearch = async (term) => {
       return;
     }
 
+  setUploadProcessing(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -364,14 +366,64 @@ const handleSearch = async (term) => {
       const data = await res.json();
       const extractedText = data.text || '';
 
-      console.log(extractedText)
+      if (!extractedText.trim()) {
+        setShowUploadModal(false);
+        return;
+      }
 
-      // TODO: send extractedText to LocalAI to generate a summarized note
-      // and then either create a new note or append to the current one.
+      // 1) Ask backend to generate a note from extracted text via Ollama
+      const genRes = await fetch(`${import.meta.env.VITE_API_URL}/upload/generate-note`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: extractedText }),
+      });
+
+      if (!genRes.ok) {
+        // Optional: log server error payload to help debug Ollama issues
+        try {
+          const errText = await genRes.text();
+          console.error('Generate note failed:', errText);
+        } catch {}
+        setShowUploadModal(false);
+        return;
+      }
+
+      const gen = await genRes.json();
+      const noteTitle = gen.title || data.fileName || 'AI Generated Note';
+      const noteContent = gen.content || gen.raw || extractedText;
+
+      // 2) Create a new note in this study plan with the generated content
+      const createRes = await fetch(`${import.meta.env.VITE_API_URL}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          studyPlanID: studyPlanId,
+          title: noteTitle,
+          content: noteContent,
+          tags: ['ai-generated'],
+          folderId: UNFILED_ID,
+        }),
+      });
+
+      if (createRes.ok) {
+        const saved = await createRes.json();
+        const newNote = { ...saved, folderId: UNFILED_ID };
+        setNotes(prev => [newNote, ...prev]);
+        setActiveNoteId(saved._id);
+        setCollapsedFolders(prev => ({ ...prev, [UNFILED_ID]: false }));
+      }
 
       setShowUploadModal(false);
     } catch (err) {
       setShowUploadModal(false);
+    } finally {
+      setUploadProcessing(false);
     }
   };
 
@@ -538,6 +590,7 @@ const handleSearch = async (term) => {
         <FileUploadModal
           onClose={() => setShowUploadModal(false)}
           onUpload={handleFileUpload}
+          isProcessing={uploadProcessing}
         />
       )}
     </div>
