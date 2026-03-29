@@ -2,26 +2,28 @@ const express = require("express");
 const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const protect = require("../middleware/authMiddleware");
+const ffmpeg = require("fluent-ffmpeg");
+const whisper = require("whisper-node").default || require("whisper-node").whisper;
+const path = require("path");
+const fs = require("fs");
 
 const router = express.Router();
 
 const storage = multer.memoryStorage();
 
-// Using multer for file upload
-const upload = multer({
+// PDF upload (in-memory)
+const uploadPdf = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 }, //20 mb
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== "application/pdf") {
-      return cb(new Error("Only PDF files are allowed"));
-    }
-    cb(null, true);
+    if (file.mimetype === "application/pdf") return cb(null, true);
+    return cb(new Error("Only PDF files are allowed"));
   },
 });
 
 
 router.post("/pdf", protect, (req, res) => {
-  upload.single("file")(req, res, async (err) => {
+  uploadPdf.single("file")(req, res, async (err) => {
     if (err) {
       console.error("Multer upload error:", err);
       if (err.code === "LIMIT_FILE_SIZE" || err.message.includes("large")) {
@@ -54,6 +56,110 @@ router.post("/pdf", protect, (req, res) => {
       return res.status(500).json({ message: "Failed to read PDF contents" });
     }
   });
+});
+
+
+// Video upload + audio->text extraction (disk)
+const videoUploadDir = path.join(__dirname, "../data/assets");
+if (!fs.existsSync(videoUploadDir)) {
+  fs.mkdirSync(videoUploadDir, { recursive: true });
+}
+
+const uploadVideo = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, videoUploadDir),
+    filename: (req, file, cb) => cb(null, `${Date.now()}${path.extname(file.originalname)}`),
+  }),
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "video/mp4") return cb(null, true);
+    return cb(new Error("Only MP4 files are allowed"));
+  },
+});
+
+router.post("/video", protect, uploadVideo.single("file"), async (req, res) => {
+  let videoPath;
+  let audioPath;
+
+  try {
+    if (!req.file?.path) {
+      return res.status(400).json({ message: "No video file uploaded" });
+    }
+
+    videoPath = req.file.path;
+    audioPath = videoPath.replace(path.extname(videoPath), ".wav");
+
+    console.log('[uploadRoutes] starting ffmpeg extraction', { videoPath, audioPath });
+    await new Promise((resolve, reject) => {
+      ffmpeg(videoPath)
+        .noVideo()
+        .audioChannels(1)
+        .audioFrequency(16000)
+        .format("wav")
+        .on('start', (cmd) => console.log('[uploadRoutes] ffmpeg start:', cmd))
+        .on('progress', (p) => console.log('[uploadRoutes] ffmpeg progress:', p))
+        .on('end', () => {
+          console.log('[uploadRoutes] ffmpeg finished, audio saved to', audioPath);
+          resolve();
+        })
+        .on('error', (err) => {
+          console.error('[uploadRoutes] ffmpeg error:', err);
+          reject(err);
+        })
+        .save(audioPath);
+    });
+
+    console.log('[uploadRoutes] calling whisper for transcription on', audioPath);
+    let transcript;
+    try {
+      transcript = await whisper(audioPath, {
+        //small fast model
+        modelName: "tiny.en",
+        whisperOptions: {
+          language: "en",
+          gen_file_txt: false,
+          gen_file_subtitle: false,
+          gen_file_vtt: false,
+        },
+      });
+      console.log('[uploadRoutes] whisper result type:', typeof transcript);
+    } catch (wErr) {
+      console.error('[uploadRoutes] whisper error:', wErr);
+      throw wErr;
+    }
+
+    let text = "";
+    if (Array.isArray(transcript)) {
+      text = transcript.map((t) => t?.speech || "").join(" ").trim();
+    } else if (typeof transcript === "string") {
+      text = transcript.trim();
+    } else if (transcript?.text) {
+      text = String(transcript.text).trim();
+    }
+
+    if (!text) {
+      return res.status(400).json({ message: "No speech detected in video" });
+    }
+
+    // Log extracted text to server console for debugging
+    console.log("[uploadRoutes] extracted text:", text);
+
+    return res.json({
+      fileName: req.file.originalname,
+      text,
+    });
+  } catch (err) {
+    console.error("Video processing error:", err);
+    const message = err && err.message ? err.message : 'Failed to process video';
+    return res.status(500).json({ message });
+  } finally {
+    try {
+      if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+    } catch {}
+    try {
+      if (audioPath && fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+    } catch {}
+  }
 });
 
 
