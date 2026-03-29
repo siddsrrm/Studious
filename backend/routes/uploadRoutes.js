@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const { PDFParse } = require("pdf-parse");
+const pdfParse = require("pdf-parse");
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -10,7 +10,7 @@ const storage = multer.memoryStorage();
 // Using multer for file upload
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB limit
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype !== "application/pdf") {
       return cb(new Error("Only PDF files are allowed"));
@@ -33,21 +33,15 @@ router.post("/pdf", protect, (req, res) => {
       return res.status(400).json({ message: "File upload failed" });
     }
 
-    // Processing pdf text using pdf-parser
+    // Processing pdf text using pdf-parse 
     try {
       if (!req.file || !req.file.buffer) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const parser = new PDFParse({ data: req.file.buffer });
-      
-      const result = await parser.getText();
-      const text = result.text || "";
-
-      const info = await parser.getInfo();
-      const pageCount = info?.pages || 0;
-
-      await parser.destroy();
+      const data = await pdfParse(req.file.buffer);
+      const text = data?.text || "";
+      const pageCount = data?.numpages || 0;
 
       return res.json({
         fileName: req.file.originalname,
@@ -62,9 +56,7 @@ router.post("/pdf", protect, (req, res) => {
   });
 });
 
-// POST /api/upload/generate-note
-// Body: { text: string }
-// Uses Ollama to turn extracted text into a structured note
+
 router.post("/generate-note", protect, async (req, res) => {
   try {
     const { text } = req.body || {};
