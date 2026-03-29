@@ -154,7 +154,7 @@ const HomePage = () => {
 
   // Renders study plan interface
   if (activePlan) {
-    return <StudyPlanPage plan={activePlan} onBack={handleBack} />;
+    return <StudyPlanPage plan={activePlan} onBack={handleBack} setStudyPlans={setStudyPlans} />;
   }
 
   // Homepage view

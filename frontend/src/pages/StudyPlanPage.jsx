@@ -4,13 +4,21 @@ import NoteEditor from "../components/NoteEditor";
 import NotePage from "./NotePage"
 
 
-function MilestonesModal({ studyPlanId, milestones, setMilestones, onClose }) {
+function MilestonesModal({ studyPlanId, milestones, setMilestones, setStudyPlans, setMilestoneVersion, onClose }) {
   const [title, setTitle] = useState("");
   const [targetPercent, setTargetPercent] = useState(50);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
+
+
+
+  function syncToParent(updatedMilestones) {
+  setStudyPlans(prev => prev.map(p => 
+    p.id === studyPlanId ? { ...p, milestones: updatedMilestones } : p
+  ));
+}
 
   function handleEdit(ms) {
     setEditingId(ms._id);
@@ -42,7 +50,12 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, onClose }) {
         });
         const data = await res.json();
         if (res.ok) {
-          setMilestones(prev => prev.map(m => m._id === editingId ? data.milestone : m));
+                  
+    const updated = milestones.map(m => m._id === editingId ? data.milestone : m);
+setMilestones(updated);
+syncToParent(updated);
+setMilestoneVersion(v => v + 1);
+
           handleCancel();
         } else {
           setError(data.message || "Failed to update milestone.");
@@ -56,7 +69,9 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, onClose }) {
         });
         const data = await res.json();
         if (res.ok) {
-          setMilestones(prev => [...prev, data.milestone]);
+          const updated = [...milestones, data.milestone];
+setMilestones(updated);
+syncToParent(updated);
           handleCancel();
         } else {
           setError(data.message || "Failed to create milestone.");
@@ -77,7 +92,9 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, onClose }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setMilestones(prev => prev.filter(m => m._id !== id));
+            const updated = milestones.filter(m => m._id !== id);
+setMilestones(updated);
+syncToParent(updated);
         if (editingId === id) handleCancel();
       }
     } catch {
@@ -85,6 +102,8 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, onClose }) {
     } finally {
       setLoading(false);
     }
+
+
   }
 
   return (
@@ -190,27 +209,19 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, onClose }) {
   );
 }
 
-const StudyPlanPage = ({ plan, onBack }) => {
+const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
   const [activeTab, setActiveTab] = useState("todo");
   const [progress, setProgress] = useState(0);
   const [milestones, setMilestones] = useState(plan.milestones || []);
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [milestoneVersion, setMilestoneVersion] = useState(0);
 
 useEffect(() => {
-  milestones.forEach((ms) => {
-    if (!ms.completed && progress >= ms.targetPercent) {
-      // mark complete via API + update local state
-      setMilestones(prev =>
-        prev.map(m => m._id === ms._id ? { ...m, completed: true } : m)
-      );
-    }
-    if (ms.completed && progress < ms.targetPercent) {
-      setMilestones(prev =>
-        prev.map(m => m._id === ms._id ? { ...m, completed: false } : m)
-      );
-    }
-  });
-}, [progress, milestones]);
+  setMilestones(prev => prev.map(ms => ({
+    ...ms,
+    completed: progress >= ms.targetPercent
+  })));
+}, [progress, milestoneVersion]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -318,6 +329,8 @@ useEffect(() => {
     studyPlanId={plan.id}
     milestones={milestones}
     setMilestones={setMilestones}
+    setStudyPlans={setStudyPlans}
+     setMilestoneVersion={setMilestoneVersion}
     onClose={() => setShowMilestoneModal(false)}
   />
 )}
