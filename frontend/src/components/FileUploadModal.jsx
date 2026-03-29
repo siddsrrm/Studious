@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 
-const ACCEPTED_TYPES = ["application/pdf"];
+const ACCEPTED_TYPES = ["application/pdf", "video/mp4"];
 
-const ACCEPTED_EXTENSIONS = ".pdf";
+const ACCEPTED_EXTENSIONS = ".pdf,.mp4";
 
 const FileUploadModal = ({ onClose, onUpload, isProcessing = false }) => {
   const [dragOver, setDragOver] = useState(false);
@@ -11,8 +11,8 @@ const FileUploadModal = ({ onClose, onUpload, isProcessing = false }) => {
   const inputRef = useRef(null);
 
   const validateFile = (f) => {
-    if (!ACCEPTED_TYPES.includes(f.type) && !f.name.match(/\.(pdf)$/i)) {
-        setError("Unsupported file type. Please upload a PDF.");
+  if (!ACCEPTED_TYPES.includes(f.type) && !f.name.match(/\.(pdf|mp4)$/i)) {
+    setError("Unsupported file type. Please upload a PDF or MP4.");
       return false;
     }
     if (f.size > 20 * 1024 * 1024) {
@@ -62,9 +62,9 @@ const FileUploadModal = ({ onClose, onUpload, isProcessing = false }) => {
 
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">Upload PDF to Generate Notes</h2>
+        <h2 className="text-lg font-semibold text-gray-800">Upload PDF or MP4 to Generate Notes</h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Upload a PDF file and AI will generate notes from it.
+          Upload a PDF or MP4 file and AI will generate notes from it.
               </p>
           </div>
           <button
@@ -96,7 +96,7 @@ const FileUploadModal = ({ onClose, onUpload, isProcessing = false }) => {
             </p>
             <p className="text-xs text-gray-400 mt-1">or click to browse</p>
           </div>
-          <p className="text-xs text-gray-400">Supported: PDF &mdash; max 20 MB</p>
+          <p className="text-xs text-gray-400">Supported: PDF (max 20 MB), MP4 (max 500 MB)</p>
           <input
             ref={inputRef}
             type="file"

@@ -343,33 +343,51 @@ const handleSearch = async (term) => {
 
   const handleFileUpload = async (file) => {
     if (!token || !studyPlanId) {
+      console.error("Missing token or studyPlanId");
       setShowUploadModal(false);
       return;
     }
 
-  setUploadProcessing(true);
+    setUploadProcessing(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/pdf`, {
+      const isVideo = file?.type === 'video/mp4' || /\.mp4$/i.test(file?.name || '');
+      const uploadEndpoint = isVideo
+        ? `${import.meta.env.VITE_API_URL}/upload/video`
+        : `${import.meta.env.VITE_API_URL}/upload/pdf`;
+
+      console.log(`Sending ${isVideo ? "Video" : "PDF"} to:`, uploadEndpoint);
+
+      const res = await fetch(uploadEndpoint, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
+        // Do NOT set Content-Type here, the browser does it automatically for FormData!
         body: formData,
       });
 
+      // --- THE CRITICAL FIX: LOG THE ACTUAL ERROR ---
       if (!res.ok) {
+        const errText = await res.text();
+        console.error(`Upload failed! Status: ${res.status} | Message:`, errText);
+        alert(`Upload Failed (${res.status}): \n${errText}`);
         setShowUploadModal(false);
         return;
       }
 
       const data = await res.json();
+      console.log('[NotePage] upload response:', data);
+      
       const extractedText = data.text || '';
-
       if (!extractedText.trim()) {
+        console.error("No text was extracted from the file.");
+        alert("The AI couldn't hear any speech in this video.");
         setShowUploadModal(false);
         return;
       }
+
+      console.log("Sending text to Ollama for formatting...");
 
       // 1) Ask backend to generate a note from extracted text via Ollama
       const genRes = await fetch(`${import.meta.env.VITE_API_URL}/upload/generate-note`, {
@@ -382,16 +400,16 @@ const handleSearch = async (term) => {
       });
 
       if (!genRes.ok) {
-        // Optional: log server error payload to help debug Ollama issues
-        try {
-          const errText = await genRes.text();
-          console.error('Generate note failed:', errText);
-        } catch {}
+        const errText = await genRes.text();
+        console.error('Generate note failed:', errText);
+        alert(`Ollama Failed: ${errText}`);
         setShowUploadModal(false);
         return;
       }
 
       const gen = await genRes.json();
+      console.log('Ollama formatting complete!');
+      
       const noteTitle = gen.title || data.fileName || 'AI Generated Note';
       const noteContent = gen.content || gen.raw || extractedText;
 
@@ -421,12 +439,13 @@ const handleSearch = async (term) => {
 
       setShowUploadModal(false);
     } catch (err) {
+      console.error("Fatal Error during upload process:", err);
+      alert(`Network/Frontend Error: ${err.message}`);
       setShowUploadModal(false);
     } finally {
       setUploadProcessing(false);
     }
   };
-
   // Render page
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
