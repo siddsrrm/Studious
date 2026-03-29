@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const API_URL = process.env.VITE_API_URL || "http://localhost:5000/api";
 
   // Current States
   const [studyPlans, setStudyPlans] = useState([]);
@@ -39,7 +40,7 @@ const HomePage = () => {
 
     (async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/study-plans`, {
+        const res = await fetch(`${API_URL}/study-plans`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -74,7 +75,7 @@ const HomePage = () => {
 
     // Create study plan in backend
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/study-plans`, {
+      const res = await fetch(`${API_URL}/study-plans`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,13 +121,10 @@ const HomePage = () => {
     // Handle deletion of study plans in backend
     (async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/study-plans/${planId}`,
-          {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const res = await fetch(`${API_URL}/study-plans/${planId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (res.ok) {
           setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
@@ -265,7 +263,6 @@ const HomePage = () => {
       {/* Main Container updated to max-w-7xl for more horizontal room */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
           {/*Calendar */}
           <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
             <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
@@ -308,7 +305,6 @@ const HomePage = () => {
               </div>
             )}
           </div>
-          
         </div>
       </main>
 

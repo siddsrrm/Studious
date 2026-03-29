@@ -1,10 +1,8 @@
-// jest.config.mjs
 export default {
-  testEnvironment: "jest-environment-jsdom",
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  testEnvironment: "jsdom", // necessary for testing React components
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"], // optional, for extra configs
   moduleFileExtensions: ["js", "jsx"],
   transform: {
     "^.+\\.jsx?$": "babel-jest",
   },
-  testPathIgnorePatterns: ["/node_modules/"],
 };

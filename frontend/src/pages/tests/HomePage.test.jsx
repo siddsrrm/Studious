@@ -1,18 +1,7 @@
-// ------------------------
-// Mock import.meta.env before importing components
-// ------------------------
-Object.defineProperty(global, "importMeta", {
-  value: {
-    env: {
-      VITE_API_URL: "http://localhost:3000", // mock URL for tests
-    },
-  },
-});
-
-// src/pages/__tests__/HomePage.test.jsx
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import HomePage from "../HomePage/HomePage";
+
 // ------------------------
 // MOCKS
 // ------------------------
@@ -101,20 +90,19 @@ describe("HomePage", () => {
     expect(screen.queryByTestId("create-form")).not.toBeInTheDocument();
   });
 
-  test("menu buttons trigger navigation and logout", () => {
+  test("settings button navigates to settings", () => {
     render(<HomePage />);
-
-    // Open menu
     fireEvent.click(screen.getByLabelText("Menu"));
-    expect(screen.getByText("Settings")).toBeInTheDocument();
-    expect(screen.getByText("Log Out")).toBeInTheDocument();
-
-    // Click settings
     fireEvent.click(screen.getByText("Settings"));
-    expect(mockedNavigate).toHaveBeenCalledWith("/settings");
 
-    // Click logout
+    expect(mockedNavigate).toHaveBeenCalledWith("/settings");
+  });
+
+  test("logout button navigates to login", () => {
+    render(<HomePage />);
+    fireEvent.click(screen.getByLabelText("Menu"));
     fireEvent.click(screen.getByText("Log Out"));
+
     expect(mockedNavigate).toHaveBeenCalledWith("/login");
   });
 
