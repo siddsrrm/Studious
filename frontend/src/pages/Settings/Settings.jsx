@@ -5,11 +5,99 @@ import styles from "./Settings.module.css";
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const SECTIONS = {
+  PROFILE: "profile",
   USERNAME: "username",
   EMAIL: "email",
+  NOTIFICATION: "notification",
   TWO_FACTOR: "two_factor",
+  GOOGLE: "google",
   DELETE: "delete"
 };
+
+const PRESET_AVATARS = [
+  "/avatars/avatar1.png",
+  "/avatars/avatar2.png",
+  "/avatars/avatar3.png",
+  "/avatars/avatar4.png"
+];
+
+function ProfileSection() {
+  const [selected, setSelected] = useState(localStorage.getItem("avatar") || PRESET_AVATARS[0]);
+  const [pending, setPending] = useState(selected);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+
+  async function handleSave() {
+    setLoading(true);
+    setSuccess(""); setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/updateProfile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatar: pending }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelected(pending);
+        localStorage.setItem("avatar", pending);
+        setSuccess("Profile photo updated.");
+      } else {
+        setError(data.message || "Failed to update profile photo.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Profile Photo</h2>
+      <p className={styles.contentDescription}>Choose a photo to represent your account.</p>
+      <hr className={styles.contentDivider} />
+
+      {/* Current avatar preview */}
+      <p className={styles.fieldLabel}>Current photo</p>
+      <img src={selected} alt="Current avatar" className={styles.avatarPreview} />
+
+      {/* Avatar grid */}
+      <p className={styles.fieldLabel}>Choose a new photo</p>
+      <div className={styles.avatarGrid}>
+        {PRESET_AVATARS.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt="Avatar option"
+            onClick={() => setPending(src)}
+            className={`${styles.avatarOption} ${pending === src ? styles.avatarSelected : ""}`}
+          />
+        ))}
+      </div>
+
+      {success && <p className={styles.success}>{success}</p>}
+      {error && <p className={styles.error}>{error}</p>}
+
+      <button
+        className={styles.button}
+        onClick={handleSave}
+        disabled={loading || pending === selected}
+      >
+        {loading ? "Saving..." : "Save Photo"}
+      </button>
+      <p className={styles.attribution}>
+  Avatars: <a href="https://www.dicebear.com/styles/fun-emoji/" target="_blank" rel="noopener noreferrer">Fun Emoji</a> style,
+  a remix of <a href="https://www.figma.com/@davisuche" target="_blank" rel="noopener noreferrer">Fun Emoji Set by Davis Uche</a>,
+  licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.
+</p>
+    </div>
+  );
+}
 
 function UsernameSection({ oldUsername, setOldUsername }) {
   const [newUsername, setNewUsername] = useState("");
@@ -326,6 +414,82 @@ function NotificationSection() {
   );
 }
 
+function GoogleSection() {
+  const [connected, setConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    async function checkGoogleStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setConnected(!!data.googleId);
+      } catch {
+        setError("Failed to load Google account status.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkGoogleStatus();
+  }, []);
+
+  function handleConnect() {
+    window.location.href = `${API_BASE}/auth/google`;
+  }
+
+  async function handleDisconnect() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/google/disconnect`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setConnected(false);
+      else setError(data.message || "Failed to disconnect Google account.");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Google Account</h2>
+      <p className={styles.contentDescription}>
+        Connect your Google account to enable signing in with Google.
+      </p>
+      <hr className={styles.contentDivider} />
+      {loading ? (
+        <p style={{ fontSize: "14px", color: "#6b7280" }}>Loading...</p>
+      ) : (
+        <>
+          <p className={styles.fieldLabel}>Status</p>
+          <p style={{ fontSize: "14px", color: connected ? "#16a34a" : "#6b7280", marginBottom: "20px" }}>
+            {connected ? "✓ Connected" : "Not connected"}
+          </p>
+          {error && <p className={styles.error}>{error}</p>}
+          {connected ? (
+            <button className={styles.buttonDanger} onClick={handleDisconnect} disabled={loading}>
+              Disconnect Google Account
+            </button>
+          ) : (
+            <button className={styles.button} onClick={handleConnect}>
+              Connect Google Account
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function DeleteSection() {
   const [showModal, setShowModal] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState("");
@@ -396,7 +560,7 @@ function DeleteSection() {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState(SECTIONS.USERNAME);
+  const [activeSection, setActiveSection] = useState(SECTIONS.PROFILE);
   const [oldUsername, setOldUsername] = useState(localStorage.getItem("username") || "User");
 
   return (
@@ -411,9 +575,18 @@ export default function SettingsPage() {
         <p className={styles.topBarWelcome}>Welcome, {oldUsername}!</p>
       </div>
 
+
+
       {/* Sidebar */}
       <div className={styles.sidebar}>
         <p className={styles.sidebarHeading}>Account</p>
+
+        <button
+  className={`${styles.sidebarItem} ${activeSection === SECTIONS.PROFILE ? styles.sidebarItemActive : ""}`}
+  onClick={() => setActiveSection(SECTIONS.PROFILE)}
+>
+  Profile Photo
+</button>
 
         <button
           className={`${styles.sidebarItem} ${activeSection === SECTIONS.USERNAME ? styles.sidebarItemActive : ""}`}
@@ -438,6 +611,13 @@ export default function SettingsPage() {
           Two-Factor Authentication
         </button>
 
+        <button
+  className={`${styles.sidebarItem} ${activeSection === SECTIONS.GOOGLE ? styles.sidebarItemActive : ""}`}
+  onClick={() => setActiveSection(SECTIONS.GOOGLE)}
+>
+  Google Account
+</button>
+
         {/* Notification Settings */}
         <button
           className={`${styles.sidebarItem} ${activeSection === SECTIONS.NOTIFICATION ? styles.sidebarItemActive : ""}`}
@@ -460,11 +640,13 @@ export default function SettingsPage() {
 
       {/* Main content */}
       <div className={styles.content}>
+        {activeSection === SECTIONS.PROFILE && <ProfileSection />}
         {activeSection === SECTIONS.USERNAME && (
           <UsernameSection oldUsername={oldUsername} setOldUsername={setOldUsername} />
         )}
         {activeSection === SECTIONS.EMAIL && <EmailSection />}
         {activeSection === SECTIONS.TWO_FACTOR && <TwoFactorSection />}
+        {activeSection === SECTIONS.GOOGLE && <GoogleSection />}
         {activeSection === SECTIONS.NOTIFICATION && <NotificationSection />}
         {activeSection === SECTIONS.DELETE && (
           <DeleteSection />

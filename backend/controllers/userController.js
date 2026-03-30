@@ -3,7 +3,30 @@ const StudyPlan = require("../models/StudyPlan");
 const bcrypt = require("bcryptjs");
 
 
+exports.updateProfile = async (req, res) => {
+
+  const { avatar } = req.body;
+
+  try {
+
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({message : "user not found"});
+      }
+      user.avatar = avatar;
+
+      await user.updateOne(avatar);
+    res.json({ message: "Profile updated.", avatar: user.avatar });
+  } catch (err) {
+    res.status(500).json({message : "failed to update profile photo"});
+  }
+
+}
+
+
 exports.getInfo = async (req, res) => {
+
+  
   try {
     const user = await User.findById(req.user.userId).select("-password");
     if (!user) { 

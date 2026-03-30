@@ -5,6 +5,7 @@ const ProgressTracker = require("./ProgressTracker")
 const userSchema = new mongoose.Schema({
   // attribute, type
   // userID can just be _id property of schema
+  avatar: { type: String, default: "" },
   email: {type: String, required: true},
   username: {type: String, required: true},
   password: {type: String, required: true},
@@ -18,7 +19,8 @@ const userSchema = new mongoose.Schema({
   notificationSettings: {
     remindersEnabled: { type: Boolean, default: false },
     reminderDaysBefore: { type: Number, default: 1 },
-}
+},
+  googleId: { type: String, default: null }
 })
 
 userSchema.methods.createStudyPlan = function(title, description) {
