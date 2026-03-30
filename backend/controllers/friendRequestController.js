@@ -88,6 +88,30 @@ exports.cancelRequest = async (req, res) => {
   }
 }
 
+exports.unfriend = async (req, res) => {
+  try {
+    const { requestId } = req.params
+
+    const fRequest = await FriendRequest.findById(requestId)
+    if (!fRequest) {
+      return res.status(404).json({ message: "Friend request not found" })
+    }
+
+    const userId = req.user.userId
+    const isSender = fRequest.sender.toString() === userId
+    const isRecipient = fRequest.recipient.toString() === userId
+
+    if (!isSender && !isRecipient) {
+      return res.status(403).json({ message: "Not authorized" })
+    }
+
+    await FriendRequest.deleteOne({ _id: requestId })
+    res.json({ message: "Unfriended successfully" })
+  } catch (err) {
+    res.status(500).json({ message: "Failed to unfriend user" })
+  }
+}
+
 exports.getFriends = async (req, res) => {
   try {
     const friends = await FriendRequest.find({

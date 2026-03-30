@@ -2,6 +2,8 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import styles from "./PeoplePage.module.css"
 
+const PAGE_SIZE = 30
+
 function PeoplePage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState("")
@@ -36,12 +38,17 @@ function PeoplePage() {
     if (query.trim() === "") { setResults([]); return }
     const timeout = setTimeout(async () => {
       setLoading(true)
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/search?q=${query}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      const data = await res.json()
-      setResults(data)
-      setLoading(false)
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/users/search?q=${query}&limit=${PAGE_SIZE}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        setResults(data)
+      } catch (err) {
+        console.error("Failed to fetch users", err)
+      } finally {
+        setLoading(false)
+      }
     }, 300)
     return () => clearTimeout(timeout)
   }, [query])
@@ -76,29 +83,28 @@ function PeoplePage() {
         <p className={styles.contentDescription}>Search for other Studious users to add as friends.</p>
         <hr className={styles.contentDivider} />
 
-        <p className={styles.fieldLabel}>Search by username</p>
-        <input
-          className={styles.input}
-          type="text"
-          placeholder="Enter a username..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-        />
+        <div className={styles.searchWrapper}>
+          <input
+            className={styles.input}
+            type="text"
+            placeholder="Search by username..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+        </div>
 
-        {loading && <p className={styles.status}>Searching...</p>}
-        {!loading && query && results.length === 0 && (
+        {loading && <p className={styles.status}>Loading...</p>}
+        {!loading && query && results && results.length === 0 && (
           <p className={styles.status}>No users found</p>
         )}
 
-        <div className={styles.list}>
-          {results.map(user => {
+        <div className={styles.grid}>
+          {results && results.map(user => {
             const btn = getButtonState(user)
             return (
               <div key={user._id} className={styles.card}>
                 <div className={styles.avatar}>{user.username[0].toUpperCase()}</div>
-                <div className={styles.info}>
-                  <p className={styles.username}>{user.username}</p>
-                </div>
+                <p className={styles.username}>{user.username}</p>
                 <div className={styles.actions}>
                   <button
                     className={styles.outlineButton}

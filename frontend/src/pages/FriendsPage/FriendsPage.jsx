@@ -29,7 +29,7 @@ function FriendsPage() {
     load()
   }, [])
 
-  const respond = async (requestId, status, isAccept) => {
+  const respond = async (requestId, status) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/friendrequests/${requestId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -40,6 +40,14 @@ function FriendsPage() {
 
   const cancel = async (requestId) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/friendrequests/${requestId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) load()
+  }
+
+  const unfriend = async (requestId) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/friendrequests/unfriend/${requestId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -89,9 +97,20 @@ function FriendsPage() {
                       <div className={styles.info}>
                         <p className={styles.username}>{user.username}</p>
                       </div>
-                      <button className={styles.outlineButton} onClick={() => navigate(`/profile/${user._id}`)}>
-                        View Profile
-                      </button>
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.outlineButton}
+                          onClick={() => navigate(`/profile/${user._id}`)}
+                        >
+                          View Profile
+                        </button>
+                        <button
+                          className={styles.cancelButton}
+                          onClick={() => unfriend(r._id)}
+                        >
+                          Unfriend
+                        </button>
+                      </div>
                     </div>
                   )
                 })
@@ -107,8 +126,12 @@ function FriendsPage() {
                       <p className={styles.username}>{r.sender.username}</p>
                     </div>
                     <div className={styles.actions}>
-                      <button className={styles.acceptButton} onClick={() => respond(r._id, 1, true)}>Accept</button>
-                      <button className={styles.declineButton} onClick={() => respond(r._id, 2, false)}>Decline</button>
+                      <button className={styles.acceptButton} onClick={() => respond(r._id, 1)}>
+                        Accept
+                      </button>
+                      <button className={styles.declineButton} onClick={() => respond(r._id, 2)}>
+                        Decline
+                      </button>
                     </div>
                   </div>
                 ))
@@ -123,7 +146,9 @@ function FriendsPage() {
                     <div className={styles.info}>
                       <p className={styles.username}>{r.recipient.username}</p>
                     </div>
-                    <button className={styles.cancelButton} onClick={() => cancel(r._id)}>Cancel</button>
+                    <button className={styles.cancelButton} onClick={() => cancel(r._id)}>
+                      Cancel
+                    </button>
                   </div>
                 ))
           )}
