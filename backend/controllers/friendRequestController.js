@@ -51,7 +51,7 @@ exports.respondRequest = async (req, res) => {
 exports.getSentRequests = async (req, res) => {
   try {
     const fRequests = await FriendRequest.find({ sender: req.user.userId, status: 0 })
-      .populate("recipient", "username")
+      .populate("recipient", "username avatar")
     res.json(fRequests)
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch sent friend requests" });
@@ -61,7 +61,7 @@ exports.getSentRequests = async (req, res) => {
 exports.getPendingRequests = async (req, res) => {
   try {
     const fRequests = await FriendRequest.find({ recipient: req.user.userId, status: 0 })
-      .populate("sender", "username")
+      .populate("sender", "username avatar")
     res.json(fRequests)
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch pending friend requests" });
@@ -117,7 +117,7 @@ exports.getFriends = async (req, res) => {
     const friends = await FriendRequest.find({
       $or: [{ sender: req.user.userId }, { recipient: req.user.userId }],
       status: 1
-    }).populate("sender recipient", "username")
+    }).populate("sender recipient", "username avatar")
 
     res.json(friends)
   } catch (err) {

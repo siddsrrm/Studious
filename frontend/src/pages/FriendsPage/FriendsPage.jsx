@@ -93,7 +93,12 @@ function FriendsPage() {
                   const user = getFriendUser(r)
                   return (
                     <div key={r._id} className={styles.card}>
-                      <div className={styles.avatar}>{user.username[0].toUpperCase()}</div>
+                      <div className={styles.avatar}>
+                        {user.avatar
+                          ? <img src={user.avatar} alt={user.username} className={styles.avatarImg} />
+                          : user.username[0].toUpperCase()
+                        }
+                      </div>
                       <div className={styles.info}>
                         <p className={styles.username}>{user.username}</p>
                       </div>
@@ -121,7 +126,12 @@ function FriendsPage() {
               ? <p className={styles.empty}>No pending requests</p>
               : pending.map(r => (
                   <div key={r._id} className={styles.card}>
-                    <div className={styles.avatar}>{r.sender.username[0].toUpperCase()}</div>
+                    <div className={styles.avatar}>
+                      {r.sender.avatar
+                        ? <img src={r.sender.avatar} alt={r.sender.username} className={styles.avatarImg} />
+                        : r.sender.username[0].toUpperCase()
+                      }
+                    </div>
                     <div className={styles.info}>
                       <p className={styles.username}>{r.sender.username}</p>
                     </div>
@@ -142,7 +152,12 @@ function FriendsPage() {
               ? <p className={styles.empty}>No sent requests</p>
               : sent.map(r => (
                   <div key={r._id} className={styles.card}>
-                    <div className={styles.avatar}>{r.recipient.username[0].toUpperCase()}</div>
+                    <div className={styles.avatar}>
+                      {r.recipient.avatar
+                        ? <img src={r.recipient.avatar} alt={r.recipient.username} className={styles.avatarImg} />
+                        : r.recipient.username[0].toUpperCase()
+                      }
+                    </div>
                     <div className={styles.info}>
                       <p className={styles.username}>{r.recipient.username}</p>
                     </div>

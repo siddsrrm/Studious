@@ -145,7 +145,7 @@ exports.searchUsers = async (req, res) => {
     const users = await User.find({
       username: { $regex: q, $options: "i" }, // case-insensitive
       _id: { $ne: req.user.userId } // not equal to the user
-    }).select("username").limit(20) // limit to 20 results
+    }).select("username avatar").limit(20) // limit to 20 results
     
     res.json(users)
   } catch (err) {

@@ -103,7 +103,12 @@ function PeoplePage() {
             const btn = getButtonState(user)
             return (
               <div key={user._id} className={styles.card}>
-                <div className={styles.avatar}>{user.username[0].toUpperCase()}</div>
+                <div className={styles.avatar}>
+                  {user.avatar
+                    ? <img src={user.avatar} alt={user.username} className={styles.avatarImg} />
+                    : user.username[0].toUpperCase()
+                  }
+                </div>
                 <p className={styles.username}>{user.username}</p>
                 <div className={styles.actions}>
                   <button
