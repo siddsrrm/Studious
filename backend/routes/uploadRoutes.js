@@ -162,7 +162,6 @@ router.post("/video", protect, uploadVideo.single("file"), async (req, res) => {
   }
 });
 
-
 router.post("/generate-note", protect, async (req, res) => {
   try {
     const { text } = req.body || {};
@@ -173,46 +172,49 @@ router.post("/generate-note", protect, async (req, res) => {
     const ollamaUrl = process.env.OLLAMA_URL;
     const ollamaModel = process.env.OLLAMA_MODEL;
 
-    if (!ollamaUrl) {
-      return res.status(500).json({ message: "OLLAMA_URL is not configured" });
+    if (!ollamaUrl || !ollamaModel) {
+      return res.status(500).json({ message: "OLLAMA configuration missing" });
     }
 
-    if (!ollamaModel) {
-      return res.status(500).json({ message: "OLLAMA_MODEL is not configured" });
-    }
+    const systemPrompt = `You are an expert teaching assistant.
+Your ONLY job is to convert lecture text into structured study notes.
 
-    const prompt = `You are an expert teaching assistant creating study materials for a university student. 
+CRITICAL FORMATTING RULES:
+1. Return ONLY valid JSON with keys "title" and "body".
+2. "title": A short, 3-5 word plain text title. No markdown.
+3. "body": A markdown string using this EXACT structure:
+   - Use ## for main topics
+   - Use ### for subtopics  
+   - Use bullet points for key terms: **Term**: Definition
+   - Use > for important callouts
+   - Separate each section with a blank line
+   - Do NOT add a preamble or closing summary
+   - NEVER use circles (●), checkboxes, or other special Unicode symbols for lists.
 
-Your task is to analyze the following extracted text and synthesize it into comprehensive, highly readable study notes. 
+OUTPUT ONLY JSON. No explanation, no extra text.`;
 
-CRITICAL FORMATTING RULES - YOU MUST FOLLOW THIS EXACT TEMPLATE:
-[Short, Descriptive Plain Text Title Goes Here - ABSOLUTELY NO MARKDOWN OR SYMBOLS]
+    const userPrompt = `Extracted lecture text:\n"""\n${text.slice(0, 12000)}\n"""`;
 
-[Start the body of your notes here using Markdown...]
-
-CONTENT GUIDELINES:
-- Structure & Size: Use Markdown headings (## for major topics, ### for subtopics).
-- Lists: Use bulleted lists (-) for related concepts and numbered lists (1., 2.) for steps.
-- Bold **key terms** and definitions.
-- Be concise, but do not omit crucial academic details.
-
-Extracted lecture text:
-"""
-${text.slice(0, 12000)}
-"""`;
-
-  const aiRes = await fetch(ollamaUrl, {
+    const aiRes = await fetch(ollamaUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-    model: ollamaModel,
+        model: ollamaModel,
+        format: {
+          type: "object",
+          properties: {
+            title: { type: "string", description: "Short plain-text title" },
+            body: { type: "string", description: "Detailed Markdown notes" }
+          },
+          required: ["title", "body"]
+        },
         messages: [
-          { role: "system", content: "You summarize lecture content into structured study notes." },
-          { role: "user", content: prompt },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
-    stream: false,
+        stream: false,
       }),
     });
 
@@ -223,24 +225,25 @@ ${text.slice(0, 12000)}
     }
 
     const aiJson = await aiRes.json();
-    const content = aiJson?.message?.content || "";
+    const contentString = aiJson?.message?.content || "{}";
 
-    if (!content) {
-      return res.status(500).json({ message: "Ollama returned no content" });
+
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(contentString);
+    } catch (e) {
+      console.error("Failed to parse AI JSON:", e);
+      return res.status(500).json({ message: "AI returned invalid format" });
     }
 
-    // First line as title, the rest as body
-    const [firstLine, ...restLines] = content.split(/\r?\n/);
-    const title = firstLine.trim() || "AI Generated Note";
-    const body = restLines.join("\n").trim();
-
     return res.json({
-      title,
-      content: body || content,
-      raw: content,
+      title: parsedContent.title || "AI Generated Note",
+      content: parsedContent.body || "No notes generated.",
+      raw: contentString,
     });
+
   } catch (err) {
-  console.error("Error generating note with Ollama:", err);
+    console.error("Error generating note with Ollama:", err);
     return res.status(500).json({ message: "Failed to generate note" });
   }
 });
