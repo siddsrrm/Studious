@@ -7,10 +7,17 @@ const API = import.meta.env.VITE_API_URL;
 const PracticeQuestionsPage = ({ studyPlanId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [generating, setGenerating] = useState(false);
   const token = localStorage.getItem("token");
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  
+  // Generation state
+  const [notes, setNotes] = useState([]);
+  const [selectedNoteIds, setSelectedNoteIds] = useState([]);
+  const [questionType, setQuestionType] = useState("free-response");
+  const [numQuestions, setNumQuestions] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -31,7 +38,24 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         setLoading(false);
       }
     }
+    
+    async function fetchNotes() {
+      try {
+        const res = await fetch(
+          `${API}/notes?studyPlanId=${studyPlanId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const data = await res.json();
+        if (res.ok) setNotes(data);
+      } catch (err) {
+        console.error("Failed to fetch notes:", err);
+      }
+    }
+    
     fetchPracticeQuestions();
+    fetchNotes();
   }, [studyPlanId, token]);
 
   const handleAddPracticeQuestion = async ({ question, answer }) => {
@@ -82,6 +106,49 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
       else setError("Failed to delete practice question.");
     } catch {
       setError("Network error. Please try again.");
+    }
+  };
+
+  const handleGenerateQuestions = async (e) => {
+    e.preventDefault();
+    
+    if (selectedNoteIds.length === 0) {
+      setError("Please select at least one note.");
+      return;
+    }
+    
+    setGenerating(true);
+    setError("");
+    
+    try {
+      const res = await fetch(`${API}/practice-questions/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          studyPlanId: studyPlanId,
+          noteIds: selectedNoteIds,
+          questionType: questionType,
+          numQuestions: numQuestions ? parseInt(numQuestions) : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setQuestions((prev) => [...prev, ...data.questions]);
+        setSelectedNoteIds([]);
+        setQuestionType("free-response");
+        setNumQuestions("");
+        setError(`Successfully generated ${data.questions.length} questions!`);
+        setTimeout(() => setError(""), 3000);
+      } else {
+        setError(data.message || "Failed to generate questions.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -139,6 +206,98 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
             Add Question
           </button>
         </form>
+
+        <div style={{ marginTop: "30px", borderTop: "1px solid #e2e8f0", paddingTop: "20px" }}>
+          <h3>Generate Questions from Notes</h3>
+          {notes.length === 0 ? (
+            <p style={{ color: "#64748b" }}>No notes available. Create some notes first!</p>
+          ) : (
+            <form onSubmit={handleGenerateQuestions}>
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  Select Notes:
+                </label>
+                {notes.map((note) => (
+                  <div key={note._id} style={{ marginBottom: "8px" }}>
+                    <input
+                      type="checkbox"
+                      id={`note-${note._id}`}
+                      checked={selectedNoteIds.includes(note._id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedNoteIds([...selectedNoteIds, note._id]);
+                        } else {
+                          setSelectedNoteIds(
+                            selectedNoteIds.filter((id) => id !== note._id),
+                          );
+                        }
+                      }}
+                    />
+                    <label htmlFor={`note-${note._id}`} style={{ marginLeft: "8px" }}>
+                      {note.title}
+                    </label>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  Question Type:
+                </label>
+                <select
+                  value={questionType}
+                  onChange={(e) => setQuestionType(e.target.value)}
+                  style={{
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    width: "100%",
+                  }}
+                >
+                  <option value="free-response">Free Response</option>
+                  <option value="multiple-choice">Multiple Choice</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  Number of Questions (Optional):
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={numQuestions}
+                  onChange={(e) => setNumQuestions(e.target.value)}
+                  placeholder="Leave empty for auto-count based on note length"
+                  style={{
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={generating || selectedNoteIds.length === 0}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: generating ? "#cbd5e1" : "#3b82f6",
+                  color: "white",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: generating ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                {generating ? "Generating..." : "Generate Questions"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
       <div>
         {questions.map((q) => (
@@ -148,6 +307,8 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
             studyPlanId={q.studyPlanId}
             question={q.question}
             answer={q.answer}
+            questionType={q.questionType}
+            options={q.options}
             onUpdate={handleUpdatePracticeQuestion}
             onDelete={handleDeletePracticeQuestion}
           />
