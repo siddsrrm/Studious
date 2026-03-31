@@ -211,11 +211,13 @@ syncToParent(updated);
 }
 
 const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
-  const [activeTab, setActiveTab] = useState("todo");
+  const [activeTab, setActiveTab] = useState("To-Do List");
   const [progress, setProgress] = useState(0);
   const [milestones, setMilestones] = useState(plan.milestones || []);
 const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [milestoneVersion, setMilestoneVersion] = useState(0);
+
+  const allTabs = ["To-Do List", "Notes", "Practice Questions"];
 
 useEffect(() => {
   setMilestones(prev => prev.map(ms => ({
@@ -282,60 +284,47 @@ useEffect(() => {
         </div>
 
         {/* progress bar */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "4px",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "0.875rem",
-                color: "#6b7280",
-                fontWeight: 500,
-              }}
-            >
-              Progress
-            </span>
-            <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-              {Math.round(progress)}%
-            </span>
-          </div>
-          <div style={{ position: 'relative', width: '100%', height: '8px', marginBottom: '20px' }}>
-  {/* Track */}
-  <div style={{ width: '100%', backgroundColor: '#e0e7ff', borderRadius: '9999px', height: '8px' }} />
-  {/* Fill */}
-  <div style={{ position: 'absolute', top: 0, left: 0, width: `${progress}%`, backgroundColor: '#4f46e5', borderRadius: '9999px', height: '8px', transition: 'width 0.3s ease' }} />
-  {/* Milestone ticks */}
-  {milestones.map((ms) => (
-    <div
-      key={ms._id}
-      title={ms.title}
-      style={{
-        position: 'absolute',
-        top: '-4px',
-        left: `${ms.targetPercent}%`,
-        transform: 'translateX(-50%)',
-        width: '16px',
-        height: '16px',
-        borderRadius: '50%',
-        backgroundColor: ms.completed ? '#4f46e5' : '#fff',
-        border: '2px solid #4f46e5',
-        cursor: 'pointer',
-        transition: 'background-color 0.3s ease',
-      }}
-    />
-  ))}
-</div>
-          <button
-        onClick={() => setShowMilestoneModal(true)}
-        style={{ fontSize: '0.75rem', color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-      >
-        Manage Milestones
-      </button>
-        </div>
+        {activeTab === "To-Do List" && (
+  <div style={{ marginBottom: "1.5rem" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+      <span style={{ fontSize: "0.875rem", color: "#6b7280", fontWeight: 500 }}>
+        Progress
+      </span>
+      <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+        {Math.round(progress)}%
+      </span>
+    </div>
+    <div style={{ position: 'relative', width: '100%', height: '8px', marginBottom: '20px' }}>
+      <div style={{ width: '100%', backgroundColor: '#e0e7ff', borderRadius: '9999px', height: '8px' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, width: `${progress}%`, backgroundColor: '#4f46e5', borderRadius: '9999px', height: '8px', transition: 'width 0.3s ease' }} />
+      {milestones.map((ms) => (
+        <div
+          key={ms._id}
+          title={ms.title}
+          style={{
+            position: 'absolute',
+            top: '-4px',
+            left: `${ms.targetPercent}%`,
+            transform: 'translateX(-50%)',
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            backgroundColor: ms.completed ? '#4f46e5' : '#fff',
+            border: '2px solid #4f46e5',
+            cursor: 'pointer',
+            transition: 'background-color 0.3s ease',
+          }}
+        />
+      ))}
+    </div>
+    <button
+      onClick={() => setShowMilestoneModal(true)}
+      style={{ fontSize: '0.75rem', color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+    >
+      Manage Milestones
+    </button>
+  </div>
+)}
 
         {/* Rendering selected component*/}
         {activeTab === "To-Do List" && (
