@@ -41,7 +41,10 @@ exports.createTask = async (req, res) => {
 
     // update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (!tracker) tracker = await ProgressTracker.create({ userID: task.ownerID });
+    if (!tracker) {
+      tracker = await ProgressTracker.create({ userID: task.ownerID });
+      await tracker.recalculateAllProgress();
+    }
     await tracker.updateTaskProgress(task.studyPlanID);
 
     res.status(201).json(task);
@@ -63,7 +66,10 @@ exports.updateTask = async (req, res) => {
 
     // update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (!tracker) tracker = await ProgressTracker.create({ userID: task.ownerID });
+    if (!tracker) {
+      tracker = await ProgressTracker.create({ userID: task.ownerID });
+      await tracker.recalculateAllProgress();
+    }
     await tracker.updateTaskProgress(task.studyPlanID);
 
     res.json(updated);
@@ -87,6 +93,10 @@ exports.deleteTask = async (req, res) => {
 
     // update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
+    if (!tracker) {
+      tracker = await ProgressTracker.create({ userID: task.ownerID });
+      await tracker.recalculateAllProgress();
+    }
     await tracker.updateTaskProgress(task.studyPlanID);
 
     res.json({ message: "Task deleted" });
@@ -122,7 +132,10 @@ exports.createSubTask = async (req, res) => {
 
     // update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (!tracker) tracker = await ProgressTracker.create({ userID: task.ownerID });
+    if (!tracker) {
+      tracker = await ProgressTracker.create({ userID: task.ownerID });
+      await tracker.recalculateAllProgress();
+    }
     await tracker.updateTaskProgress(task.studyPlanID);
 
     res.status(201).json(task);
@@ -145,7 +158,10 @@ exports.updateSubTask = async (req, res) => {
 
     // update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (!tracker) tracker = await ProgressTracker.create({ userID: task.ownerID });
+    if (!tracker) {
+      tracker = await ProgressTracker.create({ userID: task.ownerID });
+      await tracker.recalculateAllProgress();
+    }
     await tracker.updateTaskProgress(task.studyPlanID);
 
     res.json(updated);
@@ -173,9 +189,12 @@ exports.deleteSubTask = async (req, res) => {
 
     //update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (tracker) {
-      await tracker.updateTaskProgress(task.studyPlanID);
+    if (!tracker) {
+      tracker = await ProgressTracker.create({ userID: task.ownerID });
+      await tracker.recalculateAllProgress();
     }
+    await tracker.updateTaskProgress(task.studyPlanID);
+
 
     res.json(task);
   } catch (err) {
