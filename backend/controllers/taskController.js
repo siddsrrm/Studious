@@ -53,9 +53,10 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-    if (!task || task.ownerID.toString() !== req.user.userId) {
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    if (task.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
-    }
 
     //use model method to update task
     const updated = await task.updateTask(req.body);
