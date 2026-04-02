@@ -193,7 +193,12 @@ CRITICAL FORMATTING RULES:
 
 OUTPUT ONLY JSON. No explanation, no extra text.`;
 
-    const userPrompt = `Extracted lecture text:\n"""\n${text.slice(0, 12000)}\n"""`;
+    // Add uniqueness to prompt with task ID section to stop AI from skipping prompt
+    const userPrompt = `Task ID: ${Date.now()}
+    Extracted lecture text:
+    """
+    ${text.slice(0, 12000)}
+    """`;
 
     const aiRes = await fetch(ollamaUrl, {
       method: "POST",
@@ -215,6 +220,11 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
           { role: "user", content: userPrompt },
         ],
         stream: false,
+        options: {
+          num_ctx: 8192,
+          temperature: 0.3, 
+          num_predict: 2048
+        }
       }),
     });
 
