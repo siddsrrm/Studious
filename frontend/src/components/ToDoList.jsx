@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useCalendar } from "../context/CalendarContext.jsx";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
 
@@ -13,6 +14,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
   const [showModal, setShowModal] = useState(null);
+  const { events, onCreateEvent, onEditEvent, onDeleteEvent } = useCalendar();
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -70,8 +72,9 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         }),
       });
       const data = await res.json();
-      if (res.ok) setTasks([...tasks, data]);
-      else setError(data.message || "Failed to create task.");
+      if (res.ok) {
+        setTasks([...tasks, data]);
+      } else setError(data.message || "Failed to create task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -142,7 +145,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           </ul>
         )}
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-overlay">
             <div className="modal-content">
               <button className="close-btn" onClick={() => setShowModal(false)}>
                 ✖

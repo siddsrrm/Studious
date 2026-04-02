@@ -5,13 +5,11 @@ const CalendarContext = createContext();
 
 export const CalendarProvider = ({ children }) => {
   const { events, createEvent, editEvent, deleteEvent } = useEvents();
-  const [loading, setLoading] = useState(false);
 
   return (
     <CalendarContext.Provider
       value={{
         events,
-        loading,
         onCreateEvent: createEvent,
         onEditEvent: editEvent,
         onDeleteEvent: deleteEvent,

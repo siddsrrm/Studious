@@ -8,8 +8,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 const emptyForm = { title: "", start: "", end: "" };
 
 const Calendar = () => {
-  const { events, onCreateEvent, onEditEvent, onDeleteEvent, loading } =
-    useCalendar();
+  const { events, onCreateEvent, onEditEvent, onDeleteEvent } = useCalendar();
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -63,6 +62,7 @@ const Calendar = () => {
     }
     setSaving(true);
     await onCreateEvent(modal.form);
+    console.log(modal.form.end.toString());
     closeModal();
     setSaving(false);
   };
@@ -111,8 +111,6 @@ const Calendar = () => {
       changeInfo.revert();
     }
   };
-
-  if (loading) return <p>Loading calendar...</p>;
 
   return (
     <div className="relative">
