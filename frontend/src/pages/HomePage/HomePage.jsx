@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import Calendar from "../../components/Calendar";
+import { useEvents } from "../../hooks/useEvents";
+import { CalendarProvider } from "../../context/CalendarContext";
 import CreatePlanForm from "../../components/StudyPlans/CreatePlanForm";
 import PlanCard from "../../components/StudyPlans/PlanCard";
 import StudyPlanPage from "../StudyPlanPage";
 import { useNavigate } from "react-router-dom";
-import { useEvents } from "../../hooks/useEvents";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -266,55 +267,52 @@ const HomePage = () => {
 
       {/* Main Container updated to max-w-7xl for more horizontal room */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/*Calendar */}
-          <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
-            <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
-              Calendar
-            </h2>
-            <div className="calendar-container">
-              <Calendar
-                events={events}
-                onCreateEvent={createEvent}
-                onEditEvent={editEvent}
-                onDeleteEvent={deleteEvent}
-              />
+        <CalendarProvider>
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/*Calendar */}
+            <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
+              <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
+                Calendar
+              </h2>
+              <div className="calendar-container">
+                <Calendar />
+              </div>
+            </div>
+
+            {/*Study Plans */}
+            <div className="w-full lg:flex-1">
+              {studyPlans.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-lg shadow-sm border border-gray-100 h-full">
+                  <span className="text-6xl mb-4">&#128214;</span>
+                  <h2 className="text-xl font-semibold text-gray-700">
+                    No study plans yet
+                  </h2>
+                  <p className="text-gray-500 mt-1 mb-6 max-w-sm">
+                    Create your first study plan to start organising your notes,
+                    tasks, and practice questions.
+                  </p>
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow"
+                  >
+                    + Create Study Plan
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {studyPlans.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      onSelect={handleSelectPlan}
+                      onDelete={handleDeletePlan}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-
-          {/*Study Plans */}
-          <div className="w-full lg:flex-1">
-            {studyPlans.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-lg shadow-sm border border-gray-100 h-full">
-                <span className="text-6xl mb-4">&#128214;</span>
-                <h2 className="text-xl font-semibold text-gray-700">
-                  No study plans yet
-                </h2>
-                <p className="text-gray-500 mt-1 mb-6 max-w-sm">
-                  Create your first study plan to start organising your notes,
-                  tasks, and practice questions.
-                </p>
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow"
-                >
-                  + Create Study Plan
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {studyPlans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    onSelect={handleSelectPlan}
-                    onDelete={handleDeletePlan}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        </CalendarProvider>
       </main>
 
       {showCreateForm && (

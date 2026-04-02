@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useCalendar } from "../context/CalendarContext";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -6,7 +7,9 @@ import interactionPlugin from "@fullcalendar/interaction";
 
 const emptyForm = { title: "", start: "", end: "" };
 
-const Calendar = ({ events, onCreateEvent, onEditEvent, onDeleteEvent }) => {
+const Calendar = () => {
+  const { events, onCreateEvent, onEditEvent, onDeleteEvent, loading } =
+    useCalendar();
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -108,6 +111,8 @@ const Calendar = ({ events, onCreateEvent, onEditEvent, onDeleteEvent }) => {
       changeInfo.revert();
     }
   };
+
+  if (loading) return <p>Loading calendar...</p>;
 
   return (
     <div className="relative">
