@@ -6,6 +6,7 @@ import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import SettingsPage from "./pages/Settings/Settings";
 import HomePage from "./pages/HomePage/HomePage";
 import NotesPage from "./pages/NotePage";
+import OAuthCallback from "./pages/OAuthCallback";
 import Verify2FA from "./pages/Verify2FA/Verify2FA";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/notes" element={<NotesPage />} />
         {/* Your main page route can go here later */}
         <Route path="/home" element={<HomePage />} />
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
       </Routes>
     </BrowserRouter>
   );

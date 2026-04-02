@@ -9,6 +9,14 @@ router.post("/emailChange", authToken, emailChange)
 router.post("/toggle2FA", authToken, toggle2FA);
 router.get("/notification-settings", authToken, getNotificationSettings);
 router.put("/notification-settings", authToken, updateNotificationSettings);
-router.get("/me", authToken, getInfo)
+router.get("/me", authToken, getInfo);
+router.post("/google/disconnect", authToken, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.userId, { googleId: null });
+    res.json({ message: "Google account disconnected" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to disconnect" });
+  }
+});
 
 module.exports = router

@@ -17,6 +17,9 @@ const { startReminderJob } = require("./utils/reminderJob");
 
 const app = express();
 
+const passport = require("./config/passport");
+app.use(passport.initialize());
+
 connectDB();
 startReminderJob();
 
