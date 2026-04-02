@@ -12,6 +12,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
+  const [showModal, setShowModal] = useState(null);
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -140,7 +141,28 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             ))}
           </ul>
         )}
-        <AddTaskForm onAddTask={handleAddTask} />
+        {showModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                ✖
+              </button>
+              <AddTaskForm
+                onAddTask={(taskData) => {
+                  handleAddTask(taskData);
+                  setShowModal(false); // close after submit
+                }}
+              />
+            </div>
+          </div>
+        )}
+        <button
+          className="addButton"
+          type="button"
+          onClick={() => setShowModal(true)}
+        >
+          Add Task
+        </button>
       </div>
       <div className="tasks-container">
         {filteredTasks.map((task) => (
@@ -161,6 +183,7 @@ const AddTaskForm = ({ onAddTask }) => {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
+  const [recurring, setRecurring] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -170,10 +193,12 @@ const AddTaskForm = ({ onAddTask }) => {
     setDescription("");
     setPriority("medium");
     setDueDate("");
+    setRecurring(false);
   };
 
   return (
     <form className="addtask-form" onSubmit={handleSubmit}>
+      <h3>Create New Task</h3>
       <input
         type="text"
         placeholder="Task title"
@@ -196,6 +221,16 @@ const AddTaskForm = ({ onAddTask }) => {
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
       />
+      <label className="checkboxItem">
+        <span className="checkboxLabel">Recurring</span>
+        <input
+          type="checkbox"
+          checked={recurring}
+          onChange={() => {
+            setRecurring(!recurring);
+          }}
+        />
+      </label>
       <button type="submit">Add Task</button>
     </form>
   );
