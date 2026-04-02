@@ -19,14 +19,14 @@ leaderboardSchema.methods.recalculateRankings = function () {
   return this.save();
 }
 
-leaderboardSchema.methods.updateUserScore = function (userID, score) {
+leaderboardSchema.methods.updateUserScore = function (userID, username, score) {
   const existing = this.userRankings.find(r => r.userID.toString() === userID.toString());
   if (existing) {
     existing.score = score;
+    existing.username = username;
   } else {
-    this.userRankings.push({ userID, score });
+    this.userRankings.push({ userID, username, score });
   }
-  return this.save();
 }
 
 leaderboardSchema.methods.getTopUsers = function (limit = 10) {
