@@ -23,6 +23,11 @@ app.use(passport.initialize());
 connectDB();
 startReminderJob();
 
+const { pollCalendarForAllUsers } = require("./services/calendarPoller");
+
+// Poll every 5 minutes
+setInterval(pollCalendarForAllUsers, 60 * 1000);
+
 app.use(cors());
 app.use(express.json());
 

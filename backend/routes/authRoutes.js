@@ -12,7 +12,8 @@ router.post("/reset-password", resetPassword);
 router.post("/verify-2fa", verify2FA);
 
 // Redirect to Google
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"], session: false, accessType: "offline",
+  prompt: "consent" }));
 
 // Google callback
 router.get("/google/callback",

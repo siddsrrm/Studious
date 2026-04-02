@@ -1,5 +1,6 @@
 const express = require("express")
 const router = express.Router()
+const User = require("../models/User")
 const { nameChange, deleteAccount, emailChange, toggle2FA, getNotificationSettings, updateNotificationSettings, getInfo } = require("../controllers/userController")
 const authToken = require("../middleware/authMiddleware")
 
@@ -12,8 +13,12 @@ router.put("/notification-settings", authToken, updateNotificationSettings);
 router.get("/me", authToken, getInfo);
 router.post("/google/disconnect", authToken, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user.userId, { googleId: null });
-    res.json({ message: "Google account disconnected" });
+    await User.findByIdAndUpdate(req.user.userId, {
+      googleCalendarConnected: false,
+      googleAccessToken: null,
+      googleRefreshToken: null,
+    });
+    res.json({ message: "Google Calendar disconnected" });
   } catch (err) {
     res.status(500).json({ message: "Failed to disconnect" });
   }

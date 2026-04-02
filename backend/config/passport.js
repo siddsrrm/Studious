@@ -6,26 +6,37 @@ passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    accessType: "offline",
+    prompt: "consent"
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Check if a user with this googleId already exists
       let user = await User.findOne({ googleId: profile.id });
-      if (user) return done(null, user);
-
-      // Check if a user with this email already exists — link accounts
-      user = await User.findOne({ email: profile.emails[0].value });
       if (user) {
-        user.googleId = profile.id;
+        user.googleAccessToken = accessToken;
+        user.googleRefreshToken = refreshToken || user.googleRefreshToken;
+        user.googleCalendarConnected = true;
         await user.save();
         return done(null, user);
       }
 
-      // Otherwise create a new user
+      user = await User.findOne({ email: profile.emails[0].value });
+      if (user) {
+        user.googleId = profile.id;
+        user.googleAccessToken = accessToken;
+        user.googleRefreshToken = refreshToken || user.googleRefreshToken;
+        user.googleCalendarConnected = true;
+        await user.save();
+        return done(null, user);
+      }
+
       user = await User.create({
         googleId: profile.id,
         email: profile.emails[0].value,
         username: profile.displayName,
+        googleAccessToken: accessToken,
+        googleRefreshToken: refreshToken,
+        googleCalendarConnected: true,
       });
       return done(null, user);
     } catch (err) {
