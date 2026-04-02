@@ -4,9 +4,11 @@ import CreatePlanForm from "../../components/StudyPlans/CreatePlanForm";
 import PlanCard from "../../components/StudyPlans/PlanCard";
 import StudyPlanPage from "../StudyPlanPage";
 import { useNavigate } from "react-router-dom";
+import { useEvents } from "../../hooks/useEvents";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { events, createEvent, editEvent, deleteEvent } = useEvents();
 
   // Current States
   const [studyPlans, setStudyPlans] = useState([]);
@@ -265,14 +267,18 @@ const HomePage = () => {
       {/* Main Container updated to max-w-7xl for more horizontal room */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
           {/*Calendar */}
           <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
             <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
               Calendar
             </h2>
             <div className="calendar-container">
-              <Calendar />
+              <Calendar
+                events={events}
+                onCreateEvent={createEvent}
+                onEditEvent={editEvent}
+                onDeleteEvent={deleteEvent}
+              />
             </div>
           </div>
 
@@ -308,7 +314,6 @@ const HomePage = () => {
               </div>
             )}
           </div>
-          
         </div>
       </main>
 

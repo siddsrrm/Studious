@@ -4,25 +4,13 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
-const API = import.meta.env.VITE_API_URL;
-
 const emptyForm = { title: "", start: "", end: "" };
 
-const Calendar = () => {
-  const [events, setEvents] = useState([]);
+const Calendar = ({ events, onCreateEvent, onEditEvent, onDeleteEvent }) => {
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const calendarRef = useRef(null);
-  const token = localStorage.getItem("token");
-  const authHeaders = { Authorization: `Bearer ${token}` };
-
-  useEffect(() => {
-    fetch(`${API}/events`, { headers: authHeaders })
-      .then((r) => r.json())
-      .then((data) => setEvents(data))
-      .catch((err) => console.error("Error loading events:", err));
-  }, []);
 
   const openCreate = (dateStr) => {
     setError("");
@@ -35,7 +23,16 @@ const Calendar = () => {
   const openEdit = (clickInfo) => {
     setError("");
     const ev = clickInfo.event;
-    const pad = (d) => d.toISOString().slice(0, 16);
+
+    const pad = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      const h = String(date.getHours()).padStart(2, "0");
+      const min = String(date.getMinutes()).padStart(2, "0");
+      return `${y}-${m}-${d}T${h}:${min}`;
+    };
+
     setModal({
       mode: "edit",
       eventId: ev.id,
@@ -50,76 +47,64 @@ const Calendar = () => {
   const closeModal = () => setModal(null);
 
   const handleFormChange = (e) =>
-    setModal((prev) => ({ ...prev, form: { ...prev.form, [e.target.name]: e.target.value } }));
+    setModal((prev) => ({
+      ...prev,
+      form: { ...prev.form, [e.target.name]: e.target.value },
+    }));
 
   // Create calendar event
-  const handleCreate = async () => {
-    if (!modal.form.title.trim()) { setError("Title is required."); return; }
-    setSaving(true);
-    try {
-      const res = await fetch(`${API}/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify(modal.form),
-      });
-      const saved = await res.json();
-      setEvents((prev) => [...prev, saved]);
-      closeModal();
-    } catch (err) {
-      setError("Failed to save event.");
-    } finally {
-      setSaving(false);
+  const handleCreateEvent = async () => {
+    if (!modal.form.title.trim()) {
+      setError("Title is required.");
+      return;
     }
+    setSaving(true);
+    await onCreateEvent(modal.form);
+    closeModal();
+    setSaving(false);
   };
 
   // Edit calendar event
-  const handleEdit = async () => {
-    if (!modal.form.title.trim()) { setError("Title is required."); return; }
-    setSaving(true);
-    try {
-      const res = await fetch(`${API}/events/${modal.eventId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify(modal.form),
-      });
-      const updated = await res.json();
-      setEvents((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
-      closeModal();
-    } catch (err) {
-      setError("Failed to update event.");
-    } finally {
-      setSaving(false);
+  const handleEditEvent = async () => {
+    if (!modal.form.title.trim()) {
+      setError("Title is required.");
+      return;
     }
+    setSaving(true);
+    await onEditEvent(modal.eventId, modal.form);
+    closeModal();
+    setSaving(false);
   };
 
   // Delete calendar event
-  const handleDelete = async () => {
+  const handleDeleteEvent = async () => {
     setSaving(true);
-    try {
-      await fetch(`${API}/events/${modal.eventId}`, { method: "DELETE", headers: authHeaders });
-      setEvents((prev) => prev.filter((e) => e._id !== modal.eventId));
-      closeModal();
-    } catch (err) {
-      setError("Failed to delete event.");
-    } finally {
-      setSaving(false);
-    }
+    await onDeleteEvent(modal.eventId);
+    closeModal();
+    setSaving(false);
   };
 
   // Drag event to different day/time
   const handleEventChange = async (changeInfo) => {
     const ev = changeInfo.event;
-    const pad = (d) => d.toISOString().slice(0, 16);
-    const body = { start: pad(ev.start), end: ev.end ? pad(ev.end) : pad(ev.start) };
+
+    const pad = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      const h = String(date.getHours()).padStart(2, "0");
+      const min = String(date.getMinutes()).padStart(2, "0");
+      return `${y}-${m}-${d}T${h}:${min}`;
+    };
+
+    const updatedFields = {
+      start: pad(ev.start),
+      end: ev.end ? pad(ev.end) : pad(ev.start),
+    };
+
     try {
-      const res = await fetch(`${API}/events/${ev.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify(body),
-      });
-      const updated = await res.json();
-      setEvents((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
-    } catch (err) {
+      await onEditEvent(ev.id, updatedFields);
+    } catch {
       changeInfo.revert();
     }
   };
@@ -130,6 +115,7 @@ const Calendar = () => {
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
+        timeZone="local"
         headerToolbar={{
           left: "prev,next today",
           center: "title",
@@ -159,7 +145,9 @@ const Calendar = () => {
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Title
+              </label>
               <input
                 type="text"
                 name="title"
@@ -172,7 +160,9 @@ const Calendar = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Start</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Start
+              </label>
               <input
                 type="datetime-local"
                 name="start"
@@ -183,7 +173,9 @@ const Calendar = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">End</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                End
+              </label>
               <input
                 type="datetime-local"
                 name="end"
@@ -196,7 +188,7 @@ const Calendar = () => {
             <div className="flex items-center justify-between pt-2">
               {modal.mode === "edit" ? (
                 <button
-                  onClick={handleDelete}
+                  onClick={handleDeleteEvent}
                   disabled={saving}
                   className="px-4 py-2 text-sm rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                 >
@@ -213,11 +205,19 @@ const Calendar = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={modal.mode === "create" ? handleCreate : handleEdit}
+                  onClick={
+                    modal.mode === "create"
+                      ? handleCreateEvent
+                      : handleEditEvent
+                  }
                   disabled={saving}
                   className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  {saving ? "Saving…" : modal.mode === "create" ? "Create" : "Save"}
+                  {saving
+                    ? "Saving…"
+                    : modal.mode === "create"
+                      ? "Create"
+                      : "Save"}
                 </button>
               </div>
             </div>

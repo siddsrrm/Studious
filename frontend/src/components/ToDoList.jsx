@@ -142,7 +142,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           </ul>
         )}
         {showModal && (
-          <div className="modal-overlay">
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content">
               <button className="close-btn" onClick={() => setShowModal(false)}>
                 ✖
