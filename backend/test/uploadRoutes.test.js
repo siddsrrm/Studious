@@ -12,6 +12,23 @@ jest.mock('../middleware/authMiddleware', () => {
 // Mock pdf-parse so we don't need real PDFs in tests
 jest.mock('pdf-parse', () => jest.fn(async () => ({ text: 'Hello from PDF', numpages: 3 })));
 
+jest.mock('fluent-ffmpeg', () => {
+  return jest.fn(() => {
+    const handlers = {};
+    const cmd = {
+      noVideo() { return cmd; },
+      audioChannels() { return cmd; },
+      audioFrequency() { return cmd; },
+      format() { return cmd; },
+      on(event, cb) { handlers[event] = cb; return cmd; },
+      save(_path) { if (handlers['end']) { setImmediate(handlers['end']); } return cmd; },
+    };
+    return cmd;
+  });
+});
+
+jest.mock('whisper-node', () => jest.fn(async (_audioPath, _opts) => [{ speech: 'transcribed speech from video' }]));
+
 describe('uploadRoutes', () => {
   let app;
 

@@ -232,8 +232,11 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
     try {
       parsedContent = JSON.parse(contentString);
     } catch (e) {
-      console.error("Failed to parse AI JSON:", e);
-      return res.status(500).json({ message: "AI returned invalid format" });
+      console.warn("Failed to parse AI JSON, falling back to plain-text parsing:", e.message);
+      const lines = String(contentString || "").split(/\r?\n/).filter(Boolean);
+      const firstLine = lines.shift() || "AI Generated Note";
+      const body = lines.join("\n") || contentString || "No notes generated.";
+      parsedContent = { title: firstLine.trim(), body };
     }
 
     return res.json({
