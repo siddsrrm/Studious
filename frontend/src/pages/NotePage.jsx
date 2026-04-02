@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import NoteEditor from '../components/NoteEditor';
+import FileUploadModal from '../components/FileUploadModal';
 
 const UNFILED_ID = '__unfiled__';
 
@@ -26,6 +27,8 @@ const NotesPage = ({ studyPlanId }) => {
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [moveMenuNoteId, setMoveMenuNoteId] = useState(null);
   const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadProcessing, setUploadProcessing] = useState(false);
   const activeNote = notes.find(n => n._id === activeNoteId);
   const saveTimerRef = useRef(null);
 
@@ -338,6 +341,111 @@ const handleSearch = async (term) => {
   ? notes.filter(n => n.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   : notes;
 
+  const handleFileUpload = async (file) => {
+    if (!token || !studyPlanId) {
+      console.error("Missing token or studyPlanId");
+      setShowUploadModal(false);
+      return;
+    }
+
+    setUploadProcessing(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const isVideo = file?.type === 'video/mp4' || /\.mp4$/i.test(file?.name || '');
+      const uploadEndpoint = isVideo
+        ? `${import.meta.env.VITE_API_URL}/upload/video`
+        : `${import.meta.env.VITE_API_URL}/upload/pdf`;
+
+      console.log(`Sending ${isVideo ? "Video" : "PDF"} to:`, uploadEndpoint);
+
+      const res = await fetch(uploadEndpoint, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        // Do NOT set Content-Type here, the browser does it automatically for FormData!
+        body: formData,
+      });
+
+      // --- THE CRITICAL FIX: LOG THE ACTUAL ERROR ---
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`Upload failed! Status: ${res.status} | Message:`, errText);
+        alert(`Upload Failed (${res.status}): \n${errText}`);
+        setShowUploadModal(false);
+        return;
+      }
+
+      const data = await res.json();
+      console.log('[NotePage] upload response:', data);
+      
+      const extractedText = data.text || '';
+      if (!extractedText.trim()) {
+        console.error("No text was extracted from the file.");
+        alert("The AI couldn't hear any speech in this video.");
+        setShowUploadModal(false);
+        return;
+      }
+
+      console.log("Sending text to Ollama for formatting...");
+
+      // 1) Ask backend to generate a note from extracted text via Ollama
+      const genRes = await fetch(`${import.meta.env.VITE_API_URL}/upload/generate-note`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: extractedText }),
+      });
+
+      if (!genRes.ok) {
+        const errText = await genRes.text();
+        console.error('Generate note failed:', errText);
+        alert(`Ollama Failed: ${errText}`);
+        setShowUploadModal(false);
+        return;
+      }
+
+      const gen = await genRes.json();
+      console.log('Ollama formatting complete!');
+      
+      const noteTitle = gen.title || data.fileName || 'AI Generated Note';
+      const noteContent = gen.content || gen.raw || extractedText;
+
+      // 2) Create a new note in this study plan with the generated content
+      const createRes = await fetch(`${import.meta.env.VITE_API_URL}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          studyPlanID: studyPlanId,
+          title: noteTitle,
+          content: noteContent,
+          tags: ['ai-generated'],
+          folderId: UNFILED_ID,
+        }),
+      });
+
+      if (createRes.ok) {
+        const saved = await createRes.json();
+        const newNote = { ...saved, folderId: UNFILED_ID };
+        setNotes(prev => [newNote, ...prev]);
+        setActiveNoteId(saved._id);
+        setCollapsedFolders(prev => ({ ...prev, [UNFILED_ID]: false }));
+      }
+
+      setShowUploadModal(false);
+    } catch (err) {
+      console.error("Fatal Error during upload process:", err);
+      alert(`Network/Frontend Error: ${err.message}`);
+      setShowUploadModal(false);
+    } finally {
+      setUploadProcessing(false);
+    }
+  };
   // Render page
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -349,6 +457,16 @@ const handleSearch = async (term) => {
         <div className="p-4 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-800">My Notes</h2>
           <div className="flex items-center gap-1">
+            {/* Upload file for AI notes */}
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="text-gray-400 hover:text-indigo-600 transition-colors p-1"
+              title="Upload file to generate AI notes"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+            </button>
             <button
               onClick={() => setCreatingFolder(true)}
               className="text-gray-400 hover:text-blue-600 transition-colors p-1"
@@ -486,6 +604,14 @@ const handleSearch = async (term) => {
         )}
         
       </div>
+
+      {showUploadModal && (
+        <FileUploadModal
+          onClose={() => setShowUploadModal(false)}
+          onUpload={handleFileUpload}
+          isProcessing={uploadProcessing}
+        />
+      )}
     </div>
   );
 };

@@ -13,6 +13,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 const practiceQuestionRoutes = require("./routes/practiceQuestionRoutes");
 const { startReminderJob } = require("./utils/reminderJob");
 
@@ -31,6 +32,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/folders", folderRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use("/api/practice-questions", practiceQuestionRoutes);
 
 app.get("/", (req, res) => {
