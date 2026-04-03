@@ -2,6 +2,11 @@ const studyPlanController = require("../controllers/studyPlanController");
 const StudyPlan = require("../models/StudyPlan");
 
 jest.mock("../models/StudyPlan");
+jest.mock("../models/Task");
+jest.mock("../models/ProgressTracker");
+
+const Task = require("../models/Task");
+const ProgressTracker = require("../models/ProgressTracker");
 
 describe("createStudyPlan", () => {
     let res;
@@ -150,6 +155,12 @@ describe("deleteStudyPlan", () => {
         const mockPlan = { _id: "plan123", owner: { toString: () => "user123" } };
         StudyPlan.findById.mockResolvedValue(mockPlan);
         StudyPlan.deleteOne.mockResolvedValue({});
+        Task.deleteMany.mockResolvedValue({});
+        ProgressTracker.findOne.mockResolvedValue({
+            planStats: [],
+            calculateUserScore: jest.fn(),
+            save: jest.fn().mockResolvedValue(true),
+        });
         const req = { params: { id: "plan123" }, user: { userId: "user123" } };
         await studyPlanController.deleteStudyPlan(req, res);
         expect(StudyPlan.deleteOne).toHaveBeenCalledWith({ _id: "plan123" });

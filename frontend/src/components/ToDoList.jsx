@@ -93,6 +93,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         {/* <p>Progress: {progress}% </p> */}
         <div className="filter-bar">
           <select
+            aria-label="Filter by priority"
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
           >
@@ -101,16 +102,21 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             <option value="medium">Medium</option>
             <option value="high">High</option>
           </select>
+
           <input
             type="date"
+            aria-label="Filter due date from"
             value={filterDueDateFrom}
             onChange={(e) => setFilterDueDateFrom(e.target.value)}
           />
+
           <input
             type="date"
+            aria-label="Filter due date to"
             value={filterDueDateTo}
             onChange={(e) => setFilterDueDateTo(e.target.value)}
           />
+
           <button type="button" onClick={handleClearFilters}>
             Clear Filters
           </button>

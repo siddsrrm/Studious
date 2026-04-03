@@ -26,6 +26,10 @@ const EventSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  googleEventId: {
+    type: String,
+    default: null,
+  },
 });
 
 module.exports = mongoose.model("Event", EventSchema);

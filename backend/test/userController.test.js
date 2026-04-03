@@ -1,4 +1,5 @@
 const {
+  updateProfile,
   getInfo,
   nameChange,
   deleteAccount,
@@ -9,9 +10,13 @@ const {
 
 jest.mock("../models/User");
 jest.mock("../models/StudyPlan");
+jest.mock("../models/FriendRequest");
+jest.mock("../socket", () => ({ emitToUser: jest.fn(), emitToAll: jest.fn() }));
 
 const User = require("../models/User");
 const StudyPlan = require("../models/StudyPlan");
+const FriendRequest = require("../models/FriendRequest");
+const { emitToUser, emitToAll } = require("../socket");
 
 
 function mockReq(overrides = {}) {
@@ -28,6 +33,157 @@ function mockRes() {
   res.json = jest.fn().mockReturnValue(res);
   return res;
 }
+
+describe("updateProfile", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("returns 200 with message and avatar URL on success", async () => {
+    const fakeUser = {
+      _id: "user123",
+      username: "jpbarath",
+      avatar: "",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Profile updated.",
+      avatar: "https://example.com/avatar.png",
+    });
+  });
+
+  test("calls User.findById with the correct userId", async () => {
+    const fakeUser = {
+      _id: "user123",
+      username: "jpbarath",
+      avatar: "",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(User.findById).toHaveBeenCalledWith("user123");
+  });
+
+  test("sets user.avatar to the new value before calling updateOne", async () => {
+    const fakeUser = {
+      _id: "user123",
+      username: "jpbarath",
+      avatar: "https://example.com/old.png",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/new.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(fakeUser.avatar).toBe("https://example.com/new.png");
+    expect(fakeUser.updateOne).toHaveBeenCalledTimes(1);
+  });
+
+  test("allows an empty string to clear the avatar", async () => {
+    const fakeUser = {
+      _id: "user123",
+      username: "jpbarath",
+      avatar: "https://example.com/old.png",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(fakeUser.avatar).toBe("");
+    expect(res.json).toHaveBeenCalledWith({ message: "Profile updated.", avatar: "" });
+  });
+
+
+  test("calls updateOne with correct object", async () => {
+    const avatarUrl = "https://example.com/avatar.png";
+    const fakeUser = {
+      _id: "user123",
+      username: "jpbarath",
+      avatar: "",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: avatarUrl } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(fakeUser.updateOne).toHaveBeenCalledWith({ avatar: avatarUrl});
+  });
+
+  test("returns 404 when user is not found", async () => {
+    User.findById.mockResolvedValue(null);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "user not found" });
+  });
+
+  test("does not call updateOne when user is not found", async () => {
+    const updateOneSpy = jest.fn();
+    User.findById.mockResolvedValue(null);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(updateOneSpy).not.toHaveBeenCalled();
+  });
+
+  test("returns 500 when User.findById throws", async () => {
+    User.findById.mockRejectedValue(new Error("DB connection lost"));
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile photo" });
+  });
+
+  test("returns 500 when user.updateOne throws", async () => {
+    const fakeUser = {
+      avatar: "",
+      updateOne: jest.fn().mockRejectedValue(new Error("Write failed")),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile photo" });
+  });
+});
+
 
 //getInfo tests
 describe("getInfo", () => {
@@ -134,6 +290,8 @@ describe("deleteAccount", () => {
     const fakeUser = { _id: "user123" };
     User.findById.mockResolvedValue(fakeUser);
     StudyPlan.deleteMany.mockResolvedValue({});
+    FriendRequest.find.mockResolvedValue([]);
+    FriendRequest.deleteMany.mockResolvedValue({});
     User.deleteOne.mockResolvedValue({});
 
     const req = mockReq();
@@ -142,8 +300,46 @@ describe("deleteAccount", () => {
     await deleteAccount(req, res);
 
     expect(StudyPlan.deleteMany).toHaveBeenCalledWith({ owner: "user123" });
+    expect(FriendRequest.deleteMany).toHaveBeenCalledWith({
+      $or: [{ sender: "user123" }, { recipient: "user123" }],
+    });
     expect(User.deleteOne).toHaveBeenCalledWith({ _id: "user123" });
     expect(res.json).toHaveBeenCalledWith({ message: "Account deleted successfully" });
+  });
+
+  test("notifies friends before deleting accepted friendships", async () => {
+    const fakeUser = { _id: "user123", username: "jpbarath" };
+    const accepted = [
+      { _id: "req1", sender: { toString: () => "user123" }, recipient: { toString: () => "friend456" }, status: 1 },
+      { _id: "req2", sender: { toString: () => "friend789" }, recipient: { toString: () => "user123" }, status: 1 },
+    ];
+    User.findById.mockResolvedValue(fakeUser);
+    StudyPlan.deleteMany.mockResolvedValue({});
+    FriendRequest.find.mockResolvedValue(accepted);
+    FriendRequest.deleteMany.mockResolvedValue({});
+    User.deleteOne.mockResolvedValue({});
+
+    const req = mockReq();
+    const res = mockRes();
+
+    await deleteAccount(req, res);
+
+    expect(FriendRequest.find).toHaveBeenCalledWith({
+      $or: [{ sender: "user123" }, { recipient: "user123" }],
+      status: 1,
+    });
+    expect(emitToUser).toHaveBeenCalledWith(
+      "friend456",
+      "unfriended",
+      { requestId: "req1", actorName: "jpbarath" },
+      expect.stringContaining("deleted their account")
+    );
+    expect(emitToUser).toHaveBeenCalledWith(
+      "friend789",
+      "unfriended",
+      { requestId: "req2", actorName: "jpbarath" },
+      expect.stringContaining("deleted their account")
+    );
   });
 
   test("returns 404 when user is not found", async () => {
@@ -167,6 +363,9 @@ describe("deleteAccount", () => {
     await deleteAccount(req, res);
 
     expect(StudyPlan.deleteMany).not.toHaveBeenCalled();
+    expect(FriendRequest.find).not.toHaveBeenCalled();
+    expect(FriendRequest.deleteMany).not.toHaveBeenCalled();
+    expect(emitToUser).not.toHaveBeenCalled();
   });
 });
 

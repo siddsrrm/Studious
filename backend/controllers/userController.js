@@ -1,9 +1,37 @@
 const User = require("../models/User");
 const StudyPlan = require("../models/StudyPlan");
+const FriendRequest = require("../models/FriendRequest");
+const ProgressTracker = require("../models/ProgressTracker");
+const { emitToUser } = require("../socket");
+const { emitToAll } = require("../socket");
 const bcrypt = require("bcryptjs");
 
 
+exports.updateProfile = async (req, res) => {
+
+  const { avatar } = req.body;
+
+  try {
+
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({message : "user not found"});
+      }
+      user.avatar = avatar;
+
+      await user.updateOne({avatar: avatar});
+    emitToAll("user_profile_updated", { userId: user._id.toString(), username: user.username, avatar: user.avatar }, `${user.username} updated profile`)
+    res.json({ message: "Profile updated.", avatar: user.avatar });
+  } catch (err) {
+    res.status(500).json({message : "failed to update profile photo"});
+  }
+
+}
+
+
 exports.getInfo = async (req, res) => {
+
+  
   try {
     const user = await User.findById(req.user.userId).select("-password");
     if (!user) { 
@@ -37,6 +65,7 @@ exports.nameChange = async (req, res) => {
   //new name available, change the db
   user.username = newName;
   await user.updateOne({ username: newName });
+  emitToAll("user_profile_updated", { userId: user._id.toString(), username: user.username, avatar: user.avatar }, `${user.username} updated username`)
 
   //return success
   res.json({ message: "Name updated successfully" });
@@ -54,7 +83,29 @@ exports.deleteAccount = async (req, res) => {
 
 
   // Delete all study plans belonging to the user
-    await StudyPlan.deleteMany({ owner: req.user.userId });
+  await StudyPlan.deleteMany({ owner: req.user.userId });
+
+  // Notify current friends in real time before removing relationships
+  const acceptedFriendships = await FriendRequest.find({
+    $or: [{ sender: req.user.userId }, { recipient: req.user.userId }],
+    status: 1
+  });
+
+  acceptedFriendships.forEach((request) => {
+    const isSender = request.sender.toString() === req.user.userId;
+    const otherUserId = isSender ? request.recipient.toString() : request.sender.toString();
+    emitToUser(
+      otherUserId,
+      "unfriended",
+      { requestId: request._id.toString(), actorName: user.username },
+      `${user.username} deleted their account`
+    );
+  });
+
+  // Delete any friend relationships/requests involving this user
+  await FriendRequest.deleteMany({
+    $or: [{ sender: req.user.userId }, { recipient: req.user.userId }]
+  });
 
   //delete user data from db
   await User.deleteOne({ _id: user._id });
@@ -133,3 +184,59 @@ exports.updateNotificationSettings = async (req, res) => {
         res.status(500).json({ message: "Error updating settings", error: err.message });
     }
 };
+
+exports.searchUsers = async (req, res) => {
+  const { q } = req.query
+
+  if (!q) {
+    return res.json([])
+  }
+
+  try {
+    const users = await User.find({
+      username: { $regex: q, $options: "i" }, // case-insensitive
+      _id: { $ne: req.user.userId } // not equal to the user
+    }).select("username avatar").limit(20) // limit to 20 results
+    
+    res.json(users)
+  } catch (err) {
+    res.status(500).json({ message: "Failed to search users" })
+  }
+}
+
+exports.getPublicProfile = async (req, res) => {
+  try {
+    const { userId } = req.params
+    // Support test mocks that either return a query-like object (with .select)
+    // or return a Promise that resolves directly to the user object.
+    let maybeQuery = User.findById(userId);
+    let user;
+    if (maybeQuery && typeof maybeQuery.select === "function") {
+      user = await maybeQuery.select("username avatar");
+    } else {
+      user = await maybeQuery;
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    const tracker = await ProgressTracker.findOne({ userID: user._id }).select(
+      "overallcompletion totalTasksFinished totalTasks"
+    )
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      avatar: user.avatar,
+      progress: {
+        score: tracker?.overallcompletion ?? 0,
+        totalTasksFinished: tracker?.totalTasksFinished ?? 0,
+        totalTasks: tracker?.totalTasks ?? 0,
+      },
+    })
+  } catch (err) {
+  console.error(err);
+  res.status(500).json({ message: "Failed to fetch user profile" })
+  }
+}

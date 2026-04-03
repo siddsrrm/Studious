@@ -1,4 +1,10 @@
 const Event = require("../models/Event");
+const User = require("../models/User");
+const {
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+} = require("../services/googleCalendar");
 
 exports.getEvents = async (req, res) => {
   try {
@@ -19,8 +25,24 @@ exports.createEvent = async (req, res) => {
       rrule: req.body.rrule || null,
       duration: req.body.duration || null,
     });
-
     const savedEvent = await event.save();
+
+    // Sync to Google Calendar if connected
+    const user = await User.findById(req.user.userId);
+    if (user.googleCalendarConnected) {
+      const googleEventId = await createCalendarEvent(
+        user.googleAccessToken,
+        user.googleRefreshToken,
+        {
+          title: savedEvent.title,
+          description: savedEvent.description,
+          start: savedEvent.start,
+          end: savedEvent.end,
+        },
+      );
+      savedEvent.googleEventId = googleEventId;
+      await savedEvent.save();
+    }
     res.json(savedEvent);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -44,6 +66,22 @@ exports.updateEvent = async (req, res) => {
     if (duration !== undefined) event.duration = duration;
 
     const updated = await event.save();
+
+    // Sync update to Google Calendar if connected
+    const user = await User.findById(req.user.userId);
+    if (user.googleCalendarConnected && event.googleEventId) {
+      await updateCalendarEvent(
+        user.googleAccessToken,
+        user.googleRefreshToken,
+        event.googleEventId,
+        {
+          title: updated.title,
+          description: updated.description,
+          start: updated.start,
+          end: updated.end,
+        },
+      );
+    }
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -58,6 +96,23 @@ exports.deleteEvent = async (req, res) => {
     if (event.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
 
+    // Delete from Google Calendar if connected
+    const user = await User.findById(req.user.userId);
+    if (user.googleCalendarConnected && event.googleEventId) {
+      try {
+        await deleteCalendarEvent(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          event.googleEventId,
+        );
+      } catch (googleErr) {
+        console.log(
+          "Google Calendar delete failed (event may already be deleted):",
+          googleErr.message,
+        );
+        // continue anyway
+      }
+    }
     await Event.deleteOne({ _id: event._id });
     res.json({ message: "Event deleted" });
   } catch (err) {

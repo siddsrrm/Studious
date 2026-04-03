@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./Verify2FA.module.css";
+import { getSocket } from "../../socket";
 
 function Verify2FA() {
   const [code, setCode] = useState("");
@@ -30,6 +31,8 @@ function Verify2FA() {
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("token", data.token)  //store real session token
+        window.dispatchEvent(new Event("auth-changed"))
+        getSocket()
         setMessage("Verification successful! Redirecting...");
         setTimeout(() => navigate("/home"), 1500);
       } else {
