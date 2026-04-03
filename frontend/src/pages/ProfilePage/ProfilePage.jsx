@@ -337,6 +337,35 @@ function ProfilePage() {
           )}
         </div>
 
+        {/* Progress Section */}
+        {!!profile.progress && (
+          <div className={styles.card}>
+            <h3 className={styles.sectionTitle}>Progress</h3>
+            <p className={styles.sectionDescription}>
+              {profile.progress.totalTasksFinished ?? 0} of {profile.progress.totalTasks ?? 0} tasks completed
+            </p>
+            <div style={{ width: "100%" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <span style={{ fontSize: "0.85rem", color: "#6b7280" }}>Overall completion</span>
+                <span style={{ fontSize: "0.85rem", color: "#6b7280" }}>
+                  {(Number(profile.progress.score ?? 0)).toFixed(2)}%
+                </span>
+              </div>
+              <div style={{ width: "100%", backgroundColor: "#e0e7ff", borderRadius: "9999px", height: "10px" }}>
+                <div
+                  style={{
+                    width: `${Math.max(0, Math.min(100, Number(profile.progress.score ?? 0)))}%`,
+                    backgroundColor: "#4f46e5",
+                    borderRadius: "9999px",
+                    height: "10px",
+                    transition: "width 0.3s ease",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Achievements Section */}
         {achievementDefs.length > 0 && (
           <div className={styles.card}>
