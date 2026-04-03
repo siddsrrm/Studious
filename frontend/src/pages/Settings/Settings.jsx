@@ -415,76 +415,54 @@ function NotificationSection() {
 }
 
 function GoogleSection() {
-  const [connected, setConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    async function checkGoogleStatus() {
-      try {
-        const res = await fetch(`${API_BASE}/users/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setConnected(!!data.googleId);
-      } catch {
-        setError("Failed to load Google account status.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkGoogleStatus();
-  }, []);
-
-  function handleConnect() {
-    window.location.href = `${API_BASE}/auth/google`;
-  }
-
-  async function handleDisconnect() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`${API_BASE}/users/google/disconnect`, {
-        method: "POST",
+    const fetchUserInfo = async () => {
+      const res = await fetch(`${API_BASE}/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      if (res.ok) setConnected(false);
-      else setError(data.message || "Failed to disconnect Google account.");
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
+      setIsConnected(!!data.googleCalendarConnected);
       setLoading(false);
-    }
+    };
+    fetchUserInfo();
+  }, []);
+
+  async function handleDisconnect() {
+    setLoading(true);
+    await fetch(`${API_BASE}/users/google/disconnect`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setIsConnected(false);
+    setLoading(false);
   }
+
+  if (loading) return <p style={{ color: "#6b7280", fontSize: "14px" }}>Loading...</p>;
 
   return (
     <div>
-      <h2 className={styles.contentTitle}>Google Account</h2>
+      <h2 className={styles.contentTitle}>Google Calendar</h2>
       <p className={styles.contentDescription}>
-        Connect your Google account to enable signing in with Google.
+        Sync your events with Google Calendar.
       </p>
       <hr className={styles.contentDivider} />
-      {loading ? (
-        <p style={{ fontSize: "14px", color: "#6b7280" }}>Loading...</p>
-      ) : (
+      {isConnected ? (
         <>
-          <p className={styles.fieldLabel}>Status</p>
-          <p style={{ fontSize: "14px", color: connected ? "#16a34a" : "#6b7280", marginBottom: "20px" }}>
-            {connected ? "✓ Connected" : "Not connected"}
+          <p className={styles.success} style={{ marginBottom: "16px" }}>
+            ✓ Google Calendar connected — events will sync automatically.
           </p>
-          {error && <p className={styles.error}>{error}</p>}
-          {connected ? (
-            <button className={styles.buttonDanger} onClick={handleDisconnect} disabled={loading}>
-              Disconnect Google Account
-            </button>
-          ) : (
-            <button className={styles.button} onClick={handleConnect}>
-              Connect Google Account
-            </button>
-          )}
+          <button className={styles.buttonDanger} onClick={handleDisconnect} disabled={loading}>
+            Disconnect Google Calendar
+          </button>
         </>
+      ) : (
+        <a href={`${API_BASE}/auth/google`}>
+          <button className={styles.button}>Connect Google Calendar</button>
+        </a>
       )}
     </div>
   );
