@@ -60,6 +60,7 @@ const HomePage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    window.dispatchEvent(new Event("auth-changed"));
     sessionStorage.removeItem("tokenShown");
     navigate("/login");
   };

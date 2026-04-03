@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { getSocket } from "./socket";
+import { getSocket, disconnectSocket } from "./socket";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
@@ -17,6 +17,7 @@ import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 function App() {
   const [notif, setNotif] = useState(null)
   const [notifOpacity, setNotifOpacity] = useState(false)
+  const [token, setToken] = useState(localStorage.getItem("token"))
   const timers = useRef([])
 
   function showNotification(message) {
@@ -30,8 +31,24 @@ function App() {
   }
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) return
+    const onAuthChanged = () => setToken(localStorage.getItem("token"))
+    window.addEventListener("auth-changed", onAuthChanged)
+    window.addEventListener("storage", onAuthChanged)
+
+    return () => {
+      window.removeEventListener("auth-changed", onAuthChanged)
+      window.removeEventListener("storage", onAuthChanged)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!token) {
+      disconnectSocket()
+      return
+    }
+
     const socket = getSocket()
+    if (!socket) return
 
     const onRequestReceived = (request) =>
       showNotification(`${request.sender.username} sent you a friend request`)
@@ -50,7 +67,7 @@ function App() {
       socket.off("friend_request_accepted", onRequestAccepted)
       window.removeEventListener("friend-toast", onFriendToast)
     }
-  }, [])
+  }, [token])
 
   return (
     <BrowserRouter>

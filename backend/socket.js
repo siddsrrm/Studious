@@ -1,5 +1,6 @@
 const { Server } = require("socket.io")
 const jwt = require("jsonwebtoken")
+const User = require("./models/User")
 
 let io
 const userSockets = new Map() // userId -> socketId
@@ -12,7 +13,7 @@ function initSocket(server) {
     }
   })
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth.token
     if (!token) {
       console.log(`[Socket] Auth rejected      | reason: no token provided`)
@@ -20,6 +21,11 @@ function initSocket(server) {
     }
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      const user = await User.findById(decoded.userId).select("_id")
+      if (!user) {
+        console.log(`[Socket] Auth rejected      | reason: user not found`)
+        return next(new Error("User not found"))
+      }
       socket.userId = decoded.userId
       next()
     } catch (err) {
@@ -49,4 +55,11 @@ function emitToUser(userId, event, data, label) {
   }
 }
 
-module.exports = { initSocket, emitToUser }
+function emitToAll(event, data, label) {
+  if (io) {
+    io.emit(event, data)
+    console.log(`[Socket] Broadcast sent     | event: ${event}${label ? " | " + label : ""}`)
+  }
+}
+
+module.exports = { initSocket, emitToUser, emitToAll }

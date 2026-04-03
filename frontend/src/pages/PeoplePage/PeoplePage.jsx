@@ -55,6 +55,7 @@ function PeoplePage() {
     loadRelationships()
 
     const socket = getSocket()
+    if (!socket) return
 
     const onRequestAccepted = (request) => {
       const friendId = request.recipient._id.toString()
@@ -98,15 +99,29 @@ function PeoplePage() {
       clearSentRequestById(requestId)
     }
 
+    const onUserProfileUpdated = ({ userId, username, avatar }) => {
+      if (!userId) return
+      setResults(prev => prev.map(user => {
+        if (user._id.toString() !== userId.toString()) return user
+        return {
+          ...user,
+          username: username ?? user.username,
+          avatar: avatar ?? user.avatar
+        }
+      }))
+    }
+
     socket.on("friend_request_accepted", onRequestAccepted)
     socket.on("friend_request_declined", onRequestDeclined)
     socket.on("friend_request_cancelled", onRequestCancelled)
     socket.on("unfriended", onUnfriended)
+    socket.on("user_profile_updated", onUserProfileUpdated)
     return () => {
       socket.off("friend_request_accepted", onRequestAccepted)
       socket.off("friend_request_declined", onRequestDeclined)
       socket.off("friend_request_cancelled", onRequestCancelled)
       socket.off("unfriended", onUnfriended)
+      socket.off("user_profile_updated", onUserProfileUpdated)
     }
   }, [])
 

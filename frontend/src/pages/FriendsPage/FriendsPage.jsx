@@ -35,15 +35,21 @@ function FriendsPage() {
       fetch(`${import.meta.env.VITE_API_URL}/friendrequests/pending`, { headers }),
       fetch(`${import.meta.env.VITE_API_URL}/friendrequests/sent`, { headers })
     ])
-    setFriends(await fRes.json())
-    setPending(await pRes.json())
-    setSent(await sRes.json())
+    const [friendsData, pendingData, sentData] = await Promise.all([
+      fRes.json(),
+      pRes.json(),
+      sRes.json()
+    ])
+    setFriends(Array.isArray(friendsData) ? friendsData.filter(r => r?.sender && r?.recipient) : [])
+    setPending(Array.isArray(pendingData) ? pendingData.filter(r => r?.sender) : [])
+    setSent(Array.isArray(sentData) ? sentData.filter(r => r?.recipient) : [])
   }
 
   useEffect(() => {
     load()
 
     const socket = getSocket()
+    if (!socket) return
 
     const onRequestReceived = (request) => setPending(prev => [...prev, request])
     const onRequestCancelled = ({ requestId }) => setPending(prev => prev.filter(r => r._id !== requestId))
@@ -53,12 +59,29 @@ function FriendsPage() {
     }
     const onRequestDeclined = ({ requestId }) => setSent(prev => prev.filter(r => r._id !== requestId))
     const onUnfriended = ({ requestId }) => setFriends(prev => prev.filter(r => r._id !== requestId))
+    const onUserProfileUpdated = ({ userId, username, avatar }) => {
+      if (!userId) return
+      const updateUser = (user) => {
+        if (!user || typeof user !== "object" || !user._id) return user
+        if (user._id.toString() !== userId.toString()) return user
+        return {
+          ...user,
+          username: username ?? user.username,
+          avatar: avatar ?? user.avatar
+        }
+      }
+
+      setFriends(prev => prev.map(r => ({ ...r, sender: updateUser(r.sender), recipient: updateUser(r.recipient) })))
+      setPending(prev => prev.map(r => ({ ...r, sender: updateUser(r.sender) })))
+      setSent(prev => prev.map(r => ({ ...r, recipient: updateUser(r.recipient) })))
+    }
 
     socket.on("friend_request_received", onRequestReceived)
     socket.on("friend_request_cancelled", onRequestCancelled)
     socket.on("friend_request_accepted", onRequestAccepted)
     socket.on("friend_request_declined", onRequestDeclined)
     socket.on("unfriended", onUnfriended)
+    socket.on("user_profile_updated", onUserProfileUpdated)
 
     return () => {
       socket.off("friend_request_received", onRequestReceived)
@@ -66,6 +89,7 @@ function FriendsPage() {
       socket.off("friend_request_accepted", onRequestAccepted)
       socket.off("friend_request_declined", onRequestDeclined)
       socket.off("unfriended", onUnfriended)
+      socket.off("user_profile_updated", onUserProfileUpdated)
     }
   }, [])
 
@@ -112,11 +136,16 @@ function FriendsPage() {
     }
   }
 
-  const getFriendUser = (request) =>
-    request.sender.username === myUsername ? request.recipient : request.sender
+  const getFriendUser = (request) => {
+    if (!request?.sender || !request?.recipient) return null
+    return request.sender.username === myUsername ? request.recipient : request.sender
+  }
 
   const filteredFriends = friendSearch.trim()
-    ? friends.filter(r => getFriendUser(r).username.toLowerCase().includes(friendSearch.toLowerCase()))
+    ? friends.filter(r => {
+        const user = getFriendUser(r)
+        return user && user.username.toLowerCase().includes(friendSearch.toLowerCase())
+      })
     : friends
 
   return (
@@ -163,6 +192,7 @@ function FriendsPage() {
               ? <p className={styles.empty}>{friendSearch ? "No friends match your search." : "No friends yet. Find people to add!"}</p>
               : filteredFriends.map(r => {
                   const user = getFriendUser(r)
+                  if (!user) return null
                   return (
                     <div key={r._id} className={styles.card}>
                       <div className={styles.avatar}>

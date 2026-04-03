@@ -487,6 +487,7 @@ function DeleteSection() {
         setTimeout(() => {
           localStorage.removeItem("token");
           localStorage.removeItem("username");
+          window.dispatchEvent(new Event("auth-changed"));
           window.location.href = "/";
         }, 2000);
       } else {

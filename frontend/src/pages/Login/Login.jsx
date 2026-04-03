@@ -75,6 +75,7 @@ function Login() {
       localStorage.setItem("username", data.username)
       localStorage.setItem("email", data.email)
       localStorage.setItem("twoFactorEnabled", data.twoFactorEnabled)
+      window.dispatchEvent(new Event("auth-changed"))
       getSocket()
       navigate("/home")
     }

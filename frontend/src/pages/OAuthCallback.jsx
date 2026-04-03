@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getSocket } from "../socket";
 
 export default function OAuthCallback() {
   const navigate = useNavigate();
@@ -9,6 +10,8 @@ export default function OAuthCallback() {
     const token = params.get("token");
     if (token) {
       localStorage.setItem("token", token);
+      window.dispatchEvent(new Event("auth-changed"));
+      getSocket();
       navigate("/");
     } else {
       navigate("/login");
