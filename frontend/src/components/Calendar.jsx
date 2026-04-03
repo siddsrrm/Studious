@@ -66,6 +66,7 @@ const Calendar = () => {
       setEvents((prev) => [...prev, saved]);
       closeModal();
     } catch (err) {
+      console.log(err);
       setError("Failed to save event.");
     } finally {
       setSaving(false);
@@ -86,6 +87,7 @@ const Calendar = () => {
       setEvents((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
       closeModal();
     } catch (err) {
+      console.log(err);
       setError("Failed to update event.");
     } finally {
       setSaving(false);
@@ -100,6 +102,7 @@ const Calendar = () => {
       setEvents((prev) => prev.filter((e) => e._id !== modal.eventId));
       closeModal();
     } catch (err) {
+      console.log(err);
       setError("Failed to delete event.");
     } finally {
       setSaving(false);

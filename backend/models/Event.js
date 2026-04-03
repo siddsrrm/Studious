@@ -18,6 +18,10 @@ const EventSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  googleEventId: {
+    type: String,
+    default: null,
+  },
 });
 
 module.exports = mongoose.model("Event", EventSchema);

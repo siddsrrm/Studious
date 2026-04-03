@@ -5,7 +5,7 @@ const ProgressTracker = require("./ProgressTracker")
 const userSchema = new mongoose.Schema({
   // attribute, type
   // userID can just be _id property of schema
-  avatar: { type: String, default: "" },
+  avatar: { type: String, default: "/avatars/avatar1.png" },
   email: {type: String, required: true},
   username: {type: String, required: true},
   password: {type: String, required: true},
@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema({
     remindersEnabled: { type: Boolean, default: false },
     reminderDaysBefore: { type: Number, default: 1 },
 },
-  googleId: { type: String, default: null }
+  googleId: { type: String, default: null },
+  googleAccessToken: { type: String, default: null },
+googleRefreshToken: { type: String, default: null },
+googleCalendarConnected: { type: Boolean, default: false }
 })
 
 userSchema.methods.createStudyPlan = function(title, description) {
