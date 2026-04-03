@@ -23,7 +23,10 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String, default: null },
   googleAccessToken: { type: String, default: null },
 googleRefreshToken: { type: String, default: null },
-googleCalendarConnected: { type: Boolean, default: false }
+googleCalendarConnected: { type: Boolean, default: false },
+displayName: { type: String, default: "" },
+bio: { type: String, default: "", maxlength: 200 },
+location:    { type: String, default: "" }
 })
 
 userSchema.methods.createStudyPlan = function(title, description) {

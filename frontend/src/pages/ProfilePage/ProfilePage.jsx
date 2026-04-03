@@ -160,7 +160,10 @@ function ProfilePage() {
       setProfile(prev => prev ? ({
         ...prev,
         username: username ?? prev.username,
-        avatar: avatar ?? prev.avatar
+        avatar: avatar ?? prev.avatar,
+         displayName: displayName ?? prev.displayName,  
+    bio: bio ?? prev.bio,                         
+    location: location ?? prev.location            
       }) : prev)
     }
 
@@ -315,6 +318,16 @@ function ProfilePage() {
             }
           </div>
           <p className={styles.username}>{profile.username}</p>
+
+{profile.displayName && (
+  <p className={styles.displayName}>{profile.displayName}</p>
+)}
+{profile.location && (
+  <p className={styles.location}>{profile.location}</p>
+)}
+{profile.bio && (
+  <p className={styles.bio}>{profile.bio}</p>
+)}
 
           {!isSelf && btn.type === "pending" && (
             <div className={styles.pendingActions}>

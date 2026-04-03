@@ -28,6 +28,26 @@ function ProfileSection() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
+  const [displayName, setDisplayName] = useState("");
+const [bio, setBio] = useState("");
+const [location, setLocation] = useState("");
+
+useEffect(() => {
+  async function fetchProfile() {
+    try {
+      const res = await fetch(`${API_BASE}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setDisplayName(data.displayName || "");
+      setBio(data.bio || "");
+      setLocation(data.location || "");
+    } catch {
+      // fail silently
+    }
+  }
+  fetchProfile();
+}, []);
 
   async function handleSave() {
     setLoading(true);
@@ -39,15 +59,15 @@ function ProfileSection() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ avatar: pending }),
+        body: JSON.stringify({ avatar: pending, displayName, bio, location }),
       });
       const data = await res.json();
       if (res.ok) {
         setSelected(pending);
         localStorage.setItem("avatar", pending);
-        setSuccess("Profile photo updated.");
+        setSuccess("Profile updated");
       } else {
-        setError(data.message || "Failed to update profile photo.");
+        setError(data.message || "Failed to update profile");
       }
     } catch {
       setError("Network error. Please try again.");
@@ -80,15 +100,47 @@ function ProfileSection() {
         ))}
       </div>
 
+      <p className={styles.fieldLabel}>Display name</p>
+<input
+  type="text"
+  placeholder="Your display name"
+  value={displayName}
+  onChange={(e) => setDisplayName(e.target.value)}
+  className={styles.input}
+/>
+
+<p className={styles.fieldLabel}>Bio</p>
+<textarea
+  placeholder="Tell us a little about yourself"
+  value={bio}
+  onChange={(e) => setBio(e.target.value)}
+  className={styles.input}
+  rows={3}
+  maxLength={200}
+  style={{ resize: "vertical" }}
+/>
+<p style={{ fontSize: "12px", color: bio.length > 180 ? "#ef4444" : "#6b7280", textAlign: "right" }}>
+  {bio.length}/200
+</p>
+
+<p className={styles.fieldLabel}>Location</p>
+<input
+  type="text"
+  placeholder="City, Country"
+  value={location}
+  onChange={(e) => setLocation(e.target.value)}
+  className={styles.input}
+/>
+
       {success && <p className={styles.success}>{success}</p>}
       {error && <p className={styles.error}>{error}</p>}
 
       <button
         className={styles.button}
         onClick={handleSave}
-        disabled={loading || pending === selected}
+        disabled={loading}
       >
-        {loading ? "Saving..." : "Save Photo"}
+        {loading ? "Saving..." : "Save Profile"}
       </button>
       <p className={styles.attribution}>
   Avatars: <a href="https://www.dicebear.com/styles/fun-emoji/" target="_blank" rel="noopener noreferrer">Fun Emoji</a> style,
@@ -564,7 +616,7 @@ export default function SettingsPage() {
   className={`${styles.sidebarItem} ${activeSection === SECTIONS.PROFILE ? styles.sidebarItemActive : ""}`}
   onClick={() => setActiveSection(SECTIONS.PROFILE)}
 >
-  Profile Photo
+  Profile
 </button>
 
         <button

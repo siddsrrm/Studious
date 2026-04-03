@@ -341,3 +341,32 @@
     max-width: 100%;
   }
 }
+
+.displayName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: -12px 0 16px 0;
+}
+
+.location {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+}
+
+.bio {
+  font-size: 14px;
+  color: #374151;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0 0 18px 0;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

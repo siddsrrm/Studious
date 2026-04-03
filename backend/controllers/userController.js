@@ -8,25 +8,38 @@ const bcrypt = require("bcryptjs");
 
 
 exports.updateProfile = async (req, res) => {
-
-  const { avatar } = req.body;
+  const { avatar, displayName, bio, location } = req.body;  // add the 3 new fields
 
   try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: "user not found" });
+    }
 
-      const user = await User.findById(req.user.userId);
-      if (!user) {
-        return res.status(404).json({message : "user not found"});
-      }
-      user.avatar = avatar;
-
-      await user.updateOne({avatar: avatar});
-    emitToAll("user_profile_updated", { userId: user._id.toString(), username: user.username, avatar: user.avatar }, `${user.username} updated profile`)
-    res.json({ message: "Profile updated.", avatar: user.avatar });
-  } catch (err) {
-    res.status(500).json({message : "failed to update profile photo"});
-  }
-
+    if (bio !== undefined && bio.length > 200) {
+  return res.status(400).json({ message: "Bio cannot exceed 200 characters." });
 }
+
+    // Build update object with only provided fields
+    const updates = {};
+    if (avatar !== undefined)      updates.avatar = avatar;
+    if (displayName !== undefined) updates.displayName = displayName;
+    if (bio !== undefined)         updates.bio = bio;
+    if (location !== undefined)    updates.location = location;
+
+    await user.updateOne(updates);
+
+    emitToAll("user_profile_updated", {
+      userId: user._id.toString(),
+      username: user.username,
+      avatar: avatar ?? user.avatar
+    }, `${user.username} updated profile`);
+
+    res.json({ message: "Profile updated.", ...updates });
+  } catch (err) {
+    res.status(500).json({ message: "failed to update profile" });
+  }
+};
 
 
 exports.getInfo = async (req, res) => {
@@ -212,7 +225,7 @@ exports.getPublicProfile = async (req, res) => {
     let maybeQuery = User.findById(userId);
     let user;
     if (maybeQuery && typeof maybeQuery.select === "function") {
-      user = await maybeQuery.select("username avatar");
+      user = await maybeQuery.select("username avatar displayName bio location");
     } else {
       user = await maybeQuery;
     }
@@ -229,6 +242,9 @@ exports.getPublicProfile = async (req, res) => {
       _id: user._id,
       username: user.username,
       avatar: user.avatar,
+      displayName: user.displayName,   
+  bio: user.bio,              
+  location: user.location,         
       progress: {
         score: tracker?.overallcompletion ?? 0,
         totalTasksFinished: tracker?.totalTasksFinished ?? 0,
