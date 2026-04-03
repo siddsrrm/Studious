@@ -18,7 +18,8 @@ function AchievementsPage() {
             headers: { Authorization: `Bearer ${token}` }
           })
         ])
-        const [defs, earned] = await Promise.all([defsRes.json(), earnedRes.json()])
+        const defs = defsRes.ok ? await defsRes.json() : []
+        const earned = earnedRes.ok ? await earnedRes.json() : []
         const earnedMap = {}
         earned.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
         setAchievements(defs.map(def => ({

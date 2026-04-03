@@ -338,7 +338,7 @@ function ProfilePage() {
         </div>
 
         {/* Achievements Section */}
-        {achievements && achievements.length > 0 && (
+        {achievementDefs.length > 0 && (
           <div className={styles.card}>
             <h3 className={styles.sectionTitle}>Achievements</h3>
             <p className={styles.sectionDescription}>
