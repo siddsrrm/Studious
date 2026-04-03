@@ -6,6 +6,8 @@ const PracticeQuestion = ({
   studyPlanId,
   question,
   answer,
+  questionType,
+  options,
   onUpdate,
   onDelete,
 }) => {
@@ -14,6 +16,8 @@ const PracticeQuestion = ({
   const [editing, setEditing] = useState(false);
   const [editQuestion, setEditQuestion] = useState(question);
   const [editAnswer, setEditAnswer] = useState(answer);
+  const [editQuestionType, setEditQuestionType] = useState(questionType || "free-response");
+  const isMC = questionType === "multiple-choice";
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -74,24 +78,69 @@ const PracticeQuestion = ({
       ) : (
         <>
           <h3>{question}</h3>
-          <form onSubmit={handleSubmit} className="answerForm">
-            <div className="inputRow">
-              <input
-                type="text"
-                value={userAnswer}
-                disabled={isCorrect === true}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                className={`answerInput ${statusClass}`}
-              />
+          {isMC && options && (
+            <div style={{ marginBottom: "15px" }}>
+              {options.map((option, idx) => (
+                <label
+                  key={idx}
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    padding: "10px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "6px",
+                    cursor: isCorrect === true ? "not-allowed" : "pointer",
+                    backgroundColor:
+                      userAnswer === option ? "#dbeafe" : "transparent",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name={`question-${id}`}
+                    value={option}
+                    checked={userAnswer === option}
+                    disabled={isCorrect === true}
+                    onChange={(e) => setUserAnswer(e.target.value)}
+                    style={{ marginRight: "8px" }}
+                  />
+                  {option}
+                </label>
+              ))}
+            </div>
+          )}
+          <form
+            onSubmit={handleSubmit}
+            className={isMC ? "mcAnswerForm" : "answerForm"}
+          >
+            {!isMC && (
+              <div className="inputRow">
+                <input
+                  type="text"
+                  value={userAnswer}
+                  disabled={isCorrect === true}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  className={`answerInput ${statusClass}`}
+                />
 
+                <button
+                  type="submit"
+                  className="checkButton"
+                  disabled={isCorrect === true}
+                >
+                  Check
+                </button>
+              </div>
+            )}
+
+            {isMC && (
               <button
                 type="submit"
                 className="checkButton"
-                disabled={isCorrect === true}
+                disabled={isCorrect === true || !userAnswer}
               >
-                Check
+                Check Answer
               </button>
-            </div>
+            )}
 
             {isCorrect !== null && (
               <span className={`resultIcon ${statusClass}`}>
