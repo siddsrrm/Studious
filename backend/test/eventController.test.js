@@ -2,6 +2,15 @@ const eventController = require("../controllers/eventController");
 const Event = require("../models/Event");
 
 jest.mock("../models/Event");
+jest.mock("../models/User");
+const User = require("../models/User");
+
+
+jest.mock("../services/googleCalendar", () => ({
+  createCalendarEvent: jest.fn(),
+  updateCalendarEvent: jest.fn(),
+  deleteCalendarEvent: jest.fn(),
+}));
 
 const makeRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -72,6 +81,9 @@ describe("createEvent", () => {
     };
 
     const saveMock = jest.fn().mockResolvedValue(mockSaved);
+    User.findById.mockResolvedValue({
+  googleCalendarConnected: false,
+});
 
     Event.mockImplementation(() => ({
       save: saveMock,
@@ -174,15 +186,16 @@ describe("updateEvent", () => {
 
     const req = {
       params: { id: "e1" },
-      body: { title: "Updated", start: "10", end: "20" },
+      body: { title: "Updated", start: "2023-01-01",
+end: "2023-01-02", },
       user: { userId: USER_ID },
     };
 
     await eventController.updateEvent(req, res);
 
     expect(mockEvent.title).toBe("Updated");
-    expect(mockEvent.start).toBe("10");
-    expect(mockEvent.end).toBe("20");
+    expect(mockEvent.start).toBe(new Date("2023-01-01").toISOString());
+expect(mockEvent.end).toBe(new Date("2023-01-02").toISOString());
     expect(saveMock).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
   });
@@ -218,6 +231,10 @@ describe("deleteEvent", () => {
       params: { id: "e1" },
       user: { userId: USER_ID },
     };
+
+    User.findById.mockResolvedValue({
+  googleCalendarConnected: false,
+});
 
     await eventController.deleteEvent(req, res);
 
