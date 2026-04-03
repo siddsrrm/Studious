@@ -4,6 +4,7 @@ import NoteEditor from "../components/NoteEditor";
 import NotePage from "./NotePage";
 import PracticeQuestionsPage from "./PracticeQuestionsPage";
 import { CalendarProvider } from "../context/CalendarContext";
+import { ToDoListProvider } from "../context/ToDoListContext";
 
 const StudyPlanPage = ({ plan, onBack }) => {
   const [activeTab, setActiveTab] = useState("To-Do List");
@@ -36,7 +37,6 @@ const StudyPlanPage = ({ plan, onBack }) => {
               </svg>
               Back
             </button>
-
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-gray-800 truncate">
                 {plan.title}
@@ -49,7 +49,6 @@ const StudyPlanPage = ({ plan, onBack }) => {
             </div>
           </div>
         </header>
-
         {/* Tabs to access indiviudal components  */}
         <div className="max-w-5xl mx-auto px-6 pt-6">
           <div className="flex gap-2 border-b border-gray-200 mb-6">
@@ -67,7 +66,6 @@ const StudyPlanPage = ({ plan, onBack }) => {
               </button>
             ))}
           </div>
-
           {/* progress bar */}
           <div style={{ marginBottom: "1.5rem" }}>
             <div
@@ -109,22 +107,21 @@ const StudyPlanPage = ({ plan, onBack }) => {
               />
             </div>
           </div>
-
           {/* Rendering selected component*/}
           {activeTab === "To-Do List" && (
-            <ToDoList
-              studyPlanId={plan.id}
-              toDoListId={plan.id}
-              onProgressChange={(progress) => setProgress(progress)}
-            />
+            <ToDoListProvider studyPlanId={plan.id}>
+              <ToDoList
+                studyPlanId={plan.id}
+                toDoListId={plan.id}
+                onProgressChange={(progress) => setProgress(progress)}
+              />
+            </ToDoListProvider>
           )}
-
           {activeTab === "Notes" && (
             <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <NotePage studyPlanId={plan.id} />
             </div>
           )}
-
           {activeTab === "Practice Questions" && (
             <PracticeQuestionsPage studyPlanId={plan.id} />
           )}

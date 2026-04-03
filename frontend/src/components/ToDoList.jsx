@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useCalendar } from "../context/CalendarContext.jsx";
+import { useCalendar } from "../hooks/useCalendar.js";
+import { useToDoList } from "../hooks/useToDoList.js";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
 
 const API = import.meta.env.VITE_API_URL;
 
 const ToDoList = ({ studyPlanId, onProgressChange }) => {
-  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
@@ -15,6 +15,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
   const [showModal, setShowModal] = useState(null);
   const { events, onCreateEvent, onEditEvent, onDeleteEvent } = useCalendar();
+  const { tasks, onCreateTask, onEditTask, onDeleteTask } = useToDoList();
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -29,24 +30,6 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     return true;
   });
 
-  useEffect(() => {
-    async function fetchTasks() {
-      try {
-        const res = await fetch(`${API}/tasks?studyPlanId=${studyPlanId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok) setTasks(data);
-        else setError(data.message || "Failed to load tasks.");
-      } catch {
-        setError("Network error. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchTasks();
-  }, [studyPlanId]);
-
   // watches for when any values in tasks changes
   useEffect(() => {
     const total = tasks.length;
@@ -55,46 +38,17 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     if (onProgressChange) onProgressChange(progress);
   }, [tasks]);
 
-  const handleAddTask = async ({ title, description, priority, dueDate }) => {
-    try {
-      const res = await fetch(`${API}/tasks`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          studyPlanID: studyPlanId,
-          title,
-          description,
-          priority,
-          dueDate,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setTasks([...tasks, data]);
-      } else setError(data.message || "Failed to create task.");
-    } catch {
-      setError("Network error. Please try again.");
-    }
+  const handleAddTask = async (form) => {
+    onCreateTask(form);
+    onCreateEvent({ title: form.title, start: new Date(), end: form.dueDate });
   };
 
-  const handleUpdateTask = (updatedTask) => {
-    setTasks(tasks.map((t) => (t._id === updatedTask._id ? updatedTask : t)));
+  const handleUpdateTask = (taskId, form) => {
+    onEditTask(taskId, form);
   };
 
   const handleDeleteTask = async (taskId) => {
-    try {
-      const res = await fetch(`${API}/tasks/${taskId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) setTasks(tasks.filter((t) => t._id !== taskId));
-      else setError("Failed to delete task.");
-    } catch {
-      setError("Network error. Please try again.");
-    }
+    onDeleteTask(taskId);
   };
 
   const handleClearFilters = () => {
