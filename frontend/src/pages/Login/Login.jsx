@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import styles from './Login.module.css'
 import { useState } from 'react'
+import { getSocket } from '../../socket'
 
 function Login() {
   const navigate = useNavigate()
@@ -74,6 +75,7 @@ function Login() {
       localStorage.setItem("username", data.username)
       localStorage.setItem("email", data.email)
       localStorage.setItem("twoFactorEnabled", data.twoFactorEnabled)
+      getSocket()
       navigate("/home")
     }
   }

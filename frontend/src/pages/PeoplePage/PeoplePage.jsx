@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
+import { getSocket } from "../../socket"
 import styles from "./PeoplePage.module.css"
 
 const PAGE_SIZE = 30
@@ -8,11 +9,25 @@ function PeoplePage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState([])
-  const [sentIds, setSentIds] = useState(new Set())
   const [friendIds, setFriendIds] = useState(new Set())
+  const [sentRequests, setSentRequests] = useState({}) // { recipientId: requestId }
+  const friendRequestsRef = useRef({})              // { userId: requestId } — ref avoids stale closures
   const [loading, setLoading] = useState(false)
+  const [localToast, setLocalToast] = useState(null)
+  const [localToastVisible, setLocalToastVisible] = useState(false)
+  const toastTimers = useRef([])
   const token = localStorage.getItem("token")
   const myUsername = localStorage.getItem("username")
+
+  function showLocalToast(message) {
+    toastTimers.current.forEach(clearTimeout)
+    setLocalToast(message)
+    setLocalToastVisible(true)
+    toastTimers.current = [
+      setTimeout(() => setLocalToastVisible(false), 2500),
+      setTimeout(() => setLocalToast(null), 3500)
+    ]
+  }
 
   useEffect(() => {
     const loadRelationships = async () => {
@@ -26,12 +41,51 @@ function PeoplePage() {
       ])
       const friends = await friendsRes.json()
       const sent = await sentRes.json()
-      setFriendIds(new Set(friends.map(r =>
-        r.sender.username === myUsername ? r.recipient._id : r.sender._id
-      )))
-      setSentIds(new Set(sent.map(r => r.recipient._id)))
+      const friendMap = {}
+      friends.forEach(r => {
+        const otherId = r.sender.username === myUsername ? r.recipient._id.toString() : r.sender._id.toString()
+        friendMap[otherId] = r._id
+      })
+      friendRequestsRef.current = friendMap
+      setFriendIds(new Set(Object.keys(friendMap)))
+      const sentMap = {}
+      sent.forEach(r => { sentMap[r.recipient._id.toString()] = r._id })
+      setSentRequests(sentMap)
     }
     loadRelationships()
+
+    const socket = getSocket()
+
+    const onRequestAccepted = (request) => {
+      const friendId = request.recipient._id.toString()
+      friendRequestsRef.current = { ...friendRequestsRef.current, [friendId]: request._id }
+      setFriendIds(prev => new Set([...prev, friendId]))
+      setSentRequests(prev => {
+        const next = { ...prev }
+        delete next[friendId]
+        return next
+      })
+    }
+
+    const onUnfriended = ({ requestId }) => {
+      const entry = Object.entries(friendRequestsRef.current).find(([, rId]) => rId === requestId)
+      if (!entry) return
+      const next = { ...friendRequestsRef.current }
+      delete next[entry[0]]
+      friendRequestsRef.current = next
+      setFriendIds(prev => {
+        const updated = new Set(prev)
+        updated.delete(entry[0])
+        return updated
+      })
+    }
+
+    socket.on("friend_request_accepted", onRequestAccepted)
+    socket.on("unfriended", onUnfriended)
+    return () => {
+      socket.off("friend_request_accepted", onRequestAccepted)
+      socket.off("unfriended", onUnfriended)
+    }
   }, [])
 
   useEffect(() => {
@@ -60,14 +114,54 @@ function PeoplePage() {
       body: JSON.stringify({ recipientId: userId })
     })
     if (res.ok) {
-      setSentIds(prev => new Set([...prev, userId.toString()]))
+      const data = await res.json()
+      setSentRequests(prev => ({ ...prev, [userId.toString()]: data._id }))
+    }
+  }
+
+  const unfriend = async (userId) => {
+    const requestId = friendRequestsRef.current[userId.toString()]
+    if (!requestId) return
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/friendrequests/unfriend/${requestId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      const next = { ...friendRequestsRef.current }
+      delete next[userId.toString()]
+      friendRequestsRef.current = next
+      setFriendIds(prev => {
+        const updated = new Set(prev)
+        updated.delete(userId.toString())
+        return updated
+      })
+      const target = results.find(u => u._id.toString() === userId.toString())
+      if (target) showLocalToast(`You and ${target.username} are no longer friends`)
+    }
+  }
+
+  const cancelRequest = async (userId) => {
+    const requestId = sentRequests[userId.toString()]
+    if (!requestId) return
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/friendrequests/${requestId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      setSentRequests(prev => {
+        const next = { ...prev }
+        delete next[userId.toString()]
+        return next
+      })
+      showLocalToast("Friend request cancelled")
     }
   }
 
   const getButtonState = (user) => {
-    if (friendIds.has(user._id.toString())) return { label: "Friends", disabled: true }
-    if (sentIds.has(user._id.toString())) return { label: "Requested", disabled: true }
-    return { label: "Add Friend", disabled: false }
+    const id = user._id.toString()
+    if (friendIds.has(id)) return { label: "Friends", type: "friends", action: () => unfriend(user._id) }
+    if (sentRequests[id]) return { label: "Requested", type: "requested", action: () => cancelRequest(user._id) }
+    return { label: "Add Friend", type: "add", action: () => sendRequest(user._id) }
   }
 
   return (
@@ -118,9 +212,12 @@ function PeoplePage() {
                     View Profile
                   </button>
                   <button
-                    className={btn.disabled ? styles.buttonDisabled : styles.button}
-                    onClick={() => !btn.disabled && sendRequest(user._id)}
-                    disabled={btn.disabled}
+                    className={
+                      btn.type === "friends" ? styles.buttonFriends :
+                      btn.type === "requested" ? styles.buttonRequested :
+                      styles.button
+                    }
+                    onClick={btn.action}
                   >
                     {btn.label}
                   </button>
@@ -130,6 +227,12 @@ function PeoplePage() {
           })}
         </div>
       </div>
+
+      {localToast && (
+        <div className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg px-4 py-3 max-w-xs border border-gray-200 transition-opacity duration-1000 z-50 w-fit ${localToastVisible ? "opacity-100" : "opacity-0"}`}>
+          <p className="text-sm font-semibold text-gray-700">{localToast}</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
+import { getSocket } from "../../socket"
 import styles from "./FriendsPage.module.css"
 
 const TABS = ["Friends", "Pending", "Sent"]
@@ -10,8 +11,22 @@ function FriendsPage() {
   const [friends, setFriends] = useState([])
   const [pending, setPending] = useState([])
   const [sent, setSent] = useState([])
+  const [friendSearch, setFriendSearch] = useState("")
+  const [localToast, setLocalToast] = useState(null)
+  const [localToastVisible, setLocalToastVisible] = useState(false)
+  const toastTimers = useRef([])
   const token = localStorage.getItem("token")
   const myUsername = localStorage.getItem("username")
+
+  function showLocalToast(message) {
+    toastTimers.current.forEach(clearTimeout)
+    setLocalToast(message)
+    setLocalToastVisible(true)
+    toastTimers.current = [
+      setTimeout(() => setLocalToastVisible(false), 2500),
+      setTimeout(() => setLocalToast(null), 3500)
+    ]
+  }
 
   const load = async () => {
     const headers = { Authorization: `Bearer ${token}` }
@@ -27,6 +42,31 @@ function FriendsPage() {
 
   useEffect(() => {
     load()
+
+    const socket = getSocket()
+
+    const onRequestReceived = (request) => setPending(prev => [...prev, request])
+    const onRequestCancelled = ({ requestId }) => setPending(prev => prev.filter(r => r._id !== requestId))
+    const onRequestAccepted = (request) => {
+      setSent(prev => prev.filter(r => r._id !== request._id))
+      setFriends(prev => [...prev, request])
+    }
+    const onRequestDeclined = ({ requestId }) => setSent(prev => prev.filter(r => r._id !== requestId))
+    const onUnfriended = ({ requestId }) => setFriends(prev => prev.filter(r => r._id !== requestId))
+
+    socket.on("friend_request_received", onRequestReceived)
+    socket.on("friend_request_cancelled", onRequestCancelled)
+    socket.on("friend_request_accepted", onRequestAccepted)
+    socket.on("friend_request_declined", onRequestDeclined)
+    socket.on("unfriended", onUnfriended)
+
+    return () => {
+      socket.off("friend_request_received", onRequestReceived)
+      socket.off("friend_request_cancelled", onRequestCancelled)
+      socket.off("friend_request_accepted", onRequestAccepted)
+      socket.off("friend_request_declined", onRequestDeclined)
+      socket.off("unfriended", onUnfriended)
+    }
   }, [])
 
   const respond = async (requestId, status) => {
@@ -35,7 +75,18 @@ function FriendsPage() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status })
     })
-    if (res.ok) load()
+    if (res.ok) {
+      if (status === 1) {
+        const accepted = pending.find(r => r._id === requestId)
+        if (accepted) {
+          setPending(prev => prev.filter(r => r._id !== requestId))
+          setFriends(prev => [...prev, { ...accepted, status: 1 }])
+          window.dispatchEvent(new CustomEvent("friend-toast", { detail: { message: `You and ${accepted.sender.username} are now friends` } }))
+        }
+      } else {
+        setPending(prev => prev.filter(r => r._id !== requestId))
+      }
+    }
   }
 
   const cancel = async (requestId) => {
@@ -43,19 +94,30 @@ function FriendsPage() {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.ok) load()
+    if (res.ok) setSent(prev => prev.filter(r => r._id !== requestId))
   }
 
   const unfriend = async (requestId) => {
+    const target = friends.find(r => r._id === requestId)
     const res = await fetch(`${import.meta.env.VITE_API_URL}/friendrequests/unfriend/${requestId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.ok) load()
+    if (res.ok) {
+      setFriends(prev => prev.filter(r => r._id !== requestId))
+      if (target) {
+        const otherUser = getFriendUser(target)
+        showLocalToast(`You and ${otherUser.username} are no longer friends`)
+      }
+    }
   }
 
   const getFriendUser = (request) =>
     request.sender.username === myUsername ? request.recipient : request.sender
+
+  const filteredFriends = friendSearch.trim()
+    ? friends.filter(r => getFriendUser(r).username.toLowerCase().includes(friendSearch.toLowerCase()))
+    : friends
 
   return (
     <div className={styles.page}>
@@ -85,11 +147,21 @@ function FriendsPage() {
           ))}
         </div>
 
+        {tab === "Friends" && (
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Search friends..."
+            value={friendSearch}
+            onChange={e => setFriendSearch(e.target.value)}
+          />
+        )}
+
         <div className={styles.list}>
           {tab === "Friends" && (
-            friends.length === 0
-              ? <p className={styles.empty}>No friends yet. Find people to add!</p>
-              : friends.map(r => {
+            filteredFriends.length === 0
+              ? <p className={styles.empty}>{friendSearch ? "No friends match your search." : "No friends yet. Find people to add!"}</p>
+              : filteredFriends.map(r => {
                   const user = getFriendUser(r)
                   return (
                     <div key={r._id} className={styles.card}>
@@ -169,6 +241,12 @@ function FriendsPage() {
           )}
         </div>
       </div>
+
+      {localToast && (
+        <div className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg px-4 py-3 max-w-xs border border-gray-200 transition-opacity duration-1000 z-50 w-fit ${localToastVisible ? "opacity-100" : "opacity-0"}`}>
+          <p className="text-sm font-semibold text-gray-700">{localToast}</p>
+        </div>
+      )}
     </div>
   )
 }
