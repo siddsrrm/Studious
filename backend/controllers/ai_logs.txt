@@ -1,0 +1,344 @@
+
+
+=== 2026-04-03T13:09:56.980Z ===
+What characteristic allows a distributed system to continue operating even if some of its components fail?|Fault Tolerance is achieved through redundancy and replication, ensuring operation continues smoothly.|Operating without any interruptions despite component failure due to strong consistency protocols.|Scalability can occur in the presence of fault tolerance mechanisms by distributing load across multiple nodes.|Availability guarantees that system is accessible at all times regardless of failures occurring within it or its environment..
+B
+
+
+=== 2026-04-03T13:11:31.944Z ===
+What is a distributed system?|A collection of interconnected computers that work together to achieve a common goal.|An individual computer with multiple users sharing resources.|All personal devices connected wirelessly forming an extended network without centralized management.|The process where one machine controls another remotely through voice commands.|D
+
+What characterizes fault tolerance in distributed systems?|A system continues operating seamlessly even when components fail.|Every time a component fails, the entire system shuts down immediately for repairs.|Failures are ignored as they have no impact on overall system performance.|Systems operate without considering any potential failure scenarios at all times to avoid downtime fear.|B
+
+Which model is used in distributed systems where each node can act both as a client and server?|Client-Server Model|Peer-to-Peer (P2P)|Service-Oriented Architecture|Model View Controller
+
+What does the CAP theorem state about consistency models within distributed systems?|A system cannot guarantee all three of Consistency, Availability, and Partition Tolerance.|Consistency must always be sacrificed to achieve availability in a partition tolerant system.|Strongly consistent networks can never suffer from partitions or network failures.|Eventually consistent systems may temporarily show different data across the same dataset during high traffic periods only.|A
+
+
+
+=== 2026-04-03T13:20:38.249Z ===
+{
+  "multipleChoiceQuestions": [
+    {
+      "question": "What is a distributed system?",
+      "options": ["A collection of independent computers that appears as one coherent system.", "An isolated computer with specialized hardware for complex tasks."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which characteristic ensures the system continues operating even when some components fail?",
+      "options": ["Scalability", "Fault Tolerance", "Concurrency", "Transparency"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is a key difference between Client-Server and Peer-to-Peer models?",
+      "options": ["In the client-server model, clients request services from servers.", "In P2P systems, each node acts as both server and client."],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is a common challenge in distributed systems?",
+      "options": ["Network latency", "Data consistency", "Security risks"],
+      "correctIndex": [0, 1, 2]
+    }
+  ],
+  "freeResponseQuestions": [
+    {
+      "question": "Explain the concept of fault tolerance in distributed systems.",
+      "answer": "Fault tolerance refers to a system's ability to continue operating even when some components fail."
+    },
+    {
+      "question": "Describe how replication contributes to reliability and availability in distributed systems.",
+      "answer": "Replication involves creating copies of data on multiple nodes, which improves the overall reliability and availability by ensuring that if one node fails, others can take over."
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:24:59.029Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "options": ["A collection of independent computers that appears to its users as a single coherent system.", "An isolated computer working on complex tasks."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which characteristic ensures the continuation of operations even when some components fail?",
+      "options": ["Scalability", "Fault Tolerance", "Concurrency", "Transparency"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is a key difference between Client-Server and Peer-to-Peer models in distributed systems?",
+      "options": ["In the client-server model, clients request services from servers.", "In peer-to-peer model, each node acts as both server and client."],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is a common example of using REST APIs in distributed systems?",
+      "options": ["Web applications requesting data from databases.", "File-sharing networks exchanging files directly between peers.", "Cloud computing platforms managing resources."],
+      "correctIndex": 0
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:26:56.966Z ===
+{
+  "questions": [
+    {
+      "question": "Which of the following is NOT a key characteristic of distributed systems?",
+      "options": ["Scalability", "Fault Tolerance", "Centralized Control", "Concurrency"],
+      "correctIndex": 2
+    },
+    {
+      "question": "In which type of Distributed System does each node act as both a client and server?",
+      "options": ["Client-Server Model", "Peer-to-Peer (P2P)", "Distributed Databases"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which communication method in Distributed Systems does NOT use messages?',"
+      }],
+      "options": ["Message Passing", "Remote Procedure Call (RPC)", "REST APIs"],
+      "correctIndex": 0
+    }
+
+
+=== 2026-04-03T13:28:33.412Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "options": ["A collection of independent computers that appear to its users as a single coherent system.", "An isolated computer with specialized hardware for complex computations."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which characteristic is NOT associated with distributed systems?",
+      "options": ["Scalability", "Fault Tolerance", "Synchronization Complexity", "Concurrency"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What type of communication model allows a program to execute procedures on another machine as if they were local?",
+      "options": ["Message Passing", "Remote Procedure Call (RPC)", "Direct Memory Access"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which consistency model ensures that all nodes see the same data at the same time in a distributed system?",
+      "options": ["Strong Consistency", "Eventual Consistency", "Causal Consistency"],
+      "correctIndex": 0
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:29:59.287Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "answer": "A collection of independent computers that appears to its users as a single coherent system."
+    },
+    {
+      "question": "Name and describe two types of Distributed Systems.",
+      "answer": [
+        {
+          "name": "Client-Server Model",
+          "description": "Clients request services, servers provide them. Example: Web applications."
+        },
+        {
+          "name": "Peer-to-Peer (P2P)",
+          "description": "No central server; each node acts as both client and server. Example: File-sharing networks."
+        }
+      ]
+    },
+    {
+      "question": "What are the two main consistency models in Distributed Systems?",
+      "answer": [
+        "Strong Consistency ensures all nodes see the same data at the same time.",
+        "Eventual Consistency allows updates to propagate over time, and temporary differences may occur."
+      ]
+    },
+    {
+      "question": "What is CAP Theorem in Distributed Systems?",
+      "answer": "States that a distributed system can only guarantee two out of three properties: consistency, availability, and partition tolerance. This highlights the trade-offs needed when designing such systems."
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:31:46.915Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "answer": "A collection of independent computers that appears to its users as a single coherent system."
+    },
+    {
+      "question": "List and describe two key characteristics of distributed systems.",
+      "answer": [
+        "Scalability: Ability to handle growth in users, data, or resources.",
+        "Fault Tolerance: System continues operating even when some components fail."
+      ]
+    },
+    {
+      "question": "What are the three types of distributed systems mentioned?",
+      "answer": [
+        "Client-Server Model: Clients request services, servers provide them.",
+        "Peer-to-Peer (P2P): Each node acts as both client and server without a central server.",
+        "Distributed Databases: Data is stored across multiple machines but appears unified."
+      ]
+    },
+    {
+      "question": "What are the three communication methods in distributed systems?",
+      "answer": [
+        "Message Passing: Nodes communicate by sending messages.",
+        "Remote Procedure Call (RPC): Allows a program to execute a procedure on another machine as if it were local.",
+        "REST APIs: Use HTTP methods for communication and follow a stateless model."
+      ]
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:33:40.006Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "options": ["A collection of independent computers that appear to its users as a single coherent system.", "An isolated computer with specialized hardware for complex computations."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which characteristic is NOT typically associated with distributed systems?",
+      "options": ["Scalability", "Fault Tolerance", "Isolation of components.", "Concurrency"],
+      "correctIndex": 2
+    },
+    {
+      "question": "In a client-server model, what role does the server play in distributed systems?",
+      "options": ["Requests services from clients.", "Provides requested services to clients."],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which of these is NOT a type of communication used in Distributed Systems according to the notes provided above?",
+      "options": ["Message Passing", "Remote Procedure Call (RPC)", "Direct Memory Access.", "REST APIs"],
+      "correctIndex": 2
+    },
+    {
+      "question": "What does CAP theorem state about distributed systems' ability to guarantee consistency, availability and partition tolerance?",
+      "options": ["A system can only promise two out of three.", "Consistency is not important in Distributed Systems.", "All nodes see the same data at all times."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which replication technique involves storing copies of data on multiple nodes to improve reliability and availability?",
+      "options": ["Replication", "Partitioning (Sharding)", "Data Mirroring.", "Data Encryption"],
+      "correctIndex": 0
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:34:41.603Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "options": ["A collection of independent computers that appear to its users as a single coherent system.", "An isolated computer with specialized hardware for complex computations."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which consistency model ensures all nodes see the same data at the same time?",
+      "options": ["Strong Consistency", "Eventual Consistency", "CAP Theorem"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is a primary characteristic of distributed systems that allows them to handle growth in users, data or resources?",
+      "options": ["Scalability", "Fault Tolerance", "Concurrency", "Transparency"],
+      "correctIndex": 0
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:35:50.875Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "options": ["A collection of independent computers that appears to its users as one coherent system.", "An isolated computer with specialized hardware."],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which characteristic ensures the continuous operation even when some components fail?",
+      "options": ["Scalability", "Fault Tolerance", "Concurrency", "Transparency"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is a Client-Server Model in distributed systems?",
+      "options": [
+        "Clients request services, servers provide them.",
+        "A single server handles all requests from clients."
+      ],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which type of system does not rely on a centralized server?",
+      "options": ["Client-Server Model", "Peer-to-Peer (P2P)", "Distributed Databases"],
+      "correctIndex": 1
+    },
+    {
+      "question": "What is the purpose of using logical clocks in distributed systems?",
+      "options": [
+        "To order events chronologically.",
+        "For fault tolerance."
+      ],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which consistency model guarantees that all nodes see the same data at the same time?",
+      "options": ["Strong Consistency", "Eventual Consistency", "CAP Theorem"],
+      "correctIndex": 0
+    },
+    {
+      "question": "What is partition tolerance in a distributed system according to CAP theorem?",
+      "options": [
+        "The ability of the network partitions.",
+        "Dividing data into smaller pieces."
+      ],
+      "correctIndex": 0
+    },
+    {
+      "question": "Which replication technique involves storing copies of data on multiple nodes?",
+      "options": ["Replication", "Partitioning"],
+      "correctIndex": 0
+    }
+  ]
+}
+
+
+=== 2026-04-03T13:38:04.642Z ===
+{
+  "questions": [
+    {
+      "question": "What is a distributed system?",
+      "answer": "A collection of independent computers that appears to its users as a single coherent system."
+    },
+    {
+      "question": "List and describe two types of Distributed Systems.",
+      "answer": [
+        {
+          "type": "Client-Server Model",
+          "description": "In this model, clients request services from servers which provide them. An example is web applications."
+        },
+        {
+          "type": "Peer-to-Peer (P2P)",
+          "description": "Each node in the network acts as both a client and server without any centralized control. File-sharing networks are an example of P2P systems."
+        }
+      ]
+    },
+    {
+      "question": "Explain how communication occurs within Distributed Systems.",
+      "answer": "Communication in distributed systems happens over a network and can be prone to delays, failures. It includes methods like message passing (synchronous or asynchronous), Remote Procedure Call (RPC), and REST APIs."
+    },
+    {
+      "question": "What are Logical Clocks used for in Distributed Systems?",
+      "answer": "Logical clocks, such as Lamport Timestamps, order events within the system without relying on synchronized physical time."
+    }
+  ]
+}
