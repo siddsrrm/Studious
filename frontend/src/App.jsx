@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { getSocket, disconnectSocket } from "./socket";
+import { ACHIEVEMENTS } from "./achievements";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
@@ -14,6 +15,7 @@ import PeoplePage from "./pages/PeoplePage/PeoplePage";
 import FriendsPage from "./pages/FriendsPage/FriendsPage";
 import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import AchievementsPage from "./pages/AchievementsPage/AchievementsPage";
 
 function App() {
   const [notif, setNotif] = useState(null)
@@ -59,13 +61,20 @@ function App() {
 
     const onFriendToast = (e) => showNotification(e.detail.message)
 
+    const onAchievementUnlocked = ({ achievementId }) => {
+      const def = ACHIEVEMENTS.find(a => a.id === achievementId)
+      if (def) showNotification(`Achievement unlocked: ${def.name}`)
+    }
+
     socket.on("friend_request_received", onRequestReceived)
     socket.on("friend_request_accepted", onRequestAccepted)
+    socket.on("achievement_unlocked", onAchievementUnlocked)
     window.addEventListener("friend-toast", onFriendToast)
 
     return () => {
       socket.off("friend_request_received", onRequestReceived)
       socket.off("friend_request_accepted", onRequestAccepted)
+      socket.off("achievement_unlocked", onAchievementUnlocked)
       window.removeEventListener("friend-toast", onFriendToast)
     }
   }, [token])
@@ -93,6 +102,7 @@ function App() {
         <Route path="/friends" element={<FriendsPage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
+        <Route path="/achievements" element={<AchievementsPage />} />
       </Routes>
     </BrowserRouter>
   );

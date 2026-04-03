@@ -221,3 +221,123 @@
   text-align: center;
   margin: 0;
 }
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.sectionDescription {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+}
+
+.achievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.achievementBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  background-color: #f9fafb;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.achievementBadge:hover .badgeTooltip {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.achievementBadge.unlocked {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fbbf24;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+}
+
+.achievementBadge.locked {
+  opacity: 0.5;
+}
+
+.badgeImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  z-index: 10;
+}
+
+.achievementBadge.locked .badgeImage {
+  filter: grayscale(100%);
+}
+
+.badgeTooltip {
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  width: 160px;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.badgeTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #1f2937;
+}
+
+.tooltipTitle {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tooltipDescription {
+  font-size: 11px;
+  color: #e5e7eb;
+  margin-bottom: 6px;
+}
+
+.tooltipDate {
+  font-size: 11px;
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .achievementsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .card {
+    max-width: 100%;
+  }
+}

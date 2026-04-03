@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { getSocket } from "../../socket"
+import { ACHIEVEMENTS } from "../../achievements"
 import styles from "./ProfilePage.module.css"
 
 function ProfilePage() {
@@ -15,6 +16,7 @@ function ProfilePage() {
   const [sentRequests, setSentRequests] = useState({})
   const [pendingRequests, setPendingRequests] = useState({})
   const friendRequestsRef = useRef({})
+  const [earnedAchievements, setEarnedAchievements] = useState([])
   const [localToast, setLocalToast] = useState(null)
   const [localToastVisible, setLocalToastVisible] = useState(false)
   const toastTimers = useRef([])
@@ -46,12 +48,18 @@ function ProfilePage() {
           return
         }
 
-        const [profileData, friends, sent, pending] = await Promise.all([
+        const achievementsRes = await fetch(
+          `${import.meta.env.VITE_API_URL}/achievements/user/${userId}`,
+          { headers }
+        )
+        const [profileData, friends, sent, pending, earnedData] = await Promise.all([
           profileRes.json(),
           friendsRes.json(),
           sentRes.json(),
-          pendingRes.json()
+          pendingRes.json(),
+          achievementsRes.ok ? achievementsRes.json() : Promise.resolve([])
         ])
+        setEarnedAchievements(earnedData)
 
         setProfile(profileData)
 
@@ -276,6 +284,14 @@ function ProfilePage() {
   const isSelf = profile.username === myUsername
   const btn = getButtonState()
 
+  const earnedMap = {}
+  earnedAchievements.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
+  const achievements = ACHIEVEMENTS.map(a => ({
+    ...a,
+    unlocked: !!earnedMap[a.id],
+    unlockedAt: earnedMap[a.id] || null
+  }))
+
   return (
     <div className={styles.page}>
       <div className={styles.topBar}>
@@ -318,6 +334,36 @@ function ProfilePage() {
             </button>
           )}
         </div>
+
+        {/* Achievements Section */}
+        {achievements && achievements.length > 0 && (
+          <div className={styles.card}>
+            <h3 className={styles.sectionTitle}>Achievements</h3>
+            <p className={styles.sectionDescription}>
+              {achievements.filter(a => a.unlocked).length} of {achievements.length} unlocked
+            </p>
+            <div className={styles.achievementsGrid}>
+              {achievements.map((achievement) => (
+                <div key={achievement.id} className={`${styles.achievementBadge} ${achievement.unlocked ? styles.unlocked : styles.locked}`}>
+                  <div className={styles.badgeTooltip}>
+                    <div className={styles.tooltipTitle}>{achievement.name}</div>
+                    <div className={styles.tooltipDescription}>{achievement.description}</div>
+                    {achievement.unlocked && achievement.unlockedAt && (
+                      <div className={styles.tooltipDate}>
+                        Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <img
+                    src={`/badges/${achievement.badge}`}
+                    alt={achievement.name}
+                    className={styles.badgeImage}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {localToast && (
