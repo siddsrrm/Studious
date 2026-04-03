@@ -16,6 +16,7 @@ const Calendar = () => {
   const calendarRef = useRef(null);
 
   const pad = (date) => {
+    if (!date) return "";
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
@@ -84,11 +85,35 @@ const Calendar = () => {
 
     setSaving(true);
 
-    const updatedEvent = {
-      ...modal.form,
-      start: new Date(modal.form.start),
-      end: new Date(modal.form.end),
-    };
+    const existingEvent = events.find((e) => e._id === modal.eventId);
+
+    if (!existingEvent) {
+      setError("Event not found.");
+      setSaving(false);
+      return;
+    }
+
+    const isRecurring = !!existingEvent?.rrule;
+
+    const durationMs = new Date(modal.form.end) - new Date(modal.form.start);
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    const duration = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+    const updatedEvent = isRecurring
+      ? {
+          title: modal.form.title,
+          rrule: {
+            ...existingEvent.rrule,
+            dtstart: new Date(modal.form.start),
+          },
+          duration,
+        }
+      : {
+          title: modal.form.title,
+          start: new Date(modal.form.start),
+          end: new Date(modal.form.end),
+        };
 
     await onEditEvent(modal.eventId, updatedEvent);
     closeModal();
@@ -106,11 +131,32 @@ const Calendar = () => {
   // Drag event to different day/time
   const handleEventChange = async (changeInfo) => {
     const ev = changeInfo.event;
+    const existingEvent = events.find((e) => e._id === ev.id);
 
-    const updatedFields = {
-      start: ev.start,
-      end: ev.end ? ev.end : ev.start,
-    };
+    if (!existingEvent) {
+      changeInfo.revert();
+      return;
+    }
+
+    const isRecurring = !!existingEvent?.rrule;
+
+    const durationMs = ev.end ? ev.end - ev.start : 60 * 60 * 1000;
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    const duration = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+    const updatedFields = isRecurring
+      ? {
+          rrule: {
+            ...existingEvent.rrule,
+            dtstart: ev.start,
+          },
+          duration,
+        }
+      : {
+          start: ev.start,
+          end: ev.end ? ev.end : ev.start,
+        };
 
     try {
       await onEditEvent(ev.id, updatedFields);
@@ -136,7 +182,28 @@ const Calendar = () => {
           center: "title",
           right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
-        events={events.map((e) => ({ ...e, id: e._id }))}
+        events={events
+          .filter(
+            (e) => !e.rrule || (typeof e.rrule === "object" && e.rrule.freq),
+          )
+          .map((e) => {
+            const isRecurring = !!e.rrule;
+
+            return {
+              id: e._id,
+              title: e.title,
+
+              ...(isRecurring
+                ? {
+                    rrule: e.rrule,
+                    duration: e.duration,
+                  }
+                : {
+                    start: e.start,
+                    end: e.end,
+                  }),
+            };
+          })}
         dateClick={(info) => openCreate(info.dateStr)}
         eventClick={openEdit}
         editable={true}

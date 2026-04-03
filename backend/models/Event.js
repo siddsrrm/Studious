@@ -18,22 +18,13 @@ const EventSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  recurrence: {
-    freq: {
-      type: String,
-      enum: ["daily", "weekly", "monthly", null],
-      default: null,
-    },
-    interval: {
-      type: Number,
-      default: 1,
-    },
-    byweekday: {
-      type: [String], // ['mo', 'we']
-      default: [],
-    },
-    until: Date,
-    count: Number,
+  rrule: {
+    type: Object,
+    default: null,
+  },
+  duration: {
+    type: String,
+    default: null,
   },
 });
 

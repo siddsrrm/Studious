@@ -6,35 +6,6 @@ const API = import.meta.env.VITE_API_URL;
 export const useEvents = () => {
   const [events, setEvents] = useState([]);
 
-  const normalizeEvent = (e) => {
-    if (e.recurrence && e.recurrence.freq) {
-      const duration = (new Date(e.end) - new Date(e.start)) / (1000 * 60);
-
-      const rrule = new RRule({
-        freq: RRule[e.recurrence.freq.toUpperCase()],
-        interval: e.recurrence.interval || 1,
-        dtstart: new Date(e.start),
-        until: e.recurrence.until ? new Date(e.recurrence.until) : undefined,
-      });
-
-      // Generate only next 90 days
-      const now = new Date();
-      const ninetyDaysLater = new Date(
-        now.getTime() + 90 * 24 * 60 * 60 * 1000,
-      );
-      const dates = rrule.between(now, ninetyDaysLater, true);
-
-      return dates.map((date) => ({
-        _id: `${e._id}-${date.getTime()}`,
-        title: e.title,
-        start: date,
-        end: new Date(date.getTime() + duration * 60 * 1000),
-      }));
-    }
-
-    return [{ ...e, start: new Date(e.start), end: new Date(e.end) }];
-  };
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -48,8 +19,7 @@ export const useEvents = () => {
         if (!res.ok) throw new Error();
 
         const data = await res.json();
-        const allEvents = data.flatMap(normalizeEvent); // flatten arrays
-        setEvents(allEvents);
+        setEvents(data);
       } catch (err) {
         console.error("Failed to load events");
       }
@@ -78,11 +48,7 @@ export const useEvents = () => {
       if (!res.ok) throw new Error();
 
       const saved = await res.json();
-      const occurrences = Array.isArray(normalizeEvent(saved))
-        ? normalizeEvent(saved)
-        : [normalizeEvent(saved)];
-
-      setEvents((prev) => [...prev, ...occurrences]);
+      setEvents((prev) => [...prev, saved]);
     } catch {
       console.error("Failed to create event");
 
@@ -108,14 +74,9 @@ export const useEvents = () => {
       if (!res.ok) throw new Error();
 
       const updated = await res.json();
-      const occurrences = Array.isArray(normalizeEvent(updated))
-        ? normalizeEvent(updated)
-        : [normalizeEvent(updated)];
-
-      setEvents((prev) => [
-        ...prev.filter((e) => !e._id.startsWith(updated._id)),
-        ...occurrences,
-      ]);
+      setEvents((prev) =>
+        prev.map((e) => (e._id === updated._id ? updated : e)),
+      );
     } catch {
       console.error("Failed to update event");
 

@@ -16,7 +16,8 @@ exports.createEvent = async (req, res) => {
       title: req.body.title,
       start: req.body.start,
       end: req.body.end,
-      recurrence: req.body.recurrence || null,
+      rrule: req.body.rrule || null,
+      duration: req.body.duration || null,
     });
 
     const savedEvent = await event.save();
@@ -29,14 +30,19 @@ exports.createEvent = async (req, res) => {
 exports.updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
+
     if (!event) return res.status(404).json({ message: "Event not found" });
     if (event.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
-    const { title, start, end, recurrence } = req.body;
+
+    const { title, start, end, rrule, duration } = req.body;
+
     if (title !== undefined) event.title = title;
     if (start !== undefined) event.start = start;
     if (end !== undefined) event.end = end;
-    if (recurrence !== undefined) event.recurrence = recurrence;
+    if (rrule !== undefined) event.rrule = rrule;
+    if (duration !== undefined) event.duration = duration;
+
     const updated = await event.save();
     res.json(updated);
   } catch (err) {
@@ -47,9 +53,11 @@ exports.updateEvent = async (req, res) => {
 exports.deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
+
     if (!event) return res.status(404).json({ message: "Event not found" });
     if (event.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
+
     await Event.deleteOne({ _id: event._id });
     res.json({ message: "Event deleted" });
   } catch (err) {

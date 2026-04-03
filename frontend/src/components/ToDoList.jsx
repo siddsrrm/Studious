@@ -50,32 +50,19 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         title: form.title,
         start: startDate,
         end: endDate,
-        recurrence: null,
       };
 
       if (form.recurrence?.enabled) {
-        const recurrence = {
-          freq: form.recurrence.freq,
+        eventObj.rrule = {
+          freq: form.recurrence.freq.toUpperCase(), // IMPORTANT
           interval: form.recurrence.interval || 1,
-          byweekday: [],
-          until: new Date(startDate.getTime() + 90 * 24 * 60 * 60 * 1000),
+          dtstart: startDate.toISOString(),
+          until: new Date(
+            startDate.getTime() + 90 * 24 * 60 * 60 * 1000, // recurs up to 90 days instead of forever
+          ).toISOString(),
         };
-        eventObj.recurrence = recurrence;
 
-        const rrule = new RRule({
-          freq:
-            form.recurrence.freq === "daily"
-              ? RRule.DAILY
-              : form.recurrence.freq === "weekly"
-                ? RRule.WEEKLY
-                : RRule.MONTHLY,
-          interval: form.recurrence.interval,
-          dtstart: startDate,
-          until: recurrence.until,
-        });
-
-        eventObj.rrule = rrule.toString();
-        eventObj.duration = { minutes: (endDate - startDate) / (1000 * 60) };
+        eventObj.duration = "01:00"; // 1 hour (FullCalendar format)
       }
 
       await onCreateEvent(eventObj);
