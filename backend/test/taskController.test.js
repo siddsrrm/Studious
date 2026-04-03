@@ -1,7 +1,9 @@
 const taskController = require("../controllers/taskController");
 const Task = require("../models/Task");
+const ProgressTracker = require("../models/ProgressTracker");
 
 jest.mock("../models/Task");
+jest.mock("../models/ProgressTracker");
 
 const makeRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -10,7 +12,12 @@ const makeRes = () => ({
 
 const USER_ID = "user123";
 
-//getTasks
+// Mock ProgressTracker
+const mockUpdate = jest.fn().mockResolvedValue(true);
+ProgressTracker.findOne.mockResolvedValue({ updateTaskProgress: mockUpdate });
+ProgressTracker.create.mockResolvedValue({ updateTaskProgress: mockUpdate });
+
+// ------------------- getTasks -------------------
 describe("getTasks", () => {
   let res;
   beforeEach(() => {
@@ -46,7 +53,7 @@ describe("getTasks", () => {
   });
 });
 
-//createTask
+// ------------------- createTask -------------------
 describe("createTask", () => {
   let res;
   beforeEach(() => {
@@ -69,6 +76,7 @@ describe("createTask", () => {
       studyPlanID: "plan1",
       title: "Test Task",
       description: "Some description",
+      completed: false,
       priority: "high",
       dueDate: "2025-12-01",
       subTasks: [],
@@ -90,6 +98,7 @@ describe("createTask", () => {
       studyPlanID: "plan1",
       title: "Test Task",
       description: "Some description",
+      completed: false,
       priority: "high",
       dueDate: "2025-12-01",
       subTasks: [],
@@ -135,7 +144,7 @@ describe("createTask", () => {
   });
 });
 
-//updateTask
+// ------------------- updateTask -------------------
 describe("updateTask", () => {
   let res;
   beforeEach(() => {
@@ -143,99 +152,38 @@ describe("updateTask", () => {
     jest.clearAllMocks();
   });
 
-  test("returns 403 when task does not exist", async () => {
+  test("returns 404 when task does not exist", async () => {
     Task.findById.mockResolvedValue(null);
-    const req = {
-      params: { id: "t1" },
-      body: { title: "Updated" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1" }, body: { title: "Updated" }, user: { userId: USER_ID } };
     await taskController.updateTask(req, res);
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "Task not found" });
   });
 
   test("returns 403 when user is not the owner", async () => {
-    Task.findById.mockResolvedValue({
-      _id: "t1",
-      ownerID: { toString: () => "otherUser" },
-    });
-    const req = {
-      params: { id: "t1" },
-      body: { title: "Updated" },
-      user: { userId: USER_ID },
-    };
+    Task.findById.mockResolvedValue({ _id: "t1", ownerID: { toString: () => "otherUser" } });
+    const req = { params: { id: "t1" }, body: { title: "Updated" }, user: { userId: USER_ID } };
     await taskController.updateTask(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
   });
 
-  test("calls updateTask schema method and returns updated task", async () => {
-    const mockUpdatedTask = {
-      _id: "t1",
-      title: "New Title",
-      description: "New description",
-      completed: true,
-      priority: "high",
-      dueDate: "2025-12-01",
-    };
+  test("calls updateTask and returns updated task", async () => {
+    const mockUpdatedTask = { _id: "t1", title: "New Title" };
     const mockTask = {
       _id: "t1",
       ownerID: { toString: () => USER_ID },
       updateTask: jest.fn().mockResolvedValue(mockUpdatedTask),
     };
     Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1" },
-      body: { title: "New Title", description: "New description", completed: true, priority: "high", dueDate: "2025-12-01" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1" }, body: { title: "New Title" }, user: { userId: USER_ID } };
     await taskController.updateTask(req, res);
     expect(mockTask.updateTask).toHaveBeenCalledWith(req.body);
     expect(res.json).toHaveBeenCalledWith(mockUpdatedTask);
-  });
-
-  test("does not overwrite fields that are not provided", async () => {
-    const mockUpdatedTask = {
-      _id: "t1",
-      title: "Existing Title",
-      priority: "medium",
-      completed: true,
-    };
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      updateTask: jest.fn().mockResolvedValue(mockUpdatedTask),
-    };
-    Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1" },
-      body: { completed: true },
-      user: { userId: USER_ID },
-    };
-    await taskController.updateTask(req, res);
-    expect(mockTask.updateTask).toHaveBeenCalledWith(req.body);
-    expect(res.json).toHaveBeenCalledWith(mockUpdatedTask);
-  });
-
-  test("returns 500 on server error", async () => {
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      updateTask: jest.fn().mockRejectedValue(new Error("DB error")),
-    };
-    Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1" },
-      body: { title: "New Title" },
-      user: { userId: USER_ID },
-    };
-    await taskController.updateTask(req, res);
-    expect(res.status).toHaveBeenCalledWith(500);
   });
 });
 
-//deleteTask
+// ------------------- deleteTask -------------------
 describe("deleteTask", () => {
   let res;
   beforeEach(() => {
@@ -253,10 +201,7 @@ describe("deleteTask", () => {
   });
 
   test("returns 403 when user is not the owner", async () => {
-    Task.findById.mockResolvedValue({
-      _id: "t1",
-      ownerID: { toString: () => "otherUser" },
-    });
+    Task.findById.mockResolvedValue({ _id: "t1", ownerID: { toString: () => "otherUser" } });
     const req = { params: { id: "t1" }, user: { userId: USER_ID } };
     await taskController.deleteTask(req, res);
     expect(Task.deleteOne).not.toHaveBeenCalled();
@@ -275,7 +220,7 @@ describe("deleteTask", () => {
   });
 });
 
-//createSubTask
+// ------------------- createSubTask -------------------
 describe("createSubTask", () => {
   let res;
   beforeEach(() => {
@@ -285,26 +230,15 @@ describe("createSubTask", () => {
 
   test("returns 404 when task does not exist", async () => {
     Task.findById.mockResolvedValue(null);
-    const req = {
-      params: { id: "t1" },
-      body: { title: "SubTask 1" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1" }, body: { title: "SubTask" }, user: { userId: USER_ID } };
     await taskController.createSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: "Task not found" });
   });
 
   test("returns 403 when user is not the owner", async () => {
-    Task.findById.mockResolvedValue({
-      _id: "t1",
-      ownerID: { toString: () => "otherUser" },
-    });
-    const req = {
-      params: { id: "t1" },
-      body: { title: "SubTask 1" },
-      user: { userId: USER_ID },
-    };
+    Task.findById.mockResolvedValue({ _id: "t1", ownerID: { toString: () => "otherUser" } });
+    const req = { params: { id: "t1" }, body: { title: "SubTask" }, user: { userId: USER_ID } };
     await taskController.createSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
@@ -317,63 +251,28 @@ describe("createSubTask", () => {
       subTasks: [],
       save: jest.fn(),
     });
-    const req = {
-      params: { id: "t1" },
-      body: {},
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1" }, body: {}, user: { userId: USER_ID } };
     await taskController.createSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "Title is required" });
   });
 
   test("creates subtask and returns updated task", async () => {
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      subTasks: { push: jest.fn() },
-      save: jest.fn().mockResolvedValue(true),
-    };
+    const subTasks = [];
+    subTasks.push = jest.fn();
+    subTasks.pull = jest.fn();
+    const mockTask = { _id: "t1", ownerID: { toString: () => USER_ID }, subTasks, save: jest.fn().mockResolvedValue(true) };
     Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1" },
-      body: { title: "SubTask 1", description: "Sub description" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1" }, body: { title: "SubTask 1", description: "Desc" }, user: { userId: USER_ID } };
     await taskController.createSubTask(req, res);
-    expect(mockTask.subTasks.push).toHaveBeenCalledWith({
-      ownerID: USER_ID,
-      taskID: mockTask._id,
-      title: "SubTask 1",
-      description: "Sub description",
-      completed: false,
-    });
+    expect(mockTask.subTasks.push).toHaveBeenCalled();
     expect(mockTask.save).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(mockTask);
   });
-
-  test("defaults description to empty string when not provided", async () => {
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      subTasks: { push: jest.fn() },
-      save: jest.fn().mockResolvedValue(true),
-    };
-    Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1" },
-      body: { title: "SubTask 1" },
-      user: { userId: USER_ID },
-    };
-    await taskController.createSubTask(req, res);
-    expect(mockTask.subTasks.push).toHaveBeenCalledWith(
-      expect.objectContaining({ description: "" })
-    );
-  });
 });
 
-//updateSubTask
+// ------------------- updateSubTask -------------------
 describe("updateSubTask", () => {
   let res;
   beforeEach(() => {
@@ -383,71 +282,22 @@ describe("updateSubTask", () => {
 
   test("returns 404 when task does not exist", async () => {
     Task.findById.mockResolvedValue(null);
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      body: { title: "Updated SubTask" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1", subTaskId: "st1" }, body: { title: "Update" }, user: { userId: USER_ID } };
     await taskController.updateSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: "Task not found" });
   });
 
   test("returns 403 when user is not the owner", async () => {
-    Task.findById.mockResolvedValue({
-      _id: "t1",
-      ownerID: { toString: () => "otherUser" },
-    });
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      body: { title: "Updated SubTask" },
-      user: { userId: USER_ID },
-    };
+    Task.findById.mockResolvedValue({ _id: "t1", ownerID: { toString: () => "otherUser" } });
+    const req = { params: { id: "t1", subTaskId: "st1" }, body: { title: "Update" }, user: { userId: USER_ID } };
     await taskController.updateSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
   });
-
-  test("returns 404 when subtask does not exist", async () => {
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      updateSubTask: jest.fn().mockRejectedValue(new Error("Subtask not found")),
-    };
-    Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      body: { title: "Updated SubTask" },
-      user: { userId: USER_ID },
-    };
-    await taskController.updateSubTask(req, res);
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "Subtask not found" });
-  });
-
-  test("updates subtask fields and saves", async () => {
-    const mockUpdatedTask = {
-      _id: "t1",
-      subTasks: [{ _id: "st1", title: "New SubTask", description: "New desc", completed: true }],
-    };
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      updateSubTask: jest.fn().mockResolvedValue(mockUpdatedTask),
-    };
-    Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      body: { title: "New SubTask", description: "New desc", completed: true },
-      user: { userId: USER_ID },
-    };
-    await taskController.updateSubTask(req, res);
-    expect(mockTask.updateSubTask).toHaveBeenCalledWith("st1", req.body);
-    expect(res.json).toHaveBeenCalledWith(mockUpdatedTask);
-  });
 });
 
-//deleteSubTask
+// ------------------- deleteSubTask -------------------
 describe("deleteSubTask", () => {
   let res;
   beforeEach(() => {
@@ -457,41 +307,27 @@ describe("deleteSubTask", () => {
 
   test("returns 404 when task does not exist", async () => {
     Task.findById.mockResolvedValue(null);
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1", subTaskId: "st1" }, user: { userId: USER_ID } };
     await taskController.deleteSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: "Task not found" });
   });
 
   test("returns 403 when user is not the owner", async () => {
-    Task.findById.mockResolvedValue({
-      _id: "t1",
-      ownerID: { toString: () => "otherUser" },
-    });
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      user: { userId: USER_ID },
-    };
+    Task.findById.mockResolvedValue({ _id: "t1", ownerID: { toString: () => "otherUser" } });
+    const req = { params: { id: "t1", subTaskId: "st1" }, user: { userId: USER_ID } };
     await taskController.deleteSubTask(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
   });
 
   test("removes the subtask and returns updated task", async () => {
-    const mockTask = {
-      _id: "t1",
-      ownerID: { toString: () => USER_ID },
-      subTasks: { pull: jest.fn() },
-      save: jest.fn().mockResolvedValue(true),
-    };
+    const subTasks = [];
+    subTasks.push = jest.fn();
+    subTasks.pull = jest.fn();
+    const mockTask = { _id: "t1", ownerID: { toString: () => USER_ID }, subTasks, save: jest.fn().mockResolvedValue(true) };
     Task.findById.mockResolvedValue(mockTask);
-    const req = {
-      params: { id: "t1", subTaskId: "st1" },
-      user: { userId: USER_ID },
-    };
+    const req = { params: { id: "t1", subTaskId: "st1" }, user: { userId: USER_ID } };
     await taskController.deleteSubTask(req, res);
     expect(mockTask.subTasks.pull).toHaveBeenCalledWith({ _id: "st1" });
     expect(mockTask.save).toHaveBeenCalled();

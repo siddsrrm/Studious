@@ -16,10 +16,10 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, setStudyPlans
 
 
   function syncToParent(updatedMilestones) {
-  setStudyPlans(prev => prev.map(p => 
-    p.id === studyPlanId ? { ...p, milestones: updatedMilestones } : p
-  ));
-}
+    setStudyPlans(prev => prev.map(p =>
+      p.id === studyPlanId ? { ...p, milestones: updatedMilestones } : p
+    ));
+  }
 
   function handleEdit(ms) {
     setEditingId(ms._id);
@@ -51,11 +51,11 @@ function MilestonesModal({ studyPlanId, milestones, setMilestones, setStudyPlans
         });
         const data = await res.json();
         if (res.ok) {
-                  
-    const updated = milestones.map(m => m._id === editingId ? data.milestone : m);
-setMilestones(updated);
-syncToParent(updated);
-setMilestoneVersion(v => v + 1);
+
+          const updated = milestones.map(m => m._id === editingId ? data.milestone : m);
+          setMilestones(updated);
+          syncToParent(updated);
+          setMilestoneVersion(v => v + 1);
 
           handleCancel();
         } else {
@@ -71,8 +71,8 @@ setMilestoneVersion(v => v + 1);
         const data = await res.json();
         if (res.ok) {
           const updated = [...milestones, data.milestone];
-setMilestones(updated);
-syncToParent(updated);
+          setMilestones(updated);
+          syncToParent(updated);
           handleCancel();
         } else {
           setError(data.message || "Failed to create milestone.");
@@ -93,9 +93,9 @@ syncToParent(updated);
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-            const updated = milestones.filter(m => m._id !== id);
-setMilestones(updated);
-syncToParent(updated);
+        const updated = milestones.filter(m => m._id !== id);
+        setMilestones(updated);
+        syncToParent(updated);
         if (editingId === id) handleCancel();
       }
     } catch {
@@ -172,7 +172,7 @@ syncToParent(updated);
           value={title}
           onChange={e => setTitle(e.target.value)}
           onFocus={() => setError("")}
-          style={{color: '#111827', width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #000000', fontSize: '0.875rem', marginBottom: '10px', boxSizing: 'border-box', backgroundColor: '#fff' }}
+          style={{ color: '#111827', width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #000000', fontSize: '0.875rem', marginBottom: '10px', boxSizing: 'border-box', backgroundColor: '#fff' }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
           <input
@@ -214,17 +214,17 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
   const [activeTab, setActiveTab] = useState("To-Do List");
   const [progress, setProgress] = useState(0);
   const [milestones, setMilestones] = useState(plan.milestones || []);
-const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [milestoneVersion, setMilestoneVersion] = useState(0);
 
   const allTabs = ["To-Do List", "Notes", "Practice Questions"];
 
-useEffect(() => {
-  setMilestones(prev => prev.map(ms => ({
-    ...ms,
-    completed: progress >= ms.targetPercent
-  })));
-}, [progress, milestoneVersion]);
+  useEffect(() => {
+    setMilestones(prev => prev.map(ms => ({
+      ...ms,
+      completed: progress >= ms.targetPercent
+    })));
+  }, [progress, milestoneVersion]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -272,11 +272,10 @@ useEffect(() => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-                activeTab === tab
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition ${activeTab === tab
                   ? "border-indigo-600 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -285,46 +284,46 @@ useEffect(() => {
 
         {/* progress bar */}
         {activeTab === "To-Do List" && (
-  <div style={{ marginBottom: "1.5rem" }}>
-    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-      <span style={{ fontSize: "0.875rem", color: "#6b7280", fontWeight: 500 }}>
-        Progress
-      </span>
-      <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-        {Math.round(progress)}%
-      </span>
-    </div>
-    <div style={{ position: 'relative', width: '100%', height: '8px', marginBottom: '20px' }}>
-      <div style={{ width: '100%', backgroundColor: '#e0e7ff', borderRadius: '9999px', height: '8px' }} />
-      <div style={{ position: 'absolute', top: 0, left: 0, width: `${progress}%`, backgroundColor: '#4f46e5', borderRadius: '9999px', height: '8px', transition: 'width 0.3s ease' }} />
-      {milestones.map((ms) => (
-        <div
-          key={ms._id}
-          title={ms.title}
-          style={{
-            position: 'absolute',
-            top: '-4px',
-            left: `${ms.targetPercent}%`,
-            transform: 'translateX(-50%)',
-            width: '16px',
-            height: '16px',
-            borderRadius: '50%',
-            backgroundColor: ms.completed ? '#4f46e5' : '#fff',
-            border: '2px solid #4f46e5',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s ease',
-          }}
-        />
-      ))}
-    </div>
-    <button
-      onClick={() => setShowMilestoneModal(true)}
-      style={{ fontSize: '0.75rem', color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-    >
-      Manage Milestones
-    </button>
-  </div>
-)}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+              <span style={{ fontSize: "0.875rem", color: "#6b7280", fontWeight: 500 }}>
+                Progress
+              </span>
+              <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                {Math.round(progress)}%
+              </span>
+            </div>
+            <div style={{ position: 'relative', width: '100%', height: '8px', marginBottom: '20px' }}>
+              <div style={{ width: '100%', backgroundColor: '#e0e7ff', borderRadius: '9999px', height: '8px' }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, width: `${progress}%`, backgroundColor: '#4f46e5', borderRadius: '9999px', height: '8px', transition: 'width 0.3s ease' }} />
+              {milestones.map((ms) => (
+                <div
+                  key={ms._id}
+                  title={ms.title}
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    left: `${ms.targetPercent}%`,
+                    transform: 'translateX(-50%)',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: ms.completed ? '#4f46e5' : '#fff',
+                    border: '2px solid #4f46e5',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                  }}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => setShowMilestoneModal(true)}
+              style={{ fontSize: '0.75rem', color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              Manage Milestones
+            </button>
+          </div>
+        )}
 
         {/* Rendering selected component*/}
         {activeTab === "To-Do List" && (
@@ -346,15 +345,15 @@ useEffect(() => {
         )}
       </div>
       {showMilestoneModal && (
-  <MilestonesModal
-    studyPlanId={plan.id}
-    milestones={milestones}
-    setMilestones={setMilestones}
-    setStudyPlans={setStudyPlans}
-     setMilestoneVersion={setMilestoneVersion}
-    onClose={() => setShowMilestoneModal(false)}
-  />
-)}
+        <MilestonesModal
+          studyPlanId={plan.id}
+          milestones={milestones}
+          setMilestones={setMilestones}
+          setStudyPlans={setStudyPlans}
+          setMilestoneVersion={setMilestoneVersion}
+          onClose={() => setShowMilestoneModal(false)}
+        />
+      )}
     </div>
   );
 };

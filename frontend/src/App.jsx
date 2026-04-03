@@ -7,6 +7,7 @@ import SettingsPage from "./pages/Settings/Settings";
 import HomePage from "./pages/HomePage/HomePage";
 import NotesPage from "./pages/NotePage";
 import Verify2FA from "./pages/Verify2FA/Verify2FA";
+import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notes" element={<NotesPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
         {/* Your main page route can go here later */}
         <Route path="/home" element={<HomePage />} />
       </Routes>
