@@ -214,11 +214,13 @@ describe("deletePracticeQuestion", () => {
   });
 
   test("deletes question", async () => {
-    PracticeQuestion.findById.mockResolvedValue({
-      ownerID: { toString: () => USER_ID },
-    });
+    const mockDeleteOne = jest.fn().mockResolvedValue({ deletedCount: 1 });
 
-    PracticeQuestion.deleteOne.mockResolvedValue({ deletedCount: 1 });
+    PracticeQuestion.findById.mockResolvedValue({
+      _id: "q1",
+      ownerID: { toString: () => USER_ID },
+      deleteOne: mockDeleteOne,
+    });
 
     const req = {
       params: { id: "q1" },
@@ -227,7 +229,7 @@ describe("deletePracticeQuestion", () => {
 
     await practiceQuestionController.deletePracticeQuestion(req, res);
 
-    expect(PracticeQuestion.deleteOne).toHaveBeenCalled();
+    expect(mockDeleteOne).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({
       message: "Practice question deleted",
     });

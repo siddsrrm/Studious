@@ -6,10 +6,12 @@ const {
   createPracticeQuestion,
   updatePracticeQuestion,
   deletePracticeQuestion,
+  generatePracticeQuestions,
 } = require("../controllers/practiceQuestionController");
 
 router.get("/", authToken, getPracticeQuestions);
 router.post("/", authToken, createPracticeQuestion);
+router.post("/generate", authToken, generatePracticeQuestions);
 router.put("/:id", authToken, updatePracticeQuestion);
 router.delete("/:id", authToken, deletePracticeQuestion);
 
