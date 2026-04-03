@@ -8,9 +8,11 @@ import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import SettingsPage from "./pages/Settings/Settings";
 import HomePage from "./pages/HomePage/HomePage";
 import NotesPage from "./pages/NotePage";
+import OAuthCallback from "./pages/OAuthCallback";
 import Verify2FA from "./pages/Verify2FA/Verify2FA";
 import PeoplePage from "./pages/PeoplePage/PeoplePage";
 import FriendsPage from "./pages/FriendsPage/FriendsPage";
+import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 
 function App() {
   const [notif, setNotif] = useState(null)
@@ -67,9 +69,11 @@ function App() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/notes" element={<NotesPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
       </Routes>
     </BrowserRouter>
   );

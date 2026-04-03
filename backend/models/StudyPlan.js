@@ -1,5 +1,6 @@
 
 const mongoose = require("mongoose")
+const milestoneSchema = require("./Milestone.js");
 
 const studyPlanSchema = new mongoose.Schema({
   // attribute, type
@@ -8,7 +9,8 @@ const studyPlanSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
   notes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Note" }],
-  practiceQuestions: [{ type: mongoose.Schema.Types.ObjectId, ref: "PracticeQuestion" }]
+  practiceQuestions: [{ type: mongoose.Schema.Types.ObjectId, ref: "PracticeQuestion" }],
+  milestones: [milestoneSchema]
 })
 
 studyPlanSchema.methods.addPracticeQuestion = function (questionData) {

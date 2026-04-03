@@ -15,14 +15,24 @@ const taskRoutes = require("./routes/taskRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 const practiceQuestionRoutes = require("./routes/practiceQuestionRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
 const { startReminderJob } = require("./utils/reminderJob");
 const friendRequestRoutes = require("./routes/friendRequestRoutes");
 
 const app = express();
 
+const passport = require("./config/passport");
+app.use(passport.initialize());
+
 connectDB();
 startReminderJob();
+
+const { pollCalendarForAllUsers } = require("./services/calendarPoller");
+
+// Poll every 5 minutes
+setInterval(pollCalendarForAllUsers, 60 * 1000);
 
 app.use(cors());
 app.use(express.json());
@@ -34,8 +44,10 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/folders", folderRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use("/api/practice-questions", practiceQuestionRoutes);
 app.use("/api/friendrequests", friendRequestRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");

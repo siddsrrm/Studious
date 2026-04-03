@@ -11,6 +11,7 @@ import HardBreak from '@tiptap/extension-hard-break'
 import Paragraph from '@tiptap/extension-paragraph'
 import { EditorContent, useEditor } from '@tiptap/react'
 import History from '@tiptap/extension-history'
+import { Markdown } from '@tiptap/markdown';
 import {Color} from '@tiptap/extension-color'
 import {TextStyle} from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
@@ -216,6 +217,7 @@ export default function NoteEditor({ note, onUpdate }) {
   const editor = useEditor({
     extensions: [
       Document,
+      Markdown,
       Paragraph,
       Text,
       Color,
