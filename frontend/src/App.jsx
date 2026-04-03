@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { getSocket, disconnectSocket } from "./socket";
-import { ACHIEVEMENTS } from "./achievements";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
@@ -22,6 +21,7 @@ function App() {
   const [notifOpacity, setNotifOpacity] = useState(false)
   const [token, setToken] = useState(localStorage.getItem("token"))
   const timers = useRef([])
+  const achievementDefs = useRef([])
 
   function showNotification(message) {
     timers.current.forEach(clearTimeout)
@@ -32,6 +32,13 @@ function App() {
       setTimeout(() => setNotif(null), 3500)
     ]
   }
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/achievements/definitions`)
+      .then(r => r.ok ? r.json() : [])
+      .then(defs => { achievementDefs.current = defs })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const onAuthChanged = () => setToken(localStorage.getItem("token"))
@@ -62,8 +69,9 @@ function App() {
     const onFriendToast = (e) => showNotification(e.detail.message)
 
     const onAchievementUnlocked = ({ achievementId }) => {
-      const def = ACHIEVEMENTS.find(a => a.id === achievementId)
-      if (def) showNotification(`Achievement unlocked: ${def.name}`)
+      const def = achievementDefs.current.find(a => a.id === achievementId)
+      const name = def ? def.name : achievementId
+      showNotification(`Achievement unlocked: ${name}`)
     }
 
     socket.on("friend_request_received", onRequestReceived)

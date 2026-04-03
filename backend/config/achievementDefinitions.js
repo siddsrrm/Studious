@@ -1,4 +1,4 @@
-export const ACHIEVEMENTS = [
+const ACHIEVEMENT_DEFINITIONS = [
   {
     id: "complete_5_tasks",
     name: "Getting Started",
@@ -42,3 +42,7 @@ export const ACHIEVEMENTS = [
     badge: "joined-a-study-group.png"
   }
 ]
+
+const ACHIEVEMENT_MAP = Object.fromEntries(ACHIEVEMENT_DEFINITIONS.map(a => [a.id, a]))
+
+module.exports = { ACHIEVEMENT_DEFINITIONS, ACHIEVEMENT_MAP }

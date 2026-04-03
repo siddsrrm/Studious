@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { getSocket } from "../../socket"
-import { ACHIEVEMENTS } from "../../achievements"
 import styles from "./ProfilePage.module.css"
 
 function ProfilePage() {
@@ -17,6 +16,7 @@ function ProfilePage() {
   const [pendingRequests, setPendingRequests] = useState({})
   const friendRequestsRef = useRef({})
   const [earnedAchievements, setEarnedAchievements] = useState([])
+  const [achievementDefs, setAchievementDefs] = useState([])
   const [localToast, setLocalToast] = useState(null)
   const [localToastVisible, setLocalToastVisible] = useState(false)
   const toastTimers = useRef([])
@@ -48,18 +48,20 @@ function ProfilePage() {
           return
         }
 
-        const achievementsRes = await fetch(
-          `${import.meta.env.VITE_API_URL}/achievements/user/${userId}`,
-          { headers }
-        )
-        const [profileData, friends, sent, pending, earnedData] = await Promise.all([
+        const [achievementsRes, defsRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/achievements/user/${userId}`, { headers }),
+          fetch(`${import.meta.env.VITE_API_URL}/achievements/definitions`)
+        ])
+        const [profileData, friends, sent, pending, earnedData, defsData] = await Promise.all([
           profileRes.json(),
           friendsRes.json(),
           sentRes.json(),
           pendingRes.json(),
-          achievementsRes.ok ? achievementsRes.json() : Promise.resolve([])
+          achievementsRes.ok ? achievementsRes.json() : Promise.resolve([]),
+          defsRes.ok ? defsRes.json() : Promise.resolve([])
         ])
         setEarnedAchievements(earnedData)
+        setAchievementDefs(defsData)
 
         setProfile(profileData)
 
@@ -286,7 +288,7 @@ function ProfilePage() {
 
   const earnedMap = {}
   earnedAchievements.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
-  const achievements = ACHIEVEMENTS.map(a => ({
+  const achievements = achievementDefs.map(a => ({
     ...a,
     unlocked: !!earnedMap[a.id],
     unlockedAt: earnedMap[a.id] || null

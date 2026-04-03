@@ -1,35 +1,38 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ACHIEVEMENTS } from "../../achievements"
 import styles from "./AchievementsPage.module.css"
 
 function AchievementsPage() {
   const navigate = useNavigate()
   const token = localStorage.getItem("token")
   const myUsername = localStorage.getItem("username")
-  const [earned, setEarned] = useState([])
+  const [achievements, setAchievements] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/achievements`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setEarned(data)
-        }
+        const [defsRes, earnedRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_URL}/achievements/definitions`),
+          fetch(`${import.meta.env.VITE_API_URL}/achievements`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ])
+        const [defs, earned] = await Promise.all([defsRes.json(), earnedRes.json()])
+        const earnedMap = {}
+        earned.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
+        setAchievements(defs.map(def => ({
+          ...def,
+          unlocked: !!earnedMap[def.id],
+          earnedAt: earnedMap[def.id] || null
+        })))
       } catch {}
       setIsLoading(false)
     }
     load()
   }, [token])
 
-  const earnedMap = {}
-  earned.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
-
-  const unlockedCount = ACHIEVEMENTS.filter(a => earnedMap[a.id]).length
+  const unlockedCount = achievements.filter(a => a.unlocked).length
 
   return (
     <div className={styles.page}>
@@ -42,40 +45,32 @@ function AchievementsPage() {
       <div className={styles.content}>
         <h2 className={styles.contentTitle}>Achievements</h2>
         <p className={styles.contentDescription}>
-          {isLoading ? "Loading..." : `${unlockedCount} of ${ACHIEVEMENTS.length} unlocked`}
+          {isLoading ? "Loading..." : `${unlockedCount} of ${achievements.length} unlocked`}
         </p>
         <hr className={styles.contentDivider} />
 
         <div className={styles.grid}>
-          {ACHIEVEMENTS.map(achievement => {
-            const earnedAt = earnedMap[achievement.id]
-            const unlocked = !!earnedAt
-            return (
-              <div
-                key={achievement.id}
-                className={`${styles.badge} ${unlocked ? styles.unlocked : styles.locked}`}
-              >
-                <div className={styles.tooltip}>
-                  <div className={styles.tooltipTitle}>{achievement.name}</div>
-                  <div className={styles.tooltipDescription}>{achievement.description}</div>
-                  {unlocked && (
-                    <div className={styles.tooltipDate}>
-                      Unlocked {new Date(earnedAt).toLocaleDateString()}
-                    </div>
-                  )}
-                  {!unlocked && (
-                    <div className={styles.tooltipLocked}>Not yet unlocked</div>
-                  )}
-                </div>
-                <img
-                  src={`/badges/${achievement.badge}`}
-                  alt={achievement.name}
-                  className={styles.badgeImage}
-                />
-                <p className={styles.badgeName}>{achievement.name}</p>
+          {achievements.map(achievement => (
+            <div
+              key={achievement.id}
+              className={`${styles.badge} ${achievement.unlocked ? styles.unlocked : styles.locked}`}
+            >
+              <div className={styles.tooltip}>
+                <div className={styles.tooltipTitle}>{achievement.name}</div>
+                <div className={styles.tooltipDescription}>{achievement.description}</div>
+                {achievement.unlocked
+                  ? <div className={styles.tooltipDate}>Unlocked {new Date(achievement.earnedAt).toLocaleDateString()}</div>
+                  : <div className={styles.tooltipLocked}>Not yet unlocked</div>
+                }
               </div>
-            )
-          })}
+              <img
+                src={`/badges/${achievement.badge}`}
+                alt={achievement.name}
+                className={styles.badgeImage}
+              />
+              <p className={styles.badgeName}>{achievement.name}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
