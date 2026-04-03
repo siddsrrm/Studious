@@ -1,5 +1,6 @@
 const Task = require("../models/Task");
 const ProgressTracker = require("../models/ProgressTracker");
+const { checkTaskAchievements } = require("../services/achievementService");
 
 exports.getTasks = async (req, res) => {
   try {
@@ -61,8 +62,13 @@ exports.updateTask = async (req, res) => {
     if (task.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
 
+    const wasCompleted = task.completed
     //use model method to update task
     const updated = await task.updateTask(req.body);
+
+    if (!wasCompleted && req.body.completed === true) {
+      checkTaskAchievements(req.user.userId).catch(console.error)
+    }
 
     // update progress tracker
     let tracker = await ProgressTracker.findOne({ userID: task.ownerID });

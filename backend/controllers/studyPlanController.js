@@ -1,6 +1,7 @@
 const StudyPlan = require("../models/StudyPlan");
 const ProgressTracker = require("../models/ProgressTracker");
 const Task = require("../models/Task");
+const { checkStudyPlanAchievements } = require("../services/achievementService");
 
 // Create a new study plan 
 exports.createStudyPlan = async (req, res) => {
@@ -18,8 +19,7 @@ exports.createStudyPlan = async (req, res) => {
 
     await newPlan.save();
 
-    // await ProgressTracker.recalculateAllUsers();
-
+    checkStudyPlanAchievements(req.user.userId).catch(console.error)
     res.status(201).json({ message: "Study plan created", studyPlan: newPlan });
   } catch (err) {
     res.status(500).json({ error: err.message });

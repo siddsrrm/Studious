@@ -13,12 +13,15 @@ import Verify2FA from "./pages/Verify2FA/Verify2FA";
 import PeoplePage from "./pages/PeoplePage/PeoplePage";
 import FriendsPage from "./pages/FriendsPage/FriendsPage";
 import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
+import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import AchievementsPage from "./pages/AchievementsPage/AchievementsPage";
 
 function App() {
   const [notif, setNotif] = useState(null)
   const [notifOpacity, setNotifOpacity] = useState(false)
   const [token, setToken] = useState(localStorage.getItem("token"))
   const timers = useRef([])
+  const achievementDefs = useRef([])
 
   function showNotification(message) {
     timers.current.forEach(clearTimeout)
@@ -29,6 +32,13 @@ function App() {
       setTimeout(() => setNotif(null), 3500)
     ]
   }
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/achievements/definitions`)
+      .then(r => r.ok ? r.json() : [])
+      .then(defs => { achievementDefs.current = defs })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const onAuthChanged = () => setToken(localStorage.getItem("token"))
@@ -58,13 +68,21 @@ function App() {
 
     const onFriendToast = (e) => showNotification(e.detail.message)
 
+    const onAchievementUnlocked = ({ achievementId }) => {
+      const def = achievementDefs.current.find(a => a.id === achievementId)
+      const name = def ? def.name : achievementId
+      showNotification(`Achievement unlocked: ${name}`)
+    }
+
     socket.on("friend_request_received", onRequestReceived)
     socket.on("friend_request_accepted", onRequestAccepted)
+    socket.on("achievement_unlocked", onAchievementUnlocked)
     window.addEventListener("friend-toast", onFriendToast)
 
     return () => {
       socket.off("friend_request_received", onRequestReceived)
       socket.off("friend_request_accepted", onRequestAccepted)
+      socket.off("achievement_unlocked", onAchievementUnlocked)
       window.removeEventListener("friend-toast", onFriendToast)
     }
   }, [token])
@@ -90,7 +108,9 @@ function App() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
+        <Route path="/achievements" element={<AchievementsPage />} />
       </Routes>
     </BrowserRouter>
   );
