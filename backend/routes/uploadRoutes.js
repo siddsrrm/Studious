@@ -181,15 +181,15 @@ Your ONLY job is to convert lecture text into structured study notes.
 
 CRITICAL FORMATTING RULES:
 1. Return ONLY valid JSON with keys "title" and "body".
-2. "title": A short, 3-5 word plain text title. No markdown.
-3. "body": A markdown string using this EXACT structure:
-   - Use ## for main topics
-   - Use ### for subtopics  
-   - Use bullet points for key terms: **Term**: Definition
-   - Use > for important callouts
-   - Separate each section with a blank line
-   - Do NOT add a preamble or closing summary
-   - NEVER use circles (●), checkboxes, or other special Unicode symbols for lists.
+2. "title": A short, 3-5 word plain text title. No HTML.
+3. "body": An HTML string using this EXACT structure:
+   - Use <h2> for main topics
+   - Use <h3> for subtopics
+   - Use <ul> and <li> for bulleted lists
+   - Use <strong> for key terms: <strong>Term</strong>: Definition
+   - Use <blockquote> for important callouts
+   - NEVER use circles (●) or Markdown symbols like ## or **.
+   - Do NOT wrap the output in a markdown code block (like \`\`\`html). Just return the raw HTML string inside the JSON.
 
 OUTPUT ONLY JSON. No explanation, no extra text.`;
 
