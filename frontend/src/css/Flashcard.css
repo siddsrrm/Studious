@@ -84,4 +84,13 @@
 /* Optional: make input fields full width to match card width */
 .flashcard-bottom .editForm input {
   width: 100%;
+  color: #111; /* black text */
+  background-color: #ffffff; /* white background */
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.flashcard-bottom .editForm input::placeholder {
+  color: #9ca3af;
 }
