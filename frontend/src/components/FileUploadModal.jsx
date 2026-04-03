@@ -4,6 +4,9 @@ const ACCEPTED_TYPES = ["application/pdf", "video/mp4"];
 
 const ACCEPTED_EXTENSIONS = ".pdf,.mp4";
 
+const PDF_MAX_BYTES = 20 * 1024 * 1024;
+const MP4_MAX_BYTES = 500 * 1024 * 1024;
+
 const FileUploadModal = ({ onClose, onUpload, isProcessing = false }) => {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState(null);
@@ -15,8 +18,15 @@ const FileUploadModal = ({ onClose, onUpload, isProcessing = false }) => {
     setError("Unsupported file type. Please upload a PDF or MP4.");
       return false;
     }
-    if (f.size > 20 * 1024 * 1024) {
-      setError("File is too large. Maximum size is 20 MB.");
+
+    const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+    const limit = isPdf ? PDF_MAX_BYTES : MP4_MAX_BYTES;
+    if (f.size > limit) {
+      setError(
+        isPdf
+          ? "File is too large. Maximum size is 20 MB."
+          : "File is too large. Maximum size is 500 MB."
+      );
       return false;
     }
     setError("");

@@ -77,14 +77,26 @@ const uploadVideo = multer({
   },
 });
 
-router.post("/video", protect, uploadVideo.single("file"), async (req, res) => {
-  let videoPath;
-  let audioPath;
-
-  try {
-    if (!req.file?.path) {
-      return res.status(400).json({ message: "No video file uploaded" });
+router.post("/video", protect, (req, res) => {
+  uploadVideo.single("file")(req, res, async (err) => {
+    if (err) {
+      console.error("Multer video upload error:", err);
+      if (err.code === "LIMIT_FILE_SIZE" || err.message?.includes?.("large")) {
+        return res.status(413).json({ message: "File too large (max 500MB)" });
+      }
+      if (err.message === "Only MP4 files are allowed") {
+        return res.status(400).json({ message: err.message });
+      }
+      return res.status(400).json({ message: "File upload failed" });
     }
+
+    let videoPath;
+    let audioPath;
+
+    try {
+      if (!req.file?.path) {
+        return res.status(400).json({ message: "No video file uploaded" });
+      }
 
     videoPath = req.file.path;
     audioPath = videoPath.replace(path.extname(videoPath), ".wav");
@@ -148,18 +160,19 @@ router.post("/video", protect, uploadVideo.single("file"), async (req, res) => {
       fileName: req.file.originalname,
       text,
     });
-  } catch (err) {
-    console.error("Video processing error:", err);
-    const message = err && err.message ? err.message : 'Failed to process video';
-    return res.status(500).json({ message });
-  } finally {
-    try {
-      if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
-    } catch {}
-    try {
-      if (audioPath && fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
-    } catch {}
-  }
+    } catch (err2) {
+      console.error("Video processing error:", err2);
+      const message = err2 && err2.message ? err2.message : "Failed to process video";
+      return res.status(500).json({ message });
+    } finally {
+      try {
+        if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+      } catch {}
+      try {
+        if (audioPath && fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+      } catch {}
+    }
+  });
 });
 
 router.post("/generate-note", protect, async (req, res) => {
