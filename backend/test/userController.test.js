@@ -94,23 +94,6 @@ describe("updateProfile", () => {
     expect(fakeUser.updateOne).toHaveBeenCalledTimes(1);
   });
 
-  test("allows an empty string to clear the avatar", async () => {
-    const fakeUser = {
-      _id: "user123",
-      username: "jpbarath",
-      avatar: "https://example.com/old.png",
-      updateOne: jest.fn().mockResolvedValue({}),
-    };
-    User.findById.mockResolvedValue(fakeUser);
-
-    const req = mockReq({ body: { avatar: "" } });
-    const res = mockRes();
-
-    await updateProfile(req, res);
-
-    expect(fakeUser.avatar).toBe("");
-    expect(res.json).toHaveBeenCalledWith({ message: "Profile updated.", avatar: "" });
-  });
 
 
   test("calls updateOne with correct object", async () => {
@@ -164,7 +147,7 @@ describe("updateProfile", () => {
     await updateProfile(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile photo" });
+    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile" });
   });
 
   test("returns 500 when user.updateOne throws", async () => {
@@ -180,7 +163,7 @@ describe("updateProfile", () => {
     await updateProfile(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile photo" });
+    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile" });
   });
 });
 

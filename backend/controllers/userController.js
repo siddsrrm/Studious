@@ -22,7 +22,7 @@ exports.updateProfile = async (req, res) => {
 
     // Build update object with only provided fields
     const updates = {};
-    if (avatar !== undefined)      updates.avatar = avatar;
+    if (avatar !== undefined)     { updates.avatar = avatar; user.avatar = avatar; }
     if (displayName !== undefined) updates.displayName = displayName;
     if (bio !== undefined)         updates.bio = bio;
     if (location !== undefined)    updates.location = location;
