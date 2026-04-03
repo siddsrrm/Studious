@@ -79,15 +79,15 @@ exports.deletePracticeQuestion = async (req, res) => {
   }
 };
 
-const fs = require("fs");
-const path = require("path");
+// const fs = require("fs");
+// const path = require("path");
 
 exports.generatePracticeQuestions = async (req, res) => {
   try {
     const { studyPlanId, noteIds, questionType, numQuestions } = req.body;
 
-    console.log("🚀 Starting practice question generation...");
-    console.log(`Type: ${questionType}, Count: ${numQuestions || "auto"}`);
+    // console.log("Starting practice question generation...");
+    // console.log(`Type: ${questionType}, Count: ${numQuestions || "auto"}`);
 
     // 1. Validation
     if (!studyPlanId) return res.status(400).json({ message: "studyPlanId is required" });
@@ -101,7 +101,7 @@ exports.generatePracticeQuestions = async (req, res) => {
       ownerID: req.user.userId,
     });
 
-    console.log(`✓ Fetched ${notes.length} note(s) from database`);
+    // console.log(`Fetched ${notes.length} note(s) from database`);
     if (notes.length === 0) return res.status(404).json({ message: "No notes found" });
 
     const combinedText = notes
@@ -109,7 +109,7 @@ exports.generatePracticeQuestions = async (req, res) => {
       .join("\n\n---\n\n")
       .slice(0, 12000);
 
-    console.log(`Combined text length: ${combinedText.length} characters`);
+    // console.log(`Combined text length: ${combinedText.length} characters`);
 
     // 3. Construct JSON Prompt
     const isMC = questionType === "multiple-choice";
@@ -155,7 +155,7 @@ exports.generatePracticeQuestions = async (req, res) => {
     """`;
 
     // 4. Call Ollama
-    console.log(`📡 Sending request to Ollama (${process.env.OLLAMA_MODEL})...`);
+    // console.log(`Sending request to Ollama (${process.env.OLLAMA_MODEL})...`);
     const aiRes = await fetch(process.env.OLLAMA_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -173,18 +173,17 @@ exports.generatePracticeQuestions = async (req, res) => {
 
     if (!aiRes.ok) {
       const errorText = await aiRes.text().catch(() => "");
-      console.error("❌ Ollama error:", aiRes.status, errorText);
+      // console.error("Ollama error:", aiRes.status, errorText);
       return res.status(502).json({ message: "AI service request failed" });
     }
 
     const aiJson = await aiRes.json();
     const content = aiJson?.message?.content || "";
-    console.log("✓ Received AI response. Length:", content.length);
+    // console.log("✓ Received AI response. Length:", content.length);
 
     //DELETE THIS LATER - TEMP DEBUGGING
-    // 5. Logging to File (For debugging)
-    const logPath = path.join(__dirname, "ai_logs.txt");
-    fs.appendFileSync(logPath, `\n\n=== ${new Date().toISOString()} ===\n${content}\n`);
+    // const logPath = path.join(__dirname, "ai_logs.txt");
+    // fs.appendFileSync(logPath, `\n\n=== ${new Date().toISOString()} ===\n${content}\n`);
 
     // 6. Parse and Save
     try {
@@ -202,14 +201,14 @@ exports.generatePracticeQuestions = async (req, res) => {
           generatedFromNoteId: notes[0]._id,
         };
 
-        console.log(`✓ Parsed Question #${index + 1}: "${q.question.substring(0, 50)}..."`);
+        // console.log(`Parsed Question #${index + 1}: "${q.question.substring(0, 50)}..."`);
         return questionObj;
       });
 
       if (generatedQuestions.length === 0) throw new Error("No questions found in JSON");
 
       const savedQuestions = await PracticeQuestion.insertMany(generatedQuestions);
-      console.log(`✅ Saved ${savedQuestions.length} questions to database. Done!\n`);
+      // console.log(`Saved ${savedQuestions.length} questions to database. Done!\n`);
 
       res.status(201).json({
         message: `Successfully generated ${savedQuestions.length} practice questions`,
@@ -217,7 +216,7 @@ exports.generatePracticeQuestions = async (req, res) => {
       });
 
     } catch (parseError) {
-      console.error("❌ Failed to parse AI JSON:", content);
+      // console.error("Failed to parse AI JSON:", content);
       return res.status(500).json({
         message: "Failed to parse AI response into valid questions",
         raw: content
@@ -225,7 +224,7 @@ exports.generatePracticeQuestions = async (req, res) => {
     }
 
   } catch (err) {
-    console.error("❌ Error generating practice questions:", err.message);
+    // console.error("Error generating practice questions:", err.message);
     res.status(500).json({ message: "Internal server error", error: err.message });
   }
 };
