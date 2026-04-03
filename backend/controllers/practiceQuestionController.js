@@ -133,8 +133,8 @@ exports.generatePracticeQuestions = async (req, res) => {
     {
       "questions": [
         {
-          "question": "Question text?",
-          "answer": "A single concise string. DO NOT use arrays or nested objects here."
+          "question": "What specific term describes the process of plants making food?",
+          "answer": "Photosynthesis" 
         }
       ]
     }`}
@@ -144,9 +144,10 @@ exports.generatePracticeQuestions = async (req, res) => {
     2. Do NOT include a "freeResponseQuestions" key if asking for multiple-choice.
     3. Do NOT include a "multipleChoiceQuestions" key if asking for free-response.
     4. The root key must be "questions".
-    5. The "answer" field MUST be a single string. 
-    6. CRITICAL: If the answer has multiple parts, join them into one string with commas. DO NOT USE ARRAYS [ ] OR OBJECTS { } inside the answer field.
-    7. Generate exactly ${numQuestions || 3} items.
+    5. Generate exactly ${numQuestions || 3} items.${!isMC ? `
+    6. FREE RESPONSE RULE 1: The "answer" MUST be a maximum of 2 words.
+    7. FREE RESPONSE RULE 2: Focus ONLY on vocabulary terms, specific names, or key concepts. 
+    8. FREE RESPONSE RULE 3: Do NOT ask conceptual "how" or "why" questions. Only ask "what" or "who" questions that can be answered with a single term.` : ""}
 
     ### Study Notes:
     """

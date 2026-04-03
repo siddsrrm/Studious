@@ -587,3 +587,63 @@ What does the CAP theorem state about consistency models within distributed syst
 
  
 
+
+
+=== 2026-04-03T17:13:53.622Z ===
+{
+  "questions": [
+    {
+      "question": "What was the term used to describe the period when Great Britain allowed the American colonies to self-govern without intervention from Parliament?",
+      "answer": "Salutary neglect"
+    },
+    {
+      "question": "Why did Great Britain institute a series of parliamentary acts for taxing the American colonies in 1763?",
+      "answer": "To help alleviate at least some of the financial burden following the French and Indian War"
+    },
+    {
+      "question": "What event is considered to be the start of the American War of Independence?",
+      "answer": "The British raid on Lexington and Concord in April 1775"
+    }
+  ]
+}
+
+
+=== 2026-04-03T17:16:26.146Z ===
+{
+  "questions": [
+    {
+      "question": "What term describes the British policy towards the colonies?",
+      "answer": "Salutary Neglect"
+    },
+    {
+      "question": "Who was the King of Great Britain during this period?",
+      "answer": "King George III"
+    },
+    {
+      "question": "What event marked the beginning of the American War of Independence?",
+      "answer": "Battle of Lexington and Concord"
+    }
+  ]
+}
+
+
+=== 2026-04-03T17:17:47.175Z ===
+{
+  "questions": [
+    {
+      "question": "What was the period of time in which the colonies enjoyed self-governance without intervention from Parliament?",
+      "options": ["Salutary Neglect", "The French and Indian War", "The American Revolution", "The Road to Independence"],
+      "correctIndex": 0
+    },
+    {
+      "question": "Why did Great Britain institute a series of parliamentary acts for taxing the American colonies in 1763?",
+      "options": ["To punish the colonies for their role in the French and Indian War", "To alleviate some of the financial burden from the war", "To assert British authority over the colonies", "To impose harsher trade regulations"],
+      "correctIndex": 1
+    },
+    {
+      "question": "Where did fighting begin outside of Boston in the spring of 1775?",
+      "options": ["Lexington and Concord", "Boston Common", "The Lexington Green", "Concord Bridge"],
+      "correctIndex": 2
+    }
+  ]
+}
