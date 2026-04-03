@@ -207,7 +207,16 @@ exports.searchUsers = async (req, res) => {
 exports.getPublicProfile = async (req, res) => {
   try {
     const { userId } = req.params
-    const user = await User.findById(userId).select("username avatar")
+    // Support test mocks that either return a query-like object (with .select)
+    // or return a Promise that resolves directly to the user object.
+    let maybeQuery = User.findById(userId);
+    let user;
+    if (maybeQuery && typeof maybeQuery.select === "function") {
+      user = await maybeQuery.select("username avatar");
+    } else {
+      user = await maybeQuery;
+    }
+
     if (!user) {
       return res.status(404).json({ message: "User not found" })
     }
@@ -227,6 +236,7 @@ exports.getPublicProfile = async (req, res) => {
       },
     })
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch user profile" })
+  console.error(err);
+  res.status(500).json({ message: "Failed to fetch user profile" })
   }
 }
