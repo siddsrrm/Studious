@@ -13,6 +13,7 @@ import Verify2FA from "./pages/Verify2FA/Verify2FA";
 import PeoplePage from "./pages/PeoplePage/PeoplePage";
 import FriendsPage from "./pages/FriendsPage/FriendsPage";
 import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
+import ProfilePage from "./pages/ProfilePage/ProfilePage";
 
 function App() {
   const [notif, setNotif] = useState(null)
@@ -90,6 +91,7 @@ function App() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
       </Routes>
     </BrowserRouter>
