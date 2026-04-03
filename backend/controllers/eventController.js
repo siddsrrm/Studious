@@ -34,7 +34,6 @@ exports.createEvent = async (req, res) => {
     }
     res.json(savedEvent);
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -63,7 +62,6 @@ if (end !== undefined) event.end = new Date(end).toISOString();
     }
     res.json(updated);
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -92,7 +90,6 @@ exports.deleteEvent = async (req, res) => {
     await Event.deleteOne({ _id: event._id });
     res.json({ message: "Event deleted" });
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: err.message });
   }
 };
