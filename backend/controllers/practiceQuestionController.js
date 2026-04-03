@@ -133,8 +133,8 @@ exports.generatePracticeQuestions = async (req, res) => {
     {
       "questions": [
         {
-          "question": "The question text",
-          "answer": "The concise correct answer"
+          "question": "Question text?",
+          "answer": "A single concise string. DO NOT use arrays or nested objects here."
         }
       ]
     }`}
@@ -144,7 +144,9 @@ exports.generatePracticeQuestions = async (req, res) => {
     2. Do NOT include a "freeResponseQuestions" key if asking for multiple-choice.
     3. Do NOT include a "multipleChoiceQuestions" key if asking for free-response.
     4. The root key must be "questions".
-    5. Generate exactly ${numQuestions || 3} items.
+    5. The "answer" field MUST be a single string. 
+    6. CRITICAL: If the answer has multiple parts, join them into one string with commas. DO NOT USE ARRAYS [ ] OR OBJECTS { } inside the answer field.
+    7. Generate exactly ${numQuestions || 3} items.
 
     ### Study Notes:
     """
@@ -178,6 +180,7 @@ exports.generatePracticeQuestions = async (req, res) => {
     const content = aiJson?.message?.content || "";
     console.log("✓ Received AI response. Length:", content.length);
 
+    //DELETE THIS LATER - TEMP DEBUGGING
     // 5. Logging to File (For debugging)
     const logPath = path.join(__dirname, "ai_logs.txt");
     fs.appendFileSync(logPath, `\n\n=== ${new Date().toISOString()} ===\n${content}\n`);
