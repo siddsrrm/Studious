@@ -68,7 +68,7 @@ exports.deletePracticeQuestion = async (req, res) => {
       return res.status(404).json({ message: "Practice question not found" });
     if (practiceQuestion.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
-    await PracticeQuestion.deleteOne();
+    await PracticeQuestion.deleteOne({ _id: req.params.id });
     res.json({ message: "Practice question deleted" });
   } catch (err) {
     res.status(500).json({
