@@ -10,7 +10,8 @@ const makeRes = () => ({
 
 const USER_ID = "user123";
 
-describe("PracticeQuestion Controller", () => {
+// ------------------- getPracticeQuestions -------------------
+describe("getPracticeQuestions", () => {
   let res;
 
   beforeEach(() => {
@@ -18,160 +19,217 @@ describe("PracticeQuestion Controller", () => {
     jest.clearAllMocks();
   });
 
-  // --- getPracticeQuestions ---
-  describe("getPracticeQuestions", () => {
-    test("returns 400 when studyPlanId is missing", async () => {
-      const req = { query: {}, user: { userId: USER_ID } };
+  test("returns 400 when studyPlanId is missing", async () => {
+    const req = { query: {}, user: { userId: USER_ID } };
 
-      await practiceQuestionController.getPracticeQuestions(req, res);
+    await practiceQuestionController.getPracticeQuestions(req, res);
 
-      expect(PracticeQuestion.find).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "studyPlanId is required",
-      });
-    });
-
-    test("returns practice questions for a valid study plan", async () => {
-      const mockQuestions = [{ _id: "q1", question: "What is Node?" }];
-      PracticeQuestion.find.mockResolvedValue(mockQuestions);
-
-      const req = {
-        query: { studyPlanId: "plan1" },
-        user: { userId: USER_ID },
-      };
-
-      await practiceQuestionController.getPracticeQuestions(req, res);
-
-      expect(PracticeQuestion.find).toHaveBeenCalledWith({
-        ownerID: USER_ID,
-        studyPlanId: "plan1",
-      });
-      expect(res.json).toHaveBeenCalledWith(mockQuestions);
+    expect(PracticeQuestion.find).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "studyPlanId is required",
     });
   });
 
-  // --- createPracticeQuestion ---
-  describe("createPracticeQuestion", () => {
-    test("returns 400 if required fields are missing", async () => {
-      const req = {
-        body: { studyPlanId: "plan1" }, // missing question/answer
-        user: { userId: USER_ID },
-      };
+  test("returns practice questions", async () => {
+    const mockData = [{ _id: "q1", question: "Test?", answer: "A" }];
+    PracticeQuestion.find.mockResolvedValue(mockData);
 
-      await practiceQuestionController.createPracticeQuestion(req, res);
+    const req = {
+      query: { studyPlanId: "plan1" },
+      user: { userId: USER_ID },
+    };
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Question and answer required",
-      });
+    await practiceQuestionController.getPracticeQuestions(req, res);
+
+    expect(PracticeQuestion.find).toHaveBeenCalledWith({
+      ownerID: USER_ID,
+      studyPlanId: "plan1",
     });
+    expect(res.json).toHaveBeenCalledWith(mockData);
+  });
+});
 
-    test("successfully creates a practice question", async () => {
-      const mockPayload = {
-        studyPlanId: "plan1",
-        question: "1+1?",
-        answer: "2",
-      };
-      PracticeQuestion.create.mockResolvedValue({
-        ...mockPayload,
-        ownerID: USER_ID,
-      });
+// ------------------- createPracticeQuestion -------------------
+describe("createPracticeQuestion", () => {
+  let res;
 
-      const req = { body: mockPayload, user: { userId: USER_ID } };
+  beforeEach(() => {
+    res = makeRes();
+    jest.clearAllMocks();
+  });
 
-      await practiceQuestionController.createPracticeQuestion(req, res);
+  test("returns 400 when studyPlanId is missing", async () => {
+    const req = {
+      body: { question: "Q", answer: "A" },
+      user: { userId: USER_ID },
+    };
 
-      expect(PracticeQuestion.create).toHaveBeenCalledWith({
-        ownerID: USER_ID,
-        ...mockPayload,
-      });
-      expect(res.status).toHaveBeenCalledWith(201);
+    await practiceQuestionController.createPracticeQuestion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "studyPlanId is required",
     });
   });
 
-  // --- updatePracticeQuestion ---
-  describe("updatePracticeQuestion", () => {
-    test("returns 403 if question not found or user is not owner", async () => {
-      PracticeQuestion.findById.mockResolvedValue(null);
-      const req = {
-        params: { id: "q1" },
-        user: { userId: USER_ID },
-        body: { question: "New?" },
-      };
+  test("returns 400 when question or answer missing", async () => {
+    const req = {
+      body: { studyPlanId: "plan1" },
+      user: { userId: USER_ID },
+    };
 
-      await practiceQuestionController.updatePracticeQuestion(req, res);
+    await practiceQuestionController.createPracticeQuestion(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
-    });
-
-    test("calls updatePracticeQuestion model method and returns result", async () => {
-      const mockQuestion = {
-        ownerID: { toString: () => USER_ID },
-        updatePracticeQuestion: jest
-          .fn()
-          .mockResolvedValue({ question: "Updated" }),
-      };
-      PracticeQuestion.findById.mockResolvedValue(mockQuestion);
-
-      const req = {
-        params: { id: "q1" },
-        user: { userId: USER_ID },
-        body: { question: "Updated" },
-      };
-
-      await practiceQuestionController.updatePracticeQuestion(req, res);
-
-      expect(mockQuestion.updatePracticeQuestion).toHaveBeenCalledWith(
-        req.body,
-      );
-      expect(res.json).toHaveBeenCalledWith({ question: "Updated" });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Question and answer required",
     });
   });
 
-  // --- deletePracticeQuestion ---
-  describe("deletePracticeQuestion", () => {
-    test("returns 404 if practice question does not exist", async () => {
-      PracticeQuestion.findById.mockResolvedValue(null);
-      const req = { params: { id: "q1" }, user: { userId: USER_ID } };
+  test("creates practice question", async () => {
+    const mockQuestion = { _id: "q1", question: "Q", answer: "A" };
+    PracticeQuestion.create.mockResolvedValue(mockQuestion);
 
-      await practiceQuestionController.deletePracticeQuestion(req, res);
+    const req = {
+      body: { studyPlanId: "plan1", question: "Q", answer: "A" },
+      user: { userId: USER_ID },
+    };
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Practice question not found",
-      });
+    await practiceQuestionController.createPracticeQuestion(req, res);
+
+    expect(PracticeQuestion.create).toHaveBeenCalledWith({
+      ownerID: USER_ID,
+      studyPlanId: "plan1",
+      question: "Q",
+      answer: "A",
     });
 
-    test("returns 403 if user is not the owner", async () => {
-      PracticeQuestion.findById.mockResolvedValue({
-        ownerID: { toString: () => "stranger" },
-      });
-      const req = { params: { id: "q1" }, user: { userId: USER_ID } };
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(mockQuestion);
+  });
+});
 
-      await practiceQuestionController.deletePracticeQuestion(req, res);
+// ------------------- updatePracticeQuestion -------------------
+describe("updatePracticeQuestion", () => {
+  let res;
 
-      expect(res.status).toHaveBeenCalledWith(403);
+  beforeEach(() => {
+    res = makeRes();
+    jest.clearAllMocks();
+  });
+
+  test("returns 403 if question not found", async () => {
+    PracticeQuestion.findById.mockResolvedValue(null);
+
+    const req = {
+      params: { id: "q1" },
+      body: { question: "New" },
+      user: { userId: USER_ID },
+    };
+
+    await practiceQuestionController.updatePracticeQuestion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ message: "Forbidden" });
+  });
+
+  test("returns 403 if user is not owner", async () => {
+    PracticeQuestion.findById.mockResolvedValue({
+      ownerID: { toString: () => "otherUser" },
     });
 
-    test("deletes question when owner is verified", async () => {
-      const mockQuestion = {
-        _id: "q1",
-        ownerID: { toString: () => USER_ID },
-      };
-      PracticeQuestion.findById.mockResolvedValue(mockQuestion);
-      // Mock deleteOne to resolve successfully
-      PracticeQuestion.deleteOne.mockResolvedValue({ deletedCount: 1 });
+    const req = {
+      params: { id: "q1" },
+      body: { question: "New" },
+      user: { userId: USER_ID },
+    };
 
-      const req = { params: { id: "q1" }, user: { userId: USER_ID } };
+    await practiceQuestionController.updatePracticeQuestion(req, res);
 
-      await practiceQuestionController.deletePracticeQuestion(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
 
-      expect(PracticeQuestion.deleteOne).toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Practice question deleted",
-      });
+  test("updates and returns updated question", async () => {
+    const mockUpdated = { _id: "q1", question: "New", answer: "A" };
+
+    const mockDoc = {
+      ownerID: { toString: () => USER_ID },
+      updatePracticeQuestion: jest.fn().mockResolvedValue(mockUpdated),
+    };
+
+    PracticeQuestion.findById.mockResolvedValue(mockDoc);
+
+    const req = {
+      params: { id: "q1" },
+      body: { question: "New" },
+      user: { userId: USER_ID },
+    };
+
+    await practiceQuestionController.updatePracticeQuestion(req, res);
+
+    expect(mockDoc.updatePracticeQuestion).toHaveBeenCalledWith(req.body);
+    expect(res.json).toHaveBeenCalledWith(mockUpdated);
+  });
+});
+
+// ------------------- deletePracticeQuestion -------------------
+describe("deletePracticeQuestion", () => {
+  let res;
+
+  beforeEach(() => {
+    res = makeRes();
+    jest.clearAllMocks();
+  });
+
+  test("returns 404 if not found", async () => {
+    PracticeQuestion.findById.mockResolvedValue(null);
+
+    const req = {
+      params: { id: "q1" },
+      user: { userId: USER_ID },
+    };
+
+    await practiceQuestionController.deletePracticeQuestion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Practice question not found",
+    });
+  });
+
+  test("returns 403 if not owner", async () => {
+    PracticeQuestion.findById.mockResolvedValue({
+      ownerID: { toString: () => "otherUser" },
+    });
+
+    const req = {
+      params: { id: "q1" },
+      user: { userId: USER_ID },
+    };
+
+    await practiceQuestionController.deletePracticeQuestion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  test("deletes question", async () => {
+    PracticeQuestion.findById.mockResolvedValue({
+      ownerID: { toString: () => USER_ID },
+    });
+
+    PracticeQuestion.deleteOne.mockResolvedValue({ deletedCount: 1 });
+
+    const req = {
+      params: { id: "q1" },
+      user: { userId: USER_ID },
+    };
+
+    await practiceQuestionController.deletePracticeQuestion(req, res);
+
+    expect(PracticeQuestion.deleteOne).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Practice question deleted",
     });
   });
 });

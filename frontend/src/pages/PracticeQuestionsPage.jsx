@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PracticeQuestion from "../components/PracticeQuestion";
+import Flashcard from "../components/Flashcard";
 import "../css/PracticeQuestionsPage.css";
 
 const API = import.meta.env.VITE_API_URL;
@@ -11,6 +12,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
+  const [displayAsFlashcards, setDisplayAsFlashcards] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -65,7 +67,8 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         body: JSON.stringify({ studyPlanId: studyPlanId, question, answer }),
       });
       const data = await res.json();
-      if (res.ok) setQuestions(questions.map((q) => (q._id === id ? data : q)));
+      if (res.ok)
+        setQuestions((prev) => prev.map((q) => (q._id === id ? data : q)));
       else setError(data.message || "Failed to update practice question.");
     } catch {
       setError("Network error. Please try again.");
@@ -78,11 +81,15 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setQuestions(questions.filter((p) => p._id !== id));
+      if (res.ok) setQuestions((prev) => prev.filter((p) => p._id !== id));
       else setError("Failed to delete practice question.");
     } catch {
       setError("Network error. Please try again.");
     }
+  };
+
+  const handleChangeDisplay = (e) => {
+    setDisplayAsFlashcards(e.target.checked);
   };
 
   return (
@@ -139,19 +146,39 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
             Add Question
           </button>
         </form>
+        <label className="checkboxItem">
+          <input
+            type="checkbox"
+            checked={displayAsFlashcards}
+            onChange={handleChangeDisplay}
+          />
+          <span className="checkboxLabel">Display as flashcards</span>
+        </label>
       </div>
       <div>
-        {questions.map((q) => (
-          <PracticeQuestion
-            key={q._id}
-            id={q._id}
-            studyPlanId={q.studyPlanId}
-            question={q.question}
-            answer={q.answer}
-            onUpdate={handleUpdatePracticeQuestion}
-            onDelete={handleDeletePracticeQuestion}
-          />
-        ))}
+        {questions.map((q) =>
+          displayAsFlashcards ? (
+            <Flashcard
+              key={q._id}
+              id={q._id}
+              studyPlanId={q.studyPlanId}
+              question={q.question}
+              answer={q.answer}
+              onUpdate={handleUpdatePracticeQuestion}
+              onDelete={handleDeletePracticeQuestion}
+            />
+          ) : (
+            <PracticeQuestion
+              key={q._id}
+              id={q._id}
+              studyPlanId={q.studyPlanId}
+              question={q.question}
+              answer={q.answer}
+              onUpdate={handleUpdatePracticeQuestion}
+              onDelete={handleDeletePracticeQuestion}
+            />
+          ),
+        )}
       </div>
     </>
   );
