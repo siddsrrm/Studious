@@ -1,4 +1,5 @@
 const {
+  updateProfile,
   getInfo,
   nameChange,
   deleteAccount,
@@ -28,6 +29,148 @@ function mockRes() {
   res.json = jest.fn().mockReturnValue(res);
   return res;
 }
+
+describe("updateProfile", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("returns 200 with message and avatar URL on success", async () => {
+    const fakeUser = {
+      _id: "user123",
+      avatar: "",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Profile updated.",
+      avatar: "https://example.com/avatar.png",
+    });
+  });
+
+  test("calls User.findById with the correct userId", async () => {
+    const fakeUser = {
+      avatar: "",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(User.findById).toHaveBeenCalledWith("user123");
+  });
+
+  test("sets user.avatar to the new value before calling updateOne", async () => {
+    const fakeUser = {
+      avatar: "https://example.com/old.png",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/new.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(fakeUser.avatar).toBe("https://example.com/new.png");
+    expect(fakeUser.updateOne).toHaveBeenCalledTimes(1);
+  });
+
+  test("allows an empty string to clear the avatar", async () => {
+    const fakeUser = {
+      avatar: "https://example.com/old.png",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(fakeUser.avatar).toBe("");
+    expect(res.json).toHaveBeenCalledWith({ message: "Profile updated.", avatar: "" });
+  });
+
+
+  test("calls updateOne with correct object", async () => {
+    const avatarUrl = "https://example.com/avatar.png";
+    const fakeUser = {
+      avatar: "",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: avatarUrl } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(fakeUser.updateOne).toHaveBeenCalledWith({ avatar: avatarUrl});
+  });
+
+  test("returns 404 when user is not found", async () => {
+    User.findById.mockResolvedValue(null);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "user not found" });
+  });
+
+  test("does not call updateOne when user is not found", async () => {
+    const updateOneSpy = jest.fn();
+    User.findById.mockResolvedValue(null);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(updateOneSpy).not.toHaveBeenCalled();
+  });
+
+  test("returns 500 when User.findById throws", async () => {
+    User.findById.mockRejectedValue(new Error("DB connection lost"));
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile photo" });
+  });
+
+  test("returns 500 when user.updateOne throws", async () => {
+    const fakeUser = {
+      avatar: "",
+      updateOne: jest.fn().mockRejectedValue(new Error("Write failed")),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { avatar: "https://example.com/avatar.png" } });
+    const res = mockRes();
+
+    await updateProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "failed to update profile photo" });
+  });
+});
+
 
 //getInfo tests
 describe("getInfo", () => {
