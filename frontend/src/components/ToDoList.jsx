@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useCalendar } from "../hooks/useCalendar.js";
 import { useToDoList } from "../hooks/useToDoList.js";
+import { RRule } from "rrule";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
 
@@ -39,8 +40,49 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   }, [tasks]);
 
   const handleAddTask = async (form) => {
-    onCreateTask(form);
-    onCreateEvent({ title: form.title, start: new Date(), end: form.dueDate });
+    try {
+      const newTask = await onCreateTask(form);
+
+      const startDate = new Date(form.dueDate + "T00:00");
+      const endDate = new Date(form.dueDate + "T01:00"); // default 1-hour duration
+
+      let eventObj = {
+        title: form.title,
+        start: startDate,
+        end: endDate,
+        recurrence: null,
+      };
+
+      if (form.recurrence?.enabled) {
+        const recurrence = {
+          freq: form.recurrence.freq,
+          interval: form.recurrence.interval || 1,
+          byweekday: [],
+          until: new Date(startDate.getTime() + 90 * 24 * 60 * 60 * 1000),
+        };
+        eventObj.recurrence = recurrence;
+
+        const rrule = new RRule({
+          freq:
+            form.recurrence.freq === "daily"
+              ? RRule.DAILY
+              : form.recurrence.freq === "weekly"
+                ? RRule.WEEKLY
+                : RRule.MONTHLY,
+          interval: form.recurrence.interval,
+          dtstart: startDate,
+          until: recurrence.until,
+        });
+
+        eventObj.rrule = rrule.toString();
+        eventObj.duration = { minutes: (endDate - startDate) / (1000 * 60) };
+      }
+
+      await onCreateEvent(eventObj);
+    } catch (err) {
+      console.error("Error adding task/event:", err);
+      setError("Failed to create event.");
+    }
   };
 
   const handleUpdateTask = (taskId, form) => {
@@ -140,17 +182,25 @@ const AddTaskForm = ({ onAddTask }) => {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
-  const [recurring, setRecurring] = useState(false);
+  const [recurrence, setRecurrence] = useState({
+    enabled: false,
+    freq: "weekly",
+    interval: 1,
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAddTask({ title, description, priority, dueDate });
+    onAddTask({ title, description, priority, dueDate, recurrence });
     setTitle("");
     setDescription("");
     setPriority("medium");
     setDueDate("");
-    setRecurring(false);
+    setRecurrence({
+      enabled: false,
+      freq: "weekly",
+      interval: 1,
+    });
   };
 
   return (
@@ -182,12 +232,41 @@ const AddTaskForm = ({ onAddTask }) => {
         <span className="checkboxLabel">Recurring</span>
         <input
           type="checkbox"
-          checked={recurring}
+          checked={recurrence.enabled}
           onChange={() => {
-            setRecurring(!recurring);
+            setRecurrence((prev) => ({ ...prev, enabled: !prev.enabled }));
           }}
         />
       </label>
+      {recurrence.enabled && (
+        <>
+          <select
+            value={recurrence.freq}
+            onChange={(e) =>
+              setRecurrence((prev) => ({
+                ...prev,
+                freq: e.target.value,
+              }))
+            }
+          >
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+
+          <input
+            type="number"
+            min="1"
+            value={recurrence.interval}
+            onChange={(e) =>
+              setRecurrence((prev) => ({
+                ...prev,
+                interval: Number(e.target.value),
+              }))
+            }
+          />
+        </>
+      )}
       <button type="submit">Add Task</button>
     </form>
   );

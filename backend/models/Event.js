@@ -11,12 +11,29 @@ const EventSchema = new mongoose.Schema({
     required: true,
   },
   start: {
-    type: String,
+    type: Date,
     required: true,
   },
   end: {
-    type: String,
+    type: Date,
     required: true,
+  },
+  recurrence: {
+    freq: {
+      type: String,
+      enum: ["daily", "weekly", "monthly", null],
+      default: null,
+    },
+    interval: {
+      type: Number,
+      default: 1,
+    },
+    byweekday: {
+      type: [String], // ['mo', 'we']
+      default: [],
+    },
+    until: Date,
+    count: Number,
   },
 });
 

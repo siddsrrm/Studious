@@ -16,6 +16,7 @@ exports.createEvent = async (req, res) => {
       title: req.body.title,
       start: req.body.start,
       end: req.body.end,
+      recurrence: req.body.recurrence || null,
     });
 
     const savedEvent = await event.save();
@@ -31,10 +32,11 @@ exports.updateEvent = async (req, res) => {
     if (!event) return res.status(404).json({ message: "Event not found" });
     if (event.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
-    const { title, start, end } = req.body;
+    const { title, start, end, recurrence } = req.body;
     if (title !== undefined) event.title = title;
     if (start !== undefined) event.start = start;
     if (end !== undefined) event.end = end;
+    if (recurrence !== undefined) event.recurrence = recurrence;
     const updated = await event.save();
     res.json(updated);
   } catch (err) {

@@ -4,6 +4,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import rrulePlugin from "@fullcalendar/rrule";
 
 const emptyForm = { title: "", start: "", end: "" };
 
@@ -13,6 +14,15 @@ const Calendar = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const calendarRef = useRef(null);
+
+  const pad = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    const h = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    return `${y}-${m}-${d}T${h}:${min}`;
+  };
 
   const openCreate = (dateStr) => {
     setError("");
@@ -25,15 +35,6 @@ const Calendar = () => {
   const openEdit = (clickInfo) => {
     setError("");
     const ev = clickInfo.event;
-
-    const pad = (date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      const h = String(date.getHours()).padStart(2, "0");
-      const min = String(date.getMinutes()).padStart(2, "0");
-      return `${y}-${m}-${d}T${h}:${min}`;
-    };
 
     setModal({
       mode: "edit",
@@ -60,9 +61,16 @@ const Calendar = () => {
       setError("Title is required.");
       return;
     }
+
     setSaving(true);
-    await onCreateEvent(modal.form);
-    console.log(modal.form.end.toString());
+
+    const newEvent = {
+      ...modal.form,
+      start: new Date(modal.form.start),
+      end: new Date(modal.form.end),
+    };
+
+    await onCreateEvent(newEvent);
     closeModal();
     setSaving(false);
   };
@@ -73,8 +81,16 @@ const Calendar = () => {
       setError("Title is required.");
       return;
     }
+
     setSaving(true);
-    await onEditEvent(modal.eventId, modal.form);
+
+    const updatedEvent = {
+      ...modal.form,
+      start: new Date(modal.form.start),
+      end: new Date(modal.form.end),
+    };
+
+    await onEditEvent(modal.eventId, updatedEvent);
     closeModal();
     setSaving(false);
   };
@@ -91,18 +107,9 @@ const Calendar = () => {
   const handleEventChange = async (changeInfo) => {
     const ev = changeInfo.event;
 
-    const pad = (date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      const h = String(date.getHours()).padStart(2, "0");
-      const min = String(date.getMinutes()).padStart(2, "0");
-      return `${y}-${m}-${d}T${h}:${min}`;
-    };
-
     const updatedFields = {
-      start: pad(ev.start),
-      end: ev.end ? pad(ev.end) : pad(ev.start),
+      start: ev.start,
+      end: ev.end ? ev.end : ev.start,
     };
 
     try {
@@ -116,7 +123,12 @@ const Calendar = () => {
     <div className="relative">
       <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        plugins={[
+          dayGridPlugin,
+          timeGridPlugin,
+          interactionPlugin,
+          rrulePlugin,
+        ]}
         initialView="dayGridMonth"
         timeZone="local"
         headerToolbar={{
@@ -217,7 +229,7 @@ const Calendar = () => {
                   className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {saving
-                    ? "Saving…"
+                    ? "Saving..."
                     : modal.mode === "create"
                       ? "Create"
                       : "Save"}
