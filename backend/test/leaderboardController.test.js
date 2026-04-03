@@ -12,10 +12,18 @@ const makeRes = () => ({
 
 describe("Leaderboard Controller", () => {
     let res;
+    let consoleErrorSpy;
 
     beforeEach(() => {
         res = makeRes();
         jest.clearAllMocks();
+
+        // Some controller paths intentionally log errors; keep test output clean.
+        consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        consoleErrorSpy?.mockRestore?.();
     });
 
     // Mock data for shared use

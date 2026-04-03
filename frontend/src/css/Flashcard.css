@@ -1,0 +1,87 @@
+/* Wrapper to align with the page like PracticeQuestions */
+.flashcard-wrapper {
+  width: 85%;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* space between card and buttons/form */
+}
+
+/* Flashcard container */
+.flashcard-container {
+  perspective: 1000px;
+  width: 300px;
+  height: 200px;
+  cursor: pointer;
+  margin: 0; /* spacing handled by wrapper gap */
+}
+
+/* Flashcard flip styles */
+.flashcard {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flashcard.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  font-family: Arial, sans-serif;
+}
+
+/* Label styling (top-left corner) */
+.flashcard-label {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+/* Main card text */
+.flashcard-text {
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+/* Card front/back colors */
+.flashcard-front {
+  background-color: #ffffff;
+  color: #333;
+}
+
+.flashcard-back {
+  background-color: #4a90e2;
+  color: white;
+  transform: rotateY(180deg);
+}
+
+/* Buttons / Edit form below the card */
+.flashcard-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* aligns with left edge of card */
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Optional: make input fields full width to match card width */
+.flashcard-bottom .editForm input {
+  width: 100%;
+}

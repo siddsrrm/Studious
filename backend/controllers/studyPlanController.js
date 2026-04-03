@@ -1,4 +1,7 @@
 const StudyPlan = require("../models/StudyPlan");
+const ProgressTracker = require("../models/ProgressTracker");
+const Task = require("../models/Task");
+const { checkStudyPlanAchievements } = require("../services/achievementService");
 
 // Create a new study plan 
 exports.createStudyPlan = async (req, res) => {
@@ -16,6 +19,7 @@ exports.createStudyPlan = async (req, res) => {
 
     await newPlan.save();
 
+    checkStudyPlanAchievements(req.user.userId).catch(console.error)
     res.status(201).json({ message: "Study plan created", studyPlan: newPlan });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -41,7 +45,22 @@ exports.deleteStudyPlan = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    await Task.deleteMany({ studyPlanID: plan._id });
+
     await StudyPlan.deleteOne({ _id: plan._id });
+
+    // Remove the deleted plan from the user's ProgressTracker and recalculate
+    const tracker = await ProgressTracker.findOne({ userID: req.user.userId });
+    if (tracker) {
+      tracker.planStats = tracker.planStats.filter(
+        ps => ps.studyPlan.toString() !== plan._id.toString()
+      );
+      tracker.totalTasks = tracker.planStats.reduce((sum, p) => sum + (p.totalTasks || 0), 0);
+      tracker.totalTasksFinished = tracker.planStats.reduce((sum, p) => sum + (p.completedTasks || 0), 0);
+      tracker.calculateUserScore();
+      await tracker.save();
+    }
+
     res.json({ message: "Study plan deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,6 +1,7 @@
 const FriendRequest = require("../models/FriendRequest")
 const User = require("../models/User")
 const { emitToUser } = require("../socket")
+const { checkFriendAchievements } = require("../services/achievementService")
 
 // status: 0 = pending, 1 = accepted, 2 = declined
 
@@ -49,6 +50,8 @@ exports.respondRequest = async (req, res) => {
     if (status === 1) {
       const populated = await FriendRequest.findById(requestId).populate("sender recipient", "username avatar")
       emitToUser(fRequest.sender.toString(), "friend_request_accepted", populated, `${populated.recipient.username} accepted ${populated.sender.username}'s friend request`)
+      checkFriendAchievements(fRequest.sender.toString()).catch(console.error)
+      checkFriendAchievements(req.user.userId).catch(console.error)
     } else if (status === 2) {
       const populated = await FriendRequest.findById(requestId).populate("sender recipient", "username avatar")
       await FriendRequest.deleteOne({ _id: requestId })

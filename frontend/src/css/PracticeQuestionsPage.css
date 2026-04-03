@@ -42,3 +42,26 @@
 .addButton:active {
   transform: scale(0.97);
 }
+
+/* Wrapper for the single checkbox */
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+/* Checkbox itself */
+.checkboxItem input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2563eb; /* matches your button */
+}
+
+/* Label text */
+.checkboxLabel {
+  font-size: 14px;
+  color: #374151;
+}

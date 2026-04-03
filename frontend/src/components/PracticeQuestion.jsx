@@ -22,7 +22,8 @@ const PracticeQuestion = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const correct = userAnswer.trim().toLowerCase() === answer.toLowerCase();
+    const correct =
+      userAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
 
     setIsCorrect(correct);
   };

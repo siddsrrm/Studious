@@ -1,0 +1,343 @@
+.page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding-top: 64px;
+}
+
+.topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+}
+
+.topBarTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.topBarWelcome {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.backButton {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s;
+}
+
+.backButton:hover {
+  background-color: #f9fafb;
+}
+
+.content {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.contentTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+  text-align: center;
+}
+
+.contentDescription {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.contentDivider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0 0 24px 0;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.username {
+  font-weight: 700;
+  font-size: 20px;
+  color: #111827;
+  margin: 0 0 18px 0;
+}
+
+.button {
+  padding: 9px 0;
+  width: 100%;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.15s;
+}
+
+.button:hover {
+  background-color: #4338ca;
+}
+
+.buttonRequested {
+  padding: 9px 0;
+  width: 100%;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.buttonRequested:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.buttonFriends {
+  padding: 9px 0;
+  width: 100%;
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.buttonFriends:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.pendingActions {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+.acceptButton {
+  padding: 9px 0;
+  flex: 1;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.15s;
+}
+
+.acceptButton:hover {
+  background-color: #4338ca;
+}
+
+.declineButton {
+  padding: 9px 0;
+  flex: 1;
+  background-color: white;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.15s;
+}
+
+.declineButton:hover {
+  background-color: #fef2f2;
+}
+
+.status {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.sectionDescription {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+}
+
+.achievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.achievementBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  background-color: #f9fafb;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.achievementBadge:hover .badgeTooltip {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.achievementBadge.unlocked {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fbbf24;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+}
+
+.achievementBadge.locked {
+  opacity: 0.5;
+}
+
+.badgeImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  z-index: 10;
+}
+
+.achievementBadge.locked .badgeImage {
+  filter: grayscale(100%);
+}
+
+.badgeTooltip {
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  width: 160px;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.badgeTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #1f2937;
+}
+
+.tooltipTitle {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tooltipDescription {
+  font-size: 11px;
+  color: #e5e7eb;
+  margin-bottom: 6px;
+}
+
+.tooltipDate {
+  font-size: 11px;
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .achievementsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .card {
+    max-width: 100%;
+  }
+}

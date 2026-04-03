@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const StudyPlan = require("../models/StudyPlan");
 const FriendRequest = require("../models/FriendRequest");
+const ProgressTracker = require("../models/ProgressTracker");
 const { emitToUser } = require("../socket");
 const { emitToAll } = require("../socket");
 const bcrypt = require("bcryptjs");
@@ -200,5 +201,42 @@ exports.searchUsers = async (req, res) => {
     res.json(users)
   } catch (err) {
     res.status(500).json({ message: "Failed to search users" })
+  }
+}
+
+exports.getPublicProfile = async (req, res) => {
+  try {
+    const { userId } = req.params
+    // Support test mocks that either return a query-like object (with .select)
+    // or return a Promise that resolves directly to the user object.
+    let maybeQuery = User.findById(userId);
+    let user;
+    if (maybeQuery && typeof maybeQuery.select === "function") {
+      user = await maybeQuery.select("username avatar");
+    } else {
+      user = await maybeQuery;
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    const tracker = await ProgressTracker.findOne({ userID: user._id }).select(
+      "overallcompletion totalTasksFinished totalTasks"
+    )
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      avatar: user.avatar,
+      progress: {
+        score: tracker?.overallcompletion ?? 0,
+        totalTasksFinished: tracker?.totalTasksFinished ?? 0,
+        totalTasks: tracker?.totalTasks ?? 0,
+      },
+    })
+  } catch (err) {
+  console.error(err);
+  res.status(500).json({ message: "Failed to fetch user profile" })
   }
 }
