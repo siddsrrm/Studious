@@ -80,10 +80,32 @@ function PeoplePage() {
       })
     }
 
+    const clearSentRequestById = (requestId) => {
+      setSentRequests(prev => {
+        const entry = Object.entries(prev).find(([, rId]) => rId === requestId)
+        if (!entry) return prev
+        const next = { ...prev }
+        delete next[entry[0]]
+        return next
+      })
+    }
+
+    const onRequestDeclined = ({ requestId }) => {
+      clearSentRequestById(requestId)
+    }
+
+    const onRequestCancelled = ({ requestId }) => {
+      clearSentRequestById(requestId)
+    }
+
     socket.on("friend_request_accepted", onRequestAccepted)
+    socket.on("friend_request_declined", onRequestDeclined)
+    socket.on("friend_request_cancelled", onRequestCancelled)
     socket.on("unfriended", onUnfriended)
     return () => {
       socket.off("friend_request_accepted", onRequestAccepted)
+      socket.off("friend_request_declined", onRequestDeclined)
+      socket.off("friend_request_cancelled", onRequestCancelled)
       socket.off("unfriended", onUnfriended)
     }
   }, [])
@@ -147,13 +169,13 @@ function PeoplePage() {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.ok) {
+    if (res.ok || res.status === 404) {
       setSentRequests(prev => {
         const next = { ...prev }
         delete next[userId.toString()]
         return next
       })
-      showLocalToast("Friend request cancelled")
+      if (res.ok) showLocalToast("Friend request cancelled")
     }
   }
 
