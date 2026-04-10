@@ -1,12 +1,142 @@
-import React, { useRef, useState } from "react";
-import PropTypes from "prop-types";
+import React, { useRef, useState, useEffect } from "react";
 import "../css/Attachments.css";
 import { ImageConfig } from "../../../backend/config/imageConfig";
 
-const Attachments = () => {
+const API = import.meta.env.VITE_API_URL;
+
+const Attachments = ({ taskId }) => {
+  const [loading, setLoading] = useState(true);
   const [inputValue, setInputValue] = useState("");
-  const [items, setItems] = useState([]);
+  const [links, setLinks] = useState([]);
+  const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    setLoading(true);
+    async function fetchAttachments() {
+      try {
+        const res = await fetch(`${API}/attachments?taskId=${taskId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          console.error(data.message || "Failed to load attachments.");
+          return;
+        }
+        const loadedFiles = [];
+        const loadedLinks = [];
+        for (const attachment of data) {
+          if (attachment.type === "file") loadedFiles.push(attachment);
+          if (attachment.type === "link") loadedLinks.push(attachment);
+        }
+        setFiles(loadedFiles);
+        setLinks(loadedLinks);
+      } catch {
+        console.error("Network error. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAttachments();
+  }, [taskId, token]);
+
+  const handleAddAttachment = async ({
+    type,
+    url,
+    filename,
+    fileUrl,
+    size,
+    mimeType,
+  }) => {
+    const validTypes = ["link", "file"];
+
+    if (!validTypes.includes(type)) return;
+
+    try {
+      const res = await fetch(`${API}/attachments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          taskId: taskId,
+          type,
+          url,
+          filename,
+          fileUrl,
+          size,
+          mimeType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error(data.message || "Failed to create attachment.");
+        return;
+      }
+      if (type === "file") setFiles((prev) => [...prev, data]);
+      if (type === "link") setLinks((prev) => [...prev, data]);
+    } catch {
+      console.error("Network error. Please try again.");
+    }
+  };
+
+  const handleUpdateAttachments = async (
+    id,
+    { type, url, filename, fileUrl, size, mimeType },
+  ) => {
+    const validTypes = ["link", "file"];
+
+    if (!validTypes.includes(type)) return;
+
+    try {
+      const res = await fetch(`${API}/attachments/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          taskId: taskId,
+          type,
+          url,
+          filename,
+          fileUrl,
+          size,
+          mimeType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error(data.message || "Failed to update attachment.");
+        return;
+      }
+      if (type === "file")
+        setFiles((prev) => prev.map((f) => (f._id === id ? data : f)));
+      if (type === "link")
+        setLinks((prev) => prev.map((l) => (l._id === id ? data : l)));
+    } catch {
+      console.error("Network error. Please try again.");
+    }
+  };
+
+  const handleDeleteAttachment = async (id, type) => {
+    try {
+      const res = await fetch(`${API}/attachments/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        console.error("Failed to delete attachment.");
+        return;
+      }
+      if (type === "file") setFiles((prev) => prev.filter((f) => f._id !== id));
+      if (type === "link") setLinks((prev) => prev.filter((l) => l._id !== id));
+    } catch {
+      console.error("Network error. Please try again.");
+    }
+  };
 
   const normalizeUrl = (url) => {
     try {
@@ -34,8 +164,8 @@ const Attachments = () => {
       return;
     }
 
-    const alreadyExists = items.some(
-      (item) => normalizeUrl(item) === normalized,
+    const alreadyExists = links.some(
+      (link) => normalizeUrl(link.url) === normalized,
     );
 
     if (alreadyExists) {
@@ -43,10 +173,12 @@ const Attachments = () => {
       return;
     }
 
-    setItems([...items, trimmed]);
+    handleAddAttachment({ type: "link", url: trimmed });
     setInputValue("");
     setError("");
   };
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <>
@@ -70,11 +202,11 @@ const Attachments = () => {
         </form>
 
         <ul>
-          {items.map((item, index) => (
-            <li key={index}>
-              {item.startsWith("http") ? (
+          {links.map((link) => (
+            <li key={link._id}>
+              {link.url.startsWith("http") ? (
                 <a
-                  href={item}
+                  href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -84,15 +216,15 @@ const Attachments = () => {
                     whiteSpace: "nowrap",
                     display: "inline-block",
                   }}
-                  title={item}
+                  title={link.url}
                 >
-                  {item}
+                  {link.url}
                 </a>
               ) : (
-                item
+                link.url
               )}
               <button
-                onClick={() => setItems(items.filter((_, i) => i !== index))}
+                onClick={() => handleDeleteAttachment(link._id, "link")}
                 style={{
                   background: "none",
                   border: "none",
@@ -123,15 +255,19 @@ const Attachments = () => {
           ))}
         </ul>
       </div>
-      <DropFileInput />
+      <DropFileInput
+        fileList={files}
+        handleAddAttachment={handleAddAttachment}
+        handleUpdateAttachments={handleUpdateAttachments}
+        handleDeleteAttachment={handleDeleteAttachment}
+        onFileChange={() => {}}
+      />
     </>
   );
 };
 
-const DropFileInput = (props) => {
+const DropFileInput = ({ fileList, setFileList, onFileChange }) => {
   const wrapperRef = useRef(null);
-
-  const [fileList, setFileList] = useState([]);
 
   const onDragEnter = () => wrapperRef.current.classList.add("dragover");
 
@@ -144,7 +280,7 @@ const DropFileInput = (props) => {
     if (newFile) {
       const updatedList = [...fileList, newFile];
       setFileList(updatedList);
-      props.onFileChange(updatedList);
+      onFileChange(updatedList);
     }
   };
 
@@ -152,7 +288,15 @@ const DropFileInput = (props) => {
     const updatedList = [...fileList];
     updatedList.splice(fileList.indexOf(file), 1);
     setFileList(updatedList);
-    props.onFileChange(updatedList);
+    onFileChange(updatedList);
+  };
+
+  const getFileExtension = (item) => {
+    const type = item.mimeType || item.type || "";
+
+    if (!type.includes("/")) return "default";
+
+    return type.split("/")[1];
   };
 
   return (
@@ -182,7 +326,7 @@ const DropFileInput = (props) => {
             <div key={index} className="drop-file-preview__item">
               <img
                 src={
-                  ImageConfig[item.type.split("/")[1]] || ImageConfig["default"]
+                  ImageConfig[getFileExtension(item)] || ImageConfig["default"]
                 }
                 alt=""
               />
@@ -202,10 +346,6 @@ const DropFileInput = (props) => {
       ) : null}
     </>
   );
-};
-
-DropFileInput.propTypes = {
-  onFileChange: PropTypes.func,
 };
 
 export default Attachments;
