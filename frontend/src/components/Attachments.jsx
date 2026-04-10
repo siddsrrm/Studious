@@ -2,7 +2,6 @@ import React, { useRef, useState } from "react";
 import PropTypes from "prop-types";
 import "../css/Attachments.css";
 import { ImageConfig } from "../../../backend/config/imageConfig";
-import { FaTrash } from "react-icons/fa";
 
 const Attachments = () => {
   const [inputValue, setInputValue] = useState("");
