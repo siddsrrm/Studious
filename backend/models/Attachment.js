@@ -13,16 +13,50 @@ const AttachmentSchema = new mongoose.Schema({
     required: true,
   },
 
-  type: "file" | "link",
+  type: {
+    type: String,
+    enum: ["file", "link"],
+    required: true,
+  },
 
   // link-specific
-  url: { type: String, required: true },
+
+  url: {
+    type: String,
+    required: function () {
+      return this.type === "link";
+    },
+  },
 
   // file-specific
-  filename: {},
-  fileUrl: {},
-  size: {},
-  mimeType: {},
+
+  filename: {
+    type: String,
+    required: function () {
+      return this.type === "file";
+    },
+  },
+
+  fileUrl: {
+    type: String,
+    required: function () {
+      return this.type === "file";
+    },
+  },
+
+  size: {
+    type: Number, // bytes
+    required: function () {
+      return this.type === "file";
+    },
+  },
+
+  mimeType: {
+    type: String,
+    required: function () {
+      return this.type === "file";
+    },
+  },
 });
 
 AttachmentSchema.methods.updateAttachment = async function (updates) {
