@@ -36,6 +36,7 @@ const Attachments = ({ taskId, token }) => {
 
         setFiles(files);
         setLinks(links);
+        console.log("Fetch successful!");
       } catch (err) {
         if (err.name !== "AbortError") {
           setNetworkError("Network error. Please try again.");
@@ -86,6 +87,7 @@ const Attachments = ({ taskId, token }) => {
       }
       if (type === "file") setFiles((prev) => [...prev, data]);
       if (type === "link") setLinks((prev) => [...prev, data]);
+      console.log("Add successful!");
     } catch {
       setNetworkError("Network error. Please try again.");
     }
@@ -125,6 +127,7 @@ const Attachments = ({ taskId, token }) => {
         setFiles((prev) => prev.map((f) => (f._id === id ? data : f)));
       if (type === "link")
         setLinks((prev) => prev.map((l) => (l._id === id ? data : l)));
+      console.log("Update successful!");
     } catch {
       setNetworkError("Network error. Please try again.");
     }
@@ -142,6 +145,7 @@ const Attachments = ({ taskId, token }) => {
       }
       if (type === "file") setFiles((prev) => prev.filter((f) => f._id !== id));
       if (type === "link") setLinks((prev) => prev.filter((l) => l._id !== id));
+      console.log("Delete successful!");
     } catch {
       setNetworkError("Network error. Please try again.");
     }
@@ -195,25 +199,27 @@ const Attachments = ({ taskId, token }) => {
 
   const handleFilesDropped = async (files) => {
     setUploading(true);
+
     try {
       await Promise.all(
         files.map(async (file) => {
           const uploadRes = await uploadFile(file);
-          if (!uploadRes) return;
+          if (!uploadRes) {
+            setNetworkError(`Failed uploading ${file.name}`);
+            return;
+          }
 
           return handleAddAttachment({
             type: "file",
             filename: uploadRes.filename,
             fileUrl: uploadRes.fileUrl,
-            size: file.size,
-            mimeType: file.type,
+            size: uploadRes.size,
+            mimeType: uploadRes.mimeType,
           });
         }),
       );
-      if (!uploadRes) {
-        setNetworkError(`Failed uploading ${file.name}`);
-        return;
-      }
+
+      console.log("File drops successful!");
     } catch {
       setNetworkError("Network error. Please try again.");
     } finally {
@@ -241,6 +247,7 @@ const Attachments = ({ taskId, token }) => {
         return;
       }
 
+      console.log("Upload successful!");
       return data;
     } catch {
       setNetworkError("Upload error");
@@ -344,30 +351,49 @@ const Attachments = ({ taskId, token }) => {
                 padding: "8px 0",
               }}
             >
-              {/* File info + download link */}
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <a
-                  href={file.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                {/* FILE TYPE ICON */}
+                <img
+                  src={
+                    ImageConfig[
+                      (file.mimeType?.split("/")[1] || "").toLowerCase()
+                    ] || ImageConfig.default
+                  }
+                  alt="file type"
                   style={{
-                    maxWidth: "50%",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    display: "inline-block",
+                    width: "28px",
+                    height: "28px",
+                    objectFit: "contain",
                   }}
-                  title={file.filename}
-                >
-                  {file.filename}
-                </a>
+                />
 
-                <small style={{ color: "#666" }}>
-                  {file.mimeType} • {formatSize(file.size)}
-                </small>
+                {/* File info + download link */}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <a
+                    href={`${API.replace("/api", "")}${file.fileUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      maxWidth: "50%",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "inline-block",
+                    }}
+                    title={file.filename}
+                  >
+                    {file.filename}
+                  </a>
+
+                  <small style={{ color: "#666" }}>
+                    {file.mimeType} • {formatSize(file.size)}
+                  </small>
+                </div>
               </div>
 
-              {/* Delete button (same style as links) */}
+              {/* Delete button */}
               <button
                 onClick={() => handleDeleteAttachment(file._id, "file")}
                 style={{

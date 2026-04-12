@@ -3,7 +3,8 @@ const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const protect = require("../middleware/authMiddleware");
 const ffmpeg = require("fluent-ffmpeg");
-const whisper = require("whisper-node").default || require("whisper-node").whisper;
+const whisper =
+  require("whisper-node").default || require("whisper-node").whisper;
 const path = require("path");
 const fs = require("fs");
 
@@ -14,7 +15,7 @@ const storage = multer.memoryStorage();
 // Generic file upload (used by Attachments frontend)
 const uploadGeneric = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload", protect, uploadGeneric.single("file"), async (req, res) => {
+router.post("/", protect, uploadGeneric.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -54,7 +55,6 @@ const uploadPdf = multer({
   },
 });
 
-
 router.post("/pdf", protect, (req, res) => {
   uploadPdf.single("file")(req, res, async (err) => {
     if (err) {
@@ -68,7 +68,7 @@ router.post("/pdf", protect, (req, res) => {
       return res.status(400).json({ message: "File upload failed" });
     }
 
-    // Processing pdf text using pdf-parse 
+    // Processing pdf text using pdf-parse
     try {
       if (!req.file || !req.file.buffer) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -83,14 +83,12 @@ router.post("/pdf", protect, (req, res) => {
         pageCount: pageCount,
         text,
       });
-      
     } catch (parseErr) {
       console.error("Error processing PDF text:", parseErr);
       return res.status(500).json({ message: "Failed to read PDF contents" });
     }
   });
 });
-
 
 // Video upload + audio->text extraction (disk)
 const videoUploadDir = path.join(__dirname, "../data/assets");
@@ -101,7 +99,8 @@ if (!fs.existsSync(videoUploadDir)) {
 const uploadVideo = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, videoUploadDir),
-    filename: (req, file, cb) => cb(null, `${Date.now()}${path.extname(file.originalname)}`),
+    filename: (req, file, cb) =>
+      cb(null, `${Date.now()}${path.extname(file.originalname)}`),
   }),
   limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
   fileFilter: (req, file, cb) => {
@@ -131,71 +130,88 @@ router.post("/video", protect, (req, res) => {
         return res.status(400).json({ message: "No video file uploaded" });
       }
 
-    videoPath = req.file.path;
-    audioPath = videoPath.replace(path.extname(videoPath), ".wav");
+      videoPath = req.file.path;
+      audioPath = videoPath.replace(path.extname(videoPath), ".wav");
 
-    console.log('[uploadRoutes] starting ffmpeg extraction', { videoPath, audioPath });
-    await new Promise((resolve, reject) => {
-      ffmpeg(videoPath)
-        .noVideo()
-        .audioChannels(1)
-        .audioFrequency(16000)
-        .format("wav")
-        .on('start', (cmd) => console.log('[uploadRoutes] ffmpeg start:', cmd))
-        .on('progress', (p) => console.log('[uploadRoutes] ffmpeg progress:', p))
-        .on('end', () => {
-          console.log('[uploadRoutes] ffmpeg finished, audio saved to', audioPath);
-          resolve();
-        })
-        .on('error', (err) => {
-          console.error('[uploadRoutes] ffmpeg error:', err);
-          reject(err);
-        })
-        .save(audioPath);
-    });
-
-    console.log('[uploadRoutes] calling whisper for transcription on', audioPath);
-    let transcript;
-    try {
-      transcript = await whisper(audioPath, {
-        //small fast model
-        modelName: "tiny.en",
-        whisperOptions: {
-          language: "en",
-          gen_file_txt: false,
-          gen_file_subtitle: false,
-          gen_file_vtt: false,
-        },
+      console.log("[uploadRoutes] starting ffmpeg extraction", {
+        videoPath,
+        audioPath,
       });
-      console.log('[uploadRoutes] whisper result type:', typeof transcript);
-    } catch (wErr) {
-      console.error('[uploadRoutes] whisper error:', wErr);
-      throw wErr;
-    }
+      await new Promise((resolve, reject) => {
+        ffmpeg(videoPath)
+          .noVideo()
+          .audioChannels(1)
+          .audioFrequency(16000)
+          .format("wav")
+          .on("start", (cmd) =>
+            console.log("[uploadRoutes] ffmpeg start:", cmd),
+          )
+          .on("progress", (p) =>
+            console.log("[uploadRoutes] ffmpeg progress:", p),
+          )
+          .on("end", () => {
+            console.log(
+              "[uploadRoutes] ffmpeg finished, audio saved to",
+              audioPath,
+            );
+            resolve();
+          })
+          .on("error", (err) => {
+            console.error("[uploadRoutes] ffmpeg error:", err);
+            reject(err);
+          })
+          .save(audioPath);
+      });
 
-    let text = "";
-    if (Array.isArray(transcript)) {
-      text = transcript.map((t) => t?.speech || "").join(" ").trim();
-    } else if (typeof transcript === "string") {
-      text = transcript.trim();
-    } else if (transcript?.text) {
-      text = String(transcript.text).trim();
-    }
+      console.log(
+        "[uploadRoutes] calling whisper for transcription on",
+        audioPath,
+      );
+      let transcript;
+      try {
+        transcript = await whisper(audioPath, {
+          //small fast model
+          modelName: "tiny.en",
+          whisperOptions: {
+            language: "en",
+            gen_file_txt: false,
+            gen_file_subtitle: false,
+            gen_file_vtt: false,
+          },
+        });
+        console.log("[uploadRoutes] whisper result type:", typeof transcript);
+      } catch (wErr) {
+        console.error("[uploadRoutes] whisper error:", wErr);
+        throw wErr;
+      }
 
-    if (!text) {
-      return res.status(400).json({ message: "No speech detected in video" });
-    }
+      let text = "";
+      if (Array.isArray(transcript)) {
+        text = transcript
+          .map((t) => t?.speech || "")
+          .join(" ")
+          .trim();
+      } else if (typeof transcript === "string") {
+        text = transcript.trim();
+      } else if (transcript?.text) {
+        text = String(transcript.text).trim();
+      }
 
-    // Log extracted text to server console for debugging
-    console.log("[uploadRoutes] extracted text:", text);
+      if (!text) {
+        return res.status(400).json({ message: "No speech detected in video" });
+      }
 
-    return res.json({
-      fileName: req.file.originalname,
-      text,
-    });
+      // Log extracted text to server console for debugging
+      console.log("[uploadRoutes] extracted text:", text);
+
+      return res.json({
+        fileName: req.file.originalname,
+        text,
+      });
     } catch (err2) {
       console.error("Video processing error:", err2);
-      const message = err2 && err2.message ? err2.message : "Failed to process video";
+      const message =
+        err2 && err2.message ? err2.message : "Failed to process video";
       return res.status(500).json({ message });
     } finally {
       try {
@@ -257,9 +273,9 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
           type: "object",
           properties: {
             title: { type: "string", description: "Short plain-text title" },
-            body: { type: "string", description: "Detailed Markdown notes" }
+            body: { type: "string", description: "Detailed Markdown notes" },
           },
-          required: ["title", "body"]
+          required: ["title", "body"],
         },
         messages: [
           { role: "system", content: systemPrompt },
@@ -268,9 +284,9 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
         stream: false,
         options: {
           num_ctx: 8192,
-          temperature: 0.3, 
-          num_predict: 2048
-        }
+          temperature: 0.3,
+          num_predict: 2048,
+        },
       }),
     });
 
@@ -283,13 +299,17 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
     const aiJson = await aiRes.json();
     const contentString = aiJson?.message?.content || "{}";
 
-
     let parsedContent;
     try {
       parsedContent = JSON.parse(contentString);
     } catch (e) {
-      console.warn("Failed to parse AI JSON, falling back to plain-text parsing:", e.message);
-      const lines = String(contentString || "").split(/\r?\n/).filter(Boolean);
+      console.warn(
+        "Failed to parse AI JSON, falling back to plain-text parsing:",
+        e.message,
+      );
+      const lines = String(contentString || "")
+        .split(/\r?\n/)
+        .filter(Boolean);
       const firstLine = lines.shift() || "AI Generated Note";
       const body = lines.join("\n") || contentString || "No notes generated.";
       parsedContent = { title: firstLine.trim(), body };
@@ -300,7 +320,6 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
       content: parsedContent.body || "No notes generated.",
       raw: contentString,
     });
-
   } catch (err) {
     console.error("Error generating note with Ollama:", err);
     return res.status(500).json({ message: "Failed to generate note" });

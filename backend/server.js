@@ -52,7 +52,9 @@ app.use("/api/friendrequests", friendRequestRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/achievements", achievementRoutes);
 app.use("/api/attachments", attachmentRoutes);
-app.use("/uploads", express.static("uploads"));
+
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
   res.send("API is running...");
