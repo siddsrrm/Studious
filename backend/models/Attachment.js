@@ -61,9 +61,26 @@ const AttachmentSchema = new mongoose.Schema({
 
 AttachmentSchema.methods.updateAttachment = async function (updates) {
   const allowed = ["type", "url", "filename", "fileUrl", "size", "mimeType"];
+
   allowed.forEach((field) => {
-    if (updates[field] !== undefined) this[field] = updates[field];
+    if (updates[field] !== undefined) {
+      this[field] = updates[field];
+    }
   });
+
+  if (updates.type) {
+    if (updates.type === "link") {
+      this.filename = undefined;
+      this.fileUrl = undefined;
+      this.size = undefined;
+      this.mimeType = undefined;
+    }
+
+    if (updates.type === "file") {
+      this.url = undefined;
+    }
+  }
+
   await this.save();
   return this;
 };

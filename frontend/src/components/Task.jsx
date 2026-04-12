@@ -221,7 +221,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         </ul>
         <SubTaskForm onAdd={handleAddSubTask} />
         <p>Attachments:</p>
-        <Attachments token={token} />
+        <Attachments taskId={taskObj._id} token={token} />
       </div>
       {taskObj.subTasks.map((subTask) => (
         <div className="subtask-card" key={subTask._id}>

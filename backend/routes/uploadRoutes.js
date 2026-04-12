@@ -11,6 +11,39 @@ const router = express.Router();
 
 const storage = multer.memoryStorage();
 
+// Generic file upload (used by Attachments frontend)
+const uploadGeneric = multer({ storage: multer.memoryStorage() });
+
+router.post("/upload", protect, uploadGeneric.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // ensure upload folder exists
+    const uploadDir = path.join(__dirname, "../uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+    const filePath = path.join(uploadDir, fileName);
+
+    // write buffer to disk
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    return res.json({
+      filename: req.file.originalname,
+      fileUrl: `/uploads/${fileName}`,
+      size: req.file.size,
+      mimeType: req.file.mimetype,
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    return res.status(500).json({ message: "File upload failed" });
+  }
+});
+
 // PDF upload (in-memory)
 const uploadPdf = multer({
   storage,
