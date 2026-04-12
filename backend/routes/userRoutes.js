@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router()
-const {updateProfile, nameChange, deleteAccount, emailChange, toggle2FA, getNotificationSettings, updateNotificationSettings, getInfo, searchUsers, getPublicProfile } = require("../controllers/userController")
+const {updatePrivacy, updateProfile, nameChange, deleteAccount, emailChange, toggle2FA, getNotificationSettings, updateNotificationSettings, getInfo, searchUsers, getPublicProfile } = require("../controllers/userController")
 const User = require("../models/User")
 const authToken = require("../middleware/authMiddleware")
 
@@ -26,5 +26,6 @@ router.post("/google/disconnect", authToken, async (req, res) => {
 });
 router.get("/search", authToken, searchUsers)
 router.get("/:userId", authToken, getPublicProfile)
+router.post("/privacy", authToken, updatePrivacy);
 
 module.exports = router

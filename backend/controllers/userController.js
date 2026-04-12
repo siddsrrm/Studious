@@ -41,6 +41,22 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+exports.updatePrivacy = async (req, res) => {
+  try {
+    const { profileVisibility } = req.body;
+    const validOptions = ["public", "friends", "hidden"];
+    if (!validOptions.includes(profileVisibility)) {
+      return res.status(400).json({ message: "Invalid visibility option." });
+    }
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    await user.updateOne({ profileVisibility });
+    res.json({ message: "Privacy settings updated.", profileVisibility });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update privacy settings." });
+  }
+};
+
 
 exports.getInfo = async (req, res) => {
 
