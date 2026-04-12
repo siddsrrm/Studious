@@ -222,12 +222,27 @@ exports.searchUsers = async (req, res) => {
   }
 
   try {
+     // Get the searcher's friend list
+    const friendships = await FriendRequest.find({
+      $or: [{ sender: req.user.userId }, { recipient: req.user.userId }],
+      status: 1
+    });
+    const friendIds = friendships.map(f =>
+      f.sender.toString() === req.user.userId ? f.recipient.toString() : f.sender.toString()
+    );
+
     const users = await User.find({
-      username: { $regex: q, $options: "i" }, // case-insensitive
-      _id: { $ne: req.user.userId } // not equal to the user
-    }).select("username avatar").limit(20) // limit to 20 results
-    
-    res.json(users)
+      username: { $regex: q, $options: "i" },
+      _id: { $ne: req.user.userId },
+      $or: [
+        { profileVisibility: "public" },
+        { profileVisibility: { $exists: false } }, //include people with no profileVisibility saved yet
+        { profileVisibility: "friends", _id: { $in: friendIds } }
+        // hidden users are excluded entirely
+      ]
+    }).select("username avatar").limit(20);
+
+    res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Failed to search users" })
   }
