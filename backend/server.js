@@ -21,6 +21,7 @@ const leaderboardRoutes = require("./routes/leaderboardRoutes");
 const { startReminderJob } = require("./utils/reminderJob");
 const friendRequestRoutes = require("./routes/friendRequestRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
+const gradeBookRoutes = require("./routes/gradeBookRoutes");
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/practice-questions", practiceQuestionRoutes);
 app.use("/api/friendrequests", friendRequestRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/achievements", achievementRoutes);
+app.use("/api/gradebooks", gradeBookRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
