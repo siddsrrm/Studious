@@ -51,7 +51,7 @@ app.use("/api/practice-questions", practiceQuestionRoutes);
 app.use("/api/friendrequests", friendRequestRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/achievements", achievementRoutes);
-app.use("/api/gradebooks", gradeBookRoutes);
+app.use("/api/gradebook", gradeBookRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");

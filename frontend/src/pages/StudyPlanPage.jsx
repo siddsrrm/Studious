@@ -3,6 +3,7 @@ import ToDoList from "../components/ToDoList";
 import NoteEditor from "../components/NoteEditor";
 import NotePage from "./NotePage";
 import PracticeQuestionsPage from "./PracticeQuestionsPage";
+import GradeBookPage from "./GradeBookPage";
 
 
 function MilestonesModal({ studyPlanId, milestones, setMilestones, setStudyPlans, setMilestoneVersion, onClose }) {
@@ -217,7 +218,7 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [milestoneVersion, setMilestoneVersion] = useState(0);
 
-  const allTabs = ["To-Do List", "Notes", "Practice Questions"];
+  const allTabs = ["To-Do List", "Notes", "Grade Book", "Practice Questions"];
 
   useEffect(() => {
     setMilestones(prev => prev.map(ms => ({
@@ -273,8 +274,8 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition ${activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
             >
               {tab}
@@ -337,6 +338,12 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
         {activeTab === "Notes" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
             <NotePage studyPlanId={plan.id} />
+          </div>
+        )}
+
+        {activeTab === "Grade Book" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <GradeBookPage studyPlanId={plan.id} />
           </div>
         )}
 
