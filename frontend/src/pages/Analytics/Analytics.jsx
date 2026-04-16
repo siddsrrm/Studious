@@ -47,32 +47,6 @@ const COURSE_COLORS = [
   { bg: "#ccfbf1", bar: "#14b8a6", text: "#0f766e" }, // teal
 ];
 
-// ─── Mock data generator (replace with real API calls) ──────────────────────
-
-const generateMockLogs = (studyPlans) => {
-  // Returns array of { planId, planTitle, date, durationMins }
-  const logs = [];
-  const now = new Date();
-
-  studyPlans.forEach((plan, i) => {
-    // Generate random sessions over the past 5 weeks
-    for (let week = 0; week < 5; week++) {
-      const sessionsThisWeek = Math.floor(Math.random() * 5);
-      for (let s = 0; s < sessionsThisWeek; s++) {
-        const dayOffset = Math.floor(Math.random() * 7);
-        const d = new Date(now);
-        d.setDate(d.getDate() - week * 7 - dayOffset);
-        logs.push({
-          planId: plan.id,
-          planTitle: plan.title,
-          date: new Date(d),
-          durationMins: Math.floor(Math.random() * 90) + 15,
-        });
-      }
-    }
-  });
-  return logs;
-};
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
@@ -181,12 +155,19 @@ const AnalyticsPage = () => {
         }));
         setStudyPlans(normalized);
 
-        // ── Replace this block with a real API call to /study-logs ──────────
-        // e.g. const logsRes = await fetch(`${import.meta.env.VITE_API_URL}/study-logs`, ...)
-        // const logsData = await logsRes.json()
-        // setLogs(logsData)
-        // ──────────────────────────────────────────────────────────────────
-        setLogs(generateMockLogs(normalized));
+        const logsRes = await fetch(`${import.meta.env.VITE_API_URL}/study-logs`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+if (logsRes.ok) {
+  const logsData = await logsRes.json();
+  const normalizedLogs = logsData.map((l) => ({
+    planId: l.planId,
+    planTitle: l.planTitle,
+    date: new Date(l.date),
+    durationMins: l.durationMins,
+  }));
+  setLogs(normalizedLogs);
+}
       } catch (err) {
         console.error(err);
       } finally {

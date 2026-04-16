@@ -219,6 +219,29 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
 
   const allTabs = ["To-Do List", "Notes", "Practice Questions"];
 
+  
+  useEffect(() => {
+  const startTime = Date.now();
+  console.log(`Started studying plan at ${new Date(startTime).toISOString()}`);
+
+  return () => {
+    const durationMins = Math.round((Date.now() - startTime) / 1000 / 60);
+    console.log(`logging duration as ${durationMins}`);
+    if (durationMins < 1) return; // ignore accidental clicks
+
+    const token = localStorage.getItem("token");
+    navigator.sendBeacon(
+      `${import.meta.env.VITE_API_URL}/study-logs`,
+      JSON.stringify({
+        planId: plan.id,
+        planTitle: plan.title,
+        date: new Date().toISOString(),
+        durationMins,
+      })
+    );
+  };
+}, []);
+
   useEffect(() => {
     setMilestones(prev => prev.map(ms => ({
       ...ms,
