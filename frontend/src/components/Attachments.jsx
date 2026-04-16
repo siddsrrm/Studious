@@ -266,6 +266,63 @@ const Attachments = ({ taskId, token }) => {
     <>
       {networkError && <p style={{ color: "red" }}>{networkError}</p>}
       <div>
+        {links.length === 0 ? (
+          <h3>No links attached...</h3>
+        ) : (
+          <ul>
+            {links.map((link) => (
+              <li key={link._id}>
+                {link.url.startsWith("http") ? (
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      maxWidth: "50%",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "inline-block",
+                    }}
+                    title={link.url}
+                  >
+                    {link.url}
+                  </a>
+                ) : (
+                  link.url
+                )}
+                <button
+                  onClick={() => handleDeleteAttachment(link._id, "link")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    marginLeft: "10px",
+                    padding: "0",
+                    alignItems: "center",
+                    color: "red",
+                  }}
+                  title="Delete"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -283,150 +340,100 @@ const Attachments = ({ taskId, token }) => {
           <button type="submit">Add</button>
           {error && <p style={{ color: "red", marginTop: "5px" }}>{error}</p>}
         </form>
-        <ul>
-          {links.map((link) => (
-            <li key={link._id}>
-              {link.url.startsWith("http") ? (
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    maxWidth: "50%",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    display: "inline-block",
-                  }}
-                  title={link.url}
-                >
-                  {link.url}
-                </a>
-              ) : (
-                link.url
-              )}
-              <button
-                onClick={() => handleDeleteAttachment(link._id, "link")}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  marginLeft: "10px",
-                  padding: "0",
-                  alignItems: "center",
-                  color: "red",
-                }}
-                title="Delete"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
+
       <div style={{ marginTop: "20px" }}>
-        <h3>Files</h3>
-
-        <ul>
-          {files.map((file) => (
-            <li
-              key={file._id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "8px 0",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
-                {/* FILE TYPE ICON */}
-                <img
-                  src={
-                    ImageConfig[
-                      (file.mimeType?.split("/")[1] || "").toLowerCase()
-                    ] || ImageConfig.default
-                  }
-                  alt="file type"
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    objectFit: "contain",
-                  }}
-                />
-
-                {/* File info + download link */}
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <a
-                    href={`${API.replace("/api", "")}${file.fileUrl}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      maxWidth: "50%",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      display: "inline-block",
-                    }}
-                    title={file.filename}
-                  >
-                    {file.filename}
-                  </a>
-
-                  <small style={{ color: "#666" }}>
-                    {file.mimeType} • {formatSize(file.size)}
-                  </small>
-                </div>
-              </div>
-
-              {/* Delete button */}
-              <button
-                onClick={() => handleDeleteAttachment(file._id, "file")}
+        {files.length === 0 ? (
+          <h3>No files attached...</h3>
+        ) : (
+          <ul>
+            {files.map((file) => (
+              <li
+                key={file._id}
                 style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  marginLeft: "10px",
-                  padding: "0",
-                  color: "red",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "8px 0",
                 }}
-                title="Delete"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  {/* FILE TYPE ICON */}
+                  <img
+                    src={
+                      ImageConfig[
+                        (file.mimeType?.split("/")[1] || "").toLowerCase()
+                      ] || ImageConfig.default
+                    }
+                    alt="file type"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      objectFit: "contain",
+                    }}
                   />
-                </svg>
-              </button>
-            </li>
-          ))}
-        </ul>
+
+                  {/* File info + download link */}
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <a
+                      href={`${API.replace("/api", "")}${file.fileUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        maxWidth: "50%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        display: "inline-block",
+                      }}
+                      title={file.filename}
+                    >
+                      {file.filename}
+                    </a>
+
+                    <small style={{ color: "#666" }}>
+                      {file.mimeType} • {formatSize(file.size)}
+                    </small>
+                  </div>
+                </div>
+
+                {/* Delete button */}
+                <button
+                  onClick={() => handleDeleteAttachment(file._id, "file")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    marginLeft: "10px",
+                    padding: "0",
+                    color: "red",
+                  }}
+                  title="Delete"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <DropFileInput onFilesDropped={handleFilesDropped} />
+        {uploading && <p>Uploading files...</p>}
       </div>
-      <DropFileInput onFilesDropped={handleFilesDropped} />
-      {uploading && <p>Uploading files...</p>}
     </>
   );
 };
