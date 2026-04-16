@@ -230,15 +230,18 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
     if (durationMins < 1) return; // ignore accidental clicks
 
     const token = localStorage.getItem("token");
-    navigator.sendBeacon(
-      `${import.meta.env.VITE_API_URL}/study-logs`,
-      JSON.stringify({
-        planId: plan.id,
-        planTitle: plan.title,
-        date: new Date().toISOString(),
-        durationMins,
-      })
-    );
+    fetch(`${import.meta.env.VITE_API_URL}/study-logs`, {
+  method: "POST",
+  keepalive: true,
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({ planId: plan.id,
+    planTitle: plan.title,
+    date: new Date().toISOString(),
+    durationMins,}),
+});
   };
 }, []);
 
