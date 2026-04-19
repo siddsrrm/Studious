@@ -3,6 +3,7 @@ import Task from "./Task.jsx";
 import "../css/ToDoList.css";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
 const API = import.meta.env.VITE_API_URL;
@@ -57,6 +58,15 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     const progress = total === 0 ? 100 : (completed / total) * 100;
     if (onProgressChange) onProgressChange(progress);
   }, [tasks]);
+
+  // Disable background while modal is open
+  useEffect(() => {
+    if (showDraft) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [showDraft]);
 
   const handleAddTask = async ({ title, description, priority, dueDate }) => {
     try {
@@ -152,27 +162,35 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   };
 
   const handleConfirmSchedule = async () => {
-    const res = await fetch(`${API}/events/bulk-create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        events: draftSchedule.map((e) => ({
-          title: e.title,
-          start: new Date(e.start).toISOString(),
-          end: new Date(e.end).toISOString(),
-        })),
-      }),
-    });
+    try {
+      const requests = draftSchedule.map((e) =>
+        fetch(`${API}/events`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: e.title,
+            start: new Date(e.start).toISOString(),
+            end: new Date(e.end).toISOString(),
+          }),
+        }),
+      );
 
-    if (!res.ok) {
+      const results = await Promise.all(requests);
+
+      const failed = results.find((r) => !r.ok);
+      if (failed) {
+        setError("Some events failed to save");
+        return;
+      }
+
+      setShowDraft(false);
+      setDraftSchedule([]);
+    } catch (err) {
       setError("Failed to save schedule");
-      return;
     }
-
-    setShowDraft(false);
   };
 
   const handleDiscardSchedule = () => {
@@ -238,64 +256,12 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           </button>
         )}
         {showDraft && (
-          <>
-            <div style={{ marginTop: "20px" }}>
-              <h3>Review Draft Schedule</h3>
-
-              <FullCalendar
-                height="70vh"
-                plugins={[timeGridPlugin, interactionPlugin]}
-                initialView="timeGridWeek"
-                editable={true}
-                selectable={true}
-                events={draftSchedule}
-                eventOverlap={false}
-                slotDuration="00:15:00"
-                eventDrop={(info) => {
-                  setDraftSchedule((prev) =>
-                    prev.map((ev) =>
-                      ev.id === info.event.id
-                        ? {
-                            ...ev,
-                            start: info.event.start,
-                            end: info.event.end,
-                          }
-                        : ev,
-                    ),
-                  );
-                }}
-                eventResize={(info) => {
-                  setDraftSchedule((prev) =>
-                    prev.map((ev) =>
-                      ev.id === info.event.id
-                        ? {
-                            ...ev,
-                            start: info.event.start,
-                            end: info.event.end,
-                          }
-                        : ev,
-                    ),
-                  );
-                }}
-                eventClick={(info) => {
-                  const newTitle = prompt("Edit title:", info.event.title);
-
-                  if (!newTitle) return;
-
-                  setDraftSchedule((prev) =>
-                    prev.map((ev) =>
-                      ev.id === info.event.id ? { ...ev, title: newTitle } : ev,
-                    ),
-                  );
-                }}
-              />
-            </div>
-            <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
-              <button onClick={handleConfirmSchedule}>Confirm Schedule</button>
-
-              <button onClick={handleDiscardSchedule}>Discard</button>
-            </div>
-          </>
+          <ScheduleModal
+            draftSchedule={draftSchedule}
+            setDraftSchedule={setDraftSchedule}
+            onConfirm={handleConfirmSchedule}
+            onDiscard={handleDiscardSchedule}
+          />
         )}
       </div>
       <div className="tasks-container">
@@ -354,6 +320,179 @@ const AddTaskForm = ({ onAddTask }) => {
       />
       <button type="submit">Add Task</button>
     </form>
+  );
+};
+
+const ScheduleModal = ({
+  draftSchedule,
+  setDraftSchedule,
+  onConfirm,
+  onDiscard,
+  onEditEvent,
+}) => {
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedStart, setEditedStart] = useState("");
+  const [editedEnd, setEditedEnd] = useState("");
+
+  const toDatetimeLocal = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingEvent) return;
+
+    setDraftSchedule((prev) =>
+      prev.map((ev) =>
+        ev.id === editingEvent.id
+          ? {
+              ...ev,
+              title: editedTitle,
+              start: new Date(editedStart),
+              end: new Date(editedEnd),
+            }
+          : ev,
+      ),
+    );
+
+    setEditingEvent(null);
+    setEditedTitle("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEvent(null);
+    setEditedTitle("");
+  };
+
+  return (
+    <>
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3>Review Draft Schedule</h3>
+            <p className="modal-subtext">
+              Drag, resize, or click events to edit before saving.
+            </p>
+          </div>
+
+          <div className="calendar-wrapper">
+            <FullCalendar
+              height="70vh"
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="timeGridWeek"
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              editable={true}
+              selectable={true}
+              events={draftSchedule}
+              eventOverlap={false}
+              slotDuration="00:15:00"
+              eventTimeFormat={{
+                hour: "numeric",
+                minute: "2-digit",
+                meridiem: "short",
+              }}
+              eventDrop={(info) => {
+                setDraftSchedule((prev) =>
+                  prev.map((ev) =>
+                    ev.id === info.event.id
+                      ? {
+                          ...ev,
+                          start: info.event.start,
+                          end: info.event.end,
+                        }
+                      : ev,
+                  ),
+                );
+              }}
+              eventResize={(info) => {
+                setDraftSchedule((prev) =>
+                  prev.map((ev) =>
+                    ev.id === info.event.id
+                      ? {
+                          ...ev,
+                          start: info.event.start,
+                          end: info.event.end,
+                        }
+                      : ev,
+                  ),
+                );
+              }}
+              eventClick={(info) => {
+                info.jsEvent.preventDefault();
+                setEditingEvent({
+                  id: info.event.id,
+                });
+                setEditedTitle(info.event.title);
+                setEditedStart(info.event.start);
+                setEditedEnd(info.event.end);
+              }}
+            />
+          </div>
+
+          <div className="modal-actions">
+            <button className="secondary" onClick={onDiscard}>
+              Discard
+            </button>
+            <button className="primary" onClick={onConfirm}>
+              Confirm Schedule
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {editingEvent && (
+        <div className="modal-overlay">
+          <div className="modal-content small">
+            <h2 className="text-lg font-semibold text-gray-800">Edit Event</h2>
+
+            <div className="modal-field">
+              <label>Title</label>
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Start</label>
+              <input
+                type="datetime-local"
+                value={toDatetimeLocal(editedStart)}
+                onChange={(e) => setEditedStart(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>End</label>
+              <input
+                type="datetime-local"
+                value={toDatetimeLocal(editedEnd)}
+                onChange={(e) => setEditedEnd(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-actions">
+              <button className="secondary" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+
+              <button className="primary" onClick={handleSaveEdit}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

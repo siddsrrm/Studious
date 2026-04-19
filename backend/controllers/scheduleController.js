@@ -30,20 +30,63 @@ exports.generateSchedule = async (req, res) => {
     const prompt = `
 You are an intelligent scheduling assistant.
 
-Your job is to create a study schedule.
+Your job is to create an optimized study schedule.
 
-INPUT:
-- Tasks with priorities and deadlines
-- Existing calendar events (busy times)
+----------------------------------------
+CURRENT CONTEXT
+----------------------------------------
+Today is: ${new Date().toISOString().split("T")[0]}
+Current time: ${new Date().toISOString()}
 
-RULES:
-1. Only schedule during free time (not overlapping events)
-2. Prioritize tasks with earlier deadlines
-3. Break work into 1-2 hour sessions
-4. Do not exceed 4 hours of study per day
-5. Output ONLY valid JSON
+IMPORTANT:
+- You MUST NOT schedule anything in the past.
+- All events must be on or after today's date.
+- Use only future dates relative to today.
 
-FORMAT:
+----------------------------------------
+INPUT DATA
+----------------------------------------
+Tasks (with priorities and deadlines):
+${JSON.stringify(taskData)}
+
+Existing calendar events (busy times, DO NOT overlap):
+${JSON.stringify(eventData)}
+
+----------------------------------------
+SCHEDULING RULES
+----------------------------------------
+1. Only schedule during free time (no overlap with events)
+2. Do not schedule in the past under any circumstances
+3. Tasks MUST be prioritized using BOTH due date AND priority
+
+   Priority system (VERY IMPORTANT):
+   - high priority = must be scheduled first (overrides due date unless due date is today/overdue)
+   - medium priority = normal scheduling based on due date
+   - low priority = schedule only after higher priorities are placed
+
+4. Between tasks, always sort by:
+   (1) earliest due date
+   (2) highest priority
+   Use this ordering when allocating study sessions.
+
+5. Break tasks into 1–2 hour study sessions
+6. Maximum 4 hours of study per day
+7. Spread workload across multiple days when needed
+8. Prefer scheduling within the next 14 days only
+9. Avoid back-to-back long sessions (include breaks)
+10. If a task is close to its due date, prioritize scheduling it sooner even if priority is low
+
+----------------------------------------
+OUTPUT REQUIREMENTS
+----------------------------------------
+- Output ONLY valid JSON (no commentary, no markdown)
+- Do not include explanations
+- Ensure all dates are ISO-like strings in format:
+  YYYY-MM-DDTHH:MM
+
+----------------------------------------
+OUTPUT FORMAT
+----------------------------------------
 {
   "schedule": [
     {
@@ -53,13 +96,6 @@ FORMAT:
     }
   ]
 }
-
-DATA:
-Tasks:
-${JSON.stringify(taskData)}
-
-Events:
-${JSON.stringify(eventData)}
 `;
 
     const aiRes = await fetch(process.env.OLLAMA_URL, {
@@ -92,28 +128,6 @@ ${JSON.stringify(eventData)}
     return res.json(parsed.schedule);
   } catch (err) {
     console.error("Error generating schedule:", err.message);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: err.message });
-  }
-};
-
-exports.bulkCreateEvents = async (req, res) => {
-  if (!Array.isArray(req.body.events)) {
-    return res.status(400).json({ message: "Invalid events payload" });
-  }
-
-  const events = req.body.events.map((e) => ({
-    ownerID: req.user.userId,
-    title: e.title,
-    start: new Date(e.start),
-    end: new Date(e.end),
-  }));
-
-  try {
-    const saved = await Event.insertMany(events);
-    res.json(saved);
-  } catch (err) {
     res
       .status(500)
       .json({ message: "Internal server error", error: err.message });
