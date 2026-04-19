@@ -11,7 +11,7 @@ const studyLogSchema = new mongoose.Schema({
     ref: "StudyPlan",
     required: true,
   },
-  planTitle: String, // optional but useful snapshot
+  planTitle: String, 
 
   date: {
     type: Date,
