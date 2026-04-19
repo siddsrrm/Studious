@@ -85,6 +85,10 @@ ${JSON.stringify(eventData)}
 
     const parsed = JSON.parse(content);
 
+    if (!parsed.schedule) {
+      return res.status(500).json({ message: "Invalid AI response format" });
+    }
+
     return res.json(parsed.schedule);
   } catch (err) {
     console.error("Error generating schedule:", err.message);

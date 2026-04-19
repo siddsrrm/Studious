@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -130,7 +133,16 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
       const data = await res.json();
       console.log("Generated schedule:", data);
 
-      setDraftSchedule(data);
+      setDraftSchedule(
+        data.map((e, idx) => ({
+          id: crypto.randomUUID(),
+          title: e.title,
+          start: new Date(e.start),
+          end: new Date(e.end),
+          editable: true,
+        })),
+      );
+
       setShowDraft(true);
     } catch {
       setError("Failed to generate schedule");
@@ -140,22 +152,27 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   };
 
   const handleConfirmSchedule = async () => {
-    await fetch(`${API}/events/bulk-create`, {
+    const res = await fetch(`${API}/events/bulk-create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ events: draftSchedule }),
+      body: JSON.stringify({
+        events: draftSchedule.map((e) => ({
+          title: e.title,
+          start: new Date(e.start).toISOString(),
+          end: new Date(e.end).toISOString(),
+        })),
+      }),
     });
 
-    setShowDraft(false);
-  };
+    if (!res.ok) {
+      setError("Failed to save schedule");
+      return;
+    }
 
-  const handleUpdateSchedule = (index, field, value) => {
-    setDraftSchedule((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-    );
+    setShowDraft(false);
   };
 
   const handleDiscardSchedule = () => {
@@ -220,30 +237,66 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             {generatingSchedule ? "Generating..." : "Generate Schedule"}
           </button>
         )}
-        {draftSchedule.map((item, idx) => (
-          <div key={idx}>
-            <input
-              value={item.title}
-              onChange={(e) =>
-                handleUpdateSchedule(idx, "title", e.target.value)
-              }
-            />
+        {showDraft && (
+          <>
+            <div style={{ marginTop: "20px" }}>
+              <h3>Review Draft Schedule</h3>
 
-            <input
-              type="datetime-local"
-              value={item.start}
-              onChange={(e) =>
-                handleUpdateSchedule(idx, "start", e.target.value)
-              }
-            />
+              <FullCalendar
+                height="70vh"
+                plugins={[timeGridPlugin, interactionPlugin]}
+                initialView="timeGridWeek"
+                editable={true}
+                selectable={true}
+                events={draftSchedule}
+                eventOverlap={false}
+                slotDuration="00:15:00"
+                eventDrop={(info) => {
+                  setDraftSchedule((prev) =>
+                    prev.map((ev) =>
+                      ev.id === info.event.id
+                        ? {
+                            ...ev,
+                            start: info.event.start,
+                            end: info.event.end,
+                          }
+                        : ev,
+                    ),
+                  );
+                }}
+                eventResize={(info) => {
+                  setDraftSchedule((prev) =>
+                    prev.map((ev) =>
+                      ev.id === info.event.id
+                        ? {
+                            ...ev,
+                            start: info.event.start,
+                            end: info.event.end,
+                          }
+                        : ev,
+                    ),
+                  );
+                }}
+                eventClick={(info) => {
+                  const newTitle = prompt("Edit title:", info.event.title);
 
-            <input
-              type="datetime-local"
-              value={item.end}
-              onChange={(e) => handleUpdateSchedule(idx, "end", e.target.value)}
-            />
-          </div>
-        ))}
+                  if (!newTitle) return;
+
+                  setDraftSchedule((prev) =>
+                    prev.map((ev) =>
+                      ev.id === info.event.id ? { ...ev, title: newTitle } : ev,
+                    ),
+                  );
+                }}
+              />
+            </div>
+            <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
+              <button onClick={handleConfirmSchedule}>Confirm Schedule</button>
+
+              <button onClick={handleDiscardSchedule}>Discard</button>
+            </div>
+          </>
+        )}
       </div>
       <div className="tasks-container">
         {filteredTasks.map((task) => (
