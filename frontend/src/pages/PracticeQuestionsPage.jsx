@@ -315,11 +315,11 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
                 style={{
                   marginLeft: 12,
                   padding: "10px 16px",
-                  backgroundColor: '#10b981',
+                  backgroundColor: generating ? "#94a3b8" : "#10b981",
                   color: 'white',
                   borderRadius: 6,
                   border: 'none',
-                  cursor: 'pointer',
+                  cursor: generating ? "not-allowed" : "pointer",
                   fontWeight: 600,
                 }}
                 title="Generate questions from past incorrect answers"
@@ -334,16 +334,39 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
       {showGenerateWrongModal && (
         <GenerateFromWrongModal
           onClose={() => setShowGenerateWrongModal(false)}
+          disabled={generating}
           onGenerate={async () => {
-            // UI-only: simulate generation flow and show a temporary success message
             setShowGenerateWrongModal(false);
             setGenerating(true);
             setError("");
             try {
-              // Placeholder: in future call `${API}/practice-questions/generate-from-wrong`
-              await new Promise((r) => setTimeout(r, 1200));
-              setError('Successfully generated practice questions from past incorrect answers!');
-              setTimeout(() => setError(''), 3500);
+              const res = await fetch(`${API}/practice-questions/generate-mastery`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  studyPlanId,
+                  numQuestions: numQuestions ? parseInt(numQuestions) : undefined,
+                }),
+              });
+
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                setError(data.message || "Failed to generate mastery questions.");
+                return;
+              }
+
+              const newQs = Array.isArray(data.questions) ? data.questions : [];
+              if (newQs.length > 0) {
+                setQuestions((prev) => [...prev, ...newQs]);
+              }
+
+              setError(`Successfully generated ${newQs.length} mastery questions!`);
+              setTimeout(() => setError(""), 3000);
+            } catch {
+              setError("Network error. Please try again.");
             } finally {
               setGenerating(false);
             }
