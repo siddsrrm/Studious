@@ -45,6 +45,7 @@ describe("getPracticeQuestions", () => {
     expect(PracticeQuestion.find).toHaveBeenCalledWith({
       ownerID: USER_ID,
       studyPlanId: "plan1",
+  hidden: { $ne: true },
     });
     expect(res.json).toHaveBeenCalledWith(mockData);
   });
@@ -214,13 +215,16 @@ describe("deletePracticeQuestion", () => {
   });
 
   test("deletes question", async () => {
-    const mockDeleteOne = jest.fn().mockResolvedValue({ deletedCount: 1 });
+    const mockSave = jest.fn().mockResolvedValue(true);
 
-    PracticeQuestion.findById.mockResolvedValue({
+    const mockDoc = {
       _id: "q1",
       ownerID: { toString: () => USER_ID },
-      deleteOne: mockDeleteOne,
-    });
+      hidden: false,
+      save: mockSave,
+    };
+
+    PracticeQuestion.findById.mockResolvedValue(mockDoc);
 
     const req = {
       params: { id: "q1" },
@@ -229,9 +233,10 @@ describe("deletePracticeQuestion", () => {
 
     await practiceQuestionController.deletePracticeQuestion(req, res);
 
-    expect(mockDeleteOne).toHaveBeenCalled();
+  expect(mockDoc.hidden).toBe(true);
+    expect(mockSave).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({
-      message: "Practice question deleted",
+      message: "Practice question removed from view",
     });
   });
 });
