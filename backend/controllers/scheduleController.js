@@ -1,6 +1,12 @@
 const Task = require("../models/Task");
 const Event = require("../models/Event");
 
+const PRIORITY_MAP = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
 exports.generateSchedule = async (req, res) => {
   try {
     const { studyPlanId } = req.body;
@@ -15,14 +21,20 @@ exports.generateSchedule = async (req, res) => {
       ownerID: req.user.userId,
     });
 
-    const taskData = tasks.map((t) => ({
-      title: t.title,
-      priority: t.priority,
+    // Only include SAFE fields (no user text)
+    const taskData = tasks.map((t, index) => ({
+      id: index + 1, // internal safe ID
+      priority: PRIORITY_MAP[t.priority] || 2,
       dueDate: t.dueDate,
     }));
 
+    // Map ID → original title (kept OUTSIDE prompt)
+    const taskIdMap = {};
+    tasks.forEach((t, index) => {
+      taskIdMap[index + 1] = t.title;
+    });
+
     const eventData = events.map((e) => ({
-      title: e.title,
       start: e.start,
       end: e.end,
     }));
@@ -46,51 +58,43 @@ IMPORTANT:
 ----------------------------------------
 INPUT DATA
 ----------------------------------------
-Tasks (with priorities and deadlines):
+Tasks:
+Each task has:
+- id (number)
+- priority (1=low, 2=medium, 3=high)
+- dueDate (nullable)
+
 ${JSON.stringify(taskData)}
 
-Existing calendar events (busy times, DO NOT overlap):
+Existing busy times (DO NOT overlap):
 ${JSON.stringify(eventData)}
 
 ----------------------------------------
 SCHEDULING RULES
 ----------------------------------------
-1. Only schedule during free time (no overlap with events)
-2. Do not schedule in the past under any circumstances
-3. Tasks MUST be prioritized using BOTH due date AND priority
-
-   Priority system (VERY IMPORTANT):
-   - high priority = must be scheduled first (overrides due date unless due date is today/overdue)
-   - medium priority = normal scheduling based on due date
-   - low priority = schedule only after higher priorities are placed
-
-4. Between tasks, always sort by:
-   (1) earliest due date
-   (2) highest priority
-   Use this ordering when allocating study sessions.
-
-5. Break tasks into 1–2 hour study sessions
-6. Maximum 4 hours of study per day
-7. Spread workload across multiple days when needed
-8. Prefer scheduling within the next 14 days only
-9. Avoid back-to-back long sessions (include breaks)
-10. If a task is close to its due date, prioritize scheduling it sooner even if priority is low
+1. Only schedule during free time
+2. Do not schedule in the past
+3. Prioritize tasks using BOTH:
+   - earliest due date
+   - highest priority
+4. Higher priority tasks should generally be scheduled first
+5. Break tasks into 1-2 hour sessions
+6. Maximum 4 hours per day
+7. Spread work across days
+8. Prefer scheduling within next 14 days
+9. Avoid back-to-back long sessions
+10. If due date is قريب (soon), prioritize it even if priority is lower
 
 ----------------------------------------
 OUTPUT REQUIREMENTS
 ----------------------------------------
-- Output ONLY valid JSON (no commentary, no markdown)
-- Do not include explanations
-- Ensure all dates are ISO-like strings in format:
-  YYYY-MM-DDTHH:MM
-
-----------------------------------------
-OUTPUT FORMAT
-----------------------------------------
+- Output ONLY valid JSON
+- Use task IDs (NOT names)
+- Format:
 {
   "schedule": [
     {
-      "title": "Task name",
+      "taskId": number,
       "start": "YYYY-MM-DDTHH:MM",
       "end": "YYYY-MM-DDTHH:MM"
     }
@@ -125,11 +129,19 @@ OUTPUT FORMAT
       return res.status(500).json({ message: "Invalid AI response format" });
     }
 
-    return res.json(parsed.schedule);
+    // Convert taskId → real title AFTER AI responds
+    const finalSchedule = parsed.schedule.map((e) => ({
+      title: taskIdMap[e.taskId] || "Study Task",
+      start: e.start,
+      end: e.end,
+    }));
+
+    return res.json(finalSchedule);
   } catch (err) {
     console.error("Error generating schedule:", err.message);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: err.message });
+    res.status(500).json({
+      message: "Internal server error",
+      error: err.message,
+    });
   }
 };
