@@ -13,6 +13,8 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
   const [generatingSchedule, setGeneratingSchedule] = useState(false);
+  const [draftSchedule, setDraftSchedule] = useState([]);
+  const [showDraft, setShowDraft] = useState(false);
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -127,11 +129,38 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
 
       const data = await res.json();
       console.log("Generated schedule:", data);
+
+      setDraftSchedule(data);
+      setShowDraft(true);
     } catch {
       setError("Failed to generate schedule");
     } finally {
       setGeneratingSchedule(false);
     }
+  };
+
+  const handleConfirmSchedule = async () => {
+    await fetch(`${API}/events/bulk-create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ events: draftSchedule }),
+    });
+
+    setShowDraft(false);
+  };
+
+  const handleUpdateSchedule = (index, field, value) => {
+    setDraftSchedule((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+    );
+  };
+
+  const handleDiscardSchedule = () => {
+    setDraftSchedule([]);
+    setShowDraft(false);
   };
 
   return (
@@ -191,6 +220,30 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             {generatingSchedule ? "Generating..." : "Generate Schedule"}
           </button>
         )}
+        {draftSchedule.map((item, idx) => (
+          <div key={idx}>
+            <input
+              value={item.title}
+              onChange={(e) =>
+                handleUpdateSchedule(idx, "title", e.target.value)
+              }
+            />
+
+            <input
+              type="datetime-local"
+              value={item.start}
+              onChange={(e) =>
+                handleUpdateSchedule(idx, "start", e.target.value)
+              }
+            />
+
+            <input
+              type="datetime-local"
+              value={item.end}
+              onChange={(e) => handleUpdateSchedule(idx, "end", e.target.value)}
+            />
+          </div>
+        ))}
       </div>
       <div className="tasks-container">
         {filteredTasks.map((task) => (

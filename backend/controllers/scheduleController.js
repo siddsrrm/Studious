@@ -85,18 +85,31 @@ ${JSON.stringify(eventData)}
 
     const parsed = JSON.parse(content);
 
-    const newEvents = parsed.schedule.map((s) => ({
-      ownerID: req.user.userId,
-      title: s.title,
-      start: new Date(s.start).toISOString(),
-      end: new Date(s.end).toISOString(),
-    }));
-
-    const saved = await Event.insertMany(newEvents);
-
-    res.json(saved);
+    return res.json(parsed.schedule);
   } catch (err) {
     console.error("Error generating schedule:", err.message);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
+  }
+};
+
+exports.bulkCreateEvents = async (req, res) => {
+  if (!Array.isArray(req.body.events)) {
+    return res.status(400).json({ message: "Invalid events payload" });
+  }
+
+  const events = req.body.events.map((e) => ({
+    ownerID: req.user.userId,
+    title: e.title,
+    start: new Date(e.start),
+    end: new Date(e.end),
+  }));
+
+  try {
+    const saved = await Event.insertMany(events);
+    res.json(saved);
+  } catch (err) {
     res
       .status(500)
       .json({ message: "Internal server error", error: err.message });
