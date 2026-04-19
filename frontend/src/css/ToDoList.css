@@ -23,6 +23,28 @@
   color: #334155;
 }
 
+.generate-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #6366f1;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 14px;
+}
+
+.generate-btn:hover {
+  background-color: #4f46e5;
+}
+
+.generate-btn:disabled {
+  background-color: #c7d2fe;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
 .tasks-container {
   margin-top: 20px;
 }

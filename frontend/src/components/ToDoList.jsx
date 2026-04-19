@@ -12,6 +12,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
+  const [generatingSchedule, setGeneratingSchedule] = useState(false);
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -99,6 +100,40 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     setFilterDueDateTo("");
   };
 
+  const handleGenerateSchedule = async () => {
+    if (!token) {
+      console.error("No auth token");
+      return;
+    }
+
+    if (!studyPlanId || generatingSchedule) return;
+
+    setGeneratingSchedule(true);
+
+    try {
+      const res = await fetch(`${API}/schedule/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ studyPlanId }),
+      });
+
+      if (!res.ok) {
+        setError("Failed to generate schedule");
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Generated schedule:", data);
+    } catch {
+      setError("Failed to generate schedule");
+    } finally {
+      setGeneratingSchedule(false);
+    }
+  };
+
   return (
     <>
       <div className="todolist-card">
@@ -147,6 +182,15 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           </ul>
         )}
         <AddTaskForm onAddTask={handleAddTask} />
+        {tasks.length > 0 && (
+          <button
+            onClick={handleGenerateSchedule}
+            disabled={generatingSchedule}
+            className="generate-btn"
+          >
+            {generatingSchedule ? "Generating..." : "Generate Schedule"}
+          </button>
+        )}
       </div>
       <div className="tasks-container">
         {filteredTasks.map((task) => (

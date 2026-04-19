@@ -1,6 +1,10 @@
 const Event = require("../models/Event");
 const User = require("../models/User");
-const { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = require("../services/googleCalendar");
+const {
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+} = require("../services/googleCalendar");
 
 exports.getEvents = async (req, res) => {
   try {
@@ -16,18 +20,23 @@ exports.createEvent = async (req, res) => {
     const event = new Event({
       ownerID: req.user.userId,
       title: req.body.title,
-        start: new Date(req.body.start).toISOString(),
-        end: new Date(req.body.end).toISOString(),
+      start: new Date(req.body.start).toISOString(),
+      end: new Date(req.body.end).toISOString(),
     });
-        const savedEvent = await event.save();
+    const savedEvent = await event.save();
 
-        // Sync to Google Calendar if connected
+    // Sync to Google Calendar if connected
     const user = await User.findById(req.user.userId);
     if (user.googleCalendarConnected) {
       const googleEventId = await createCalendarEvent(
         user.googleAccessToken,
         user.googleRefreshToken,
-        { title: savedEvent.title, description: savedEvent.description, start: savedEvent.start, end: savedEvent.end }
+        {
+          title: savedEvent.title,
+          description: savedEvent.description,
+          start: savedEvent.start,
+          end: savedEvent.end,
+        },
       );
       savedEvent.googleEventId = googleEventId;
       await savedEvent.save();
@@ -46,8 +55,8 @@ exports.updateEvent = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     const { title, start, end } = req.body;
     if (title !== undefined) event.title = title;
-if (start !== undefined) event.start = new Date(start).toISOString();
-if (end !== undefined) event.end = new Date(end).toISOString();
+    if (start !== undefined) event.start = new Date(start).toISOString();
+    if (end !== undefined) event.end = new Date(end).toISOString();
     const updated = await event.save();
 
     // Sync update to Google Calendar if connected
@@ -57,7 +66,12 @@ if (end !== undefined) event.end = new Date(end).toISOString();
         user.googleAccessToken,
         user.googleRefreshToken,
         event.googleEventId,
-        { title: updated.title, description: updated.description, start: updated.start, end: updated.end }
+        {
+          title: updated.title,
+          description: updated.description,
+          start: updated.start,
+          end: updated.end,
+        },
       );
     }
     res.json(updated);
@@ -80,10 +94,13 @@ exports.deleteEvent = async (req, res) => {
         await deleteCalendarEvent(
           user.googleAccessToken,
           user.googleRefreshToken,
-          event.googleEventId
+          event.googleEventId,
         );
       } catch (googleErr) {
-        console.log("Google Calendar delete failed (event may already be deleted):", googleErr.message);
+        console.log(
+          "Google Calendar delete failed (event may already be deleted):",
+          googleErr.message,
+        );
         // continue anyway
       }
     }
