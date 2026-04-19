@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PracticeQuestion from "../components/PracticeQuestion";
 import Flashcard from "../components/Flashcard";
+import GenerateFromWrongModal from "../components/PracticeQuestions/GenerateFromWrongModal";
 import "../css/PracticeQuestionsPage.css";
 
 const API = import.meta.env.VITE_API_URL;
@@ -22,6 +23,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
 
   // Flashcard state
   const [displayAsFlashcards, setDisplayAsFlashcards] = useState(false);
+  const [showGenerateWrongModal, setShowGenerateWrongModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -307,10 +309,47 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
               >
                 {generating ? "Generating..." : "Generate Questions"}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowGenerateWrongModal(true)}
+                style={{
+                  marginLeft: 12,
+                  padding: "10px 16px",
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+                title="Generate questions from past incorrect answers"
+              >
+                Generate from Mastery
+              </button>
             </form>
           )}
         </div>
       </div>
+
+      {showGenerateWrongModal && (
+        <GenerateFromWrongModal
+          onClose={() => setShowGenerateWrongModal(false)}
+          onGenerate={async () => {
+            // UI-only: simulate generation flow and show a temporary success message
+            setShowGenerateWrongModal(false);
+            setGenerating(true);
+            setError("");
+            try {
+              // Placeholder: in future call `${API}/practice-questions/generate-from-wrong`
+              await new Promise((r) => setTimeout(r, 1200));
+              setError('Successfully generated practice questions from past incorrect answers!');
+              setTimeout(() => setError(''), 3500);
+            } finally {
+              setGenerating(false);
+            }
+          }}
+        />
+      )}
 
       {/* Questions list */}
       <div>
