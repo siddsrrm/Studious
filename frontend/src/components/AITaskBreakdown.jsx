@@ -12,7 +12,7 @@ const AITaskBreakdown = ({ taskObj, onAdd }) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API}/upload/generate-task-breakdown`, {
+      const res = await fetch(`${API}/tasks/${taskObj._id}/generate-breakdown`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
