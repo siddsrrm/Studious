@@ -5,10 +5,10 @@ const messageSchema = new mongoose.Schema({
   // ID can just be _id property of schema
 
   senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   content: { type: String, required: true },
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
+  conversationId: { type: mongoose.Schema.Types.ObjectId, ref: "Conversation", required: true },
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: "StudyGroup", default: null }
 })
 
