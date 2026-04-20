@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../css/Attachments.css";
-import { ImageConfig } from "../../../backend/config/imageConfig";
+import { ImageConfig } from "../../config/ImageConfig";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -70,15 +70,11 @@ const Attachments = ({ taskId, token }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          taskId: taskId,
-          type,
-          url,
-          filename,
-          fileUrl,
-          size,
-          mimeType,
-        }),
+        body: JSON.stringify(
+          type === "link"
+            ? { taskId, type, url }
+            : { taskId, type, filename, fileUrl, size, mimeType },
+        ),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -108,15 +104,11 @@ const Attachments = ({ taskId, token }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          taskId: taskId,
-          type,
-          url,
-          filename,
-          fileUrl,
-          size,
-          mimeType,
-        }),
+        body: JSON.stringify(
+          type === "link"
+            ? { taskId, type, url }
+            : { taskId, type, filename, fileUrl, size, mimeType },
+        ),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -203,54 +195,35 @@ const Attachments = ({ taskId, token }) => {
     try {
       await Promise.all(
         files.map(async (file) => {
-          const uploadRes = await uploadFile(file);
-          if (!uploadRes) {
-            setNetworkError(`Failed uploading ${file.name}`);
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("taskId", taskId);
+          formData.append("type", "file");
+
+          const res = await fetch(`${API}/attachments`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            setNetworkError(data.message || "Upload failed");
             return;
           }
 
-          return handleAddAttachment({
-            type: "file",
-            filename: uploadRes.filename,
-            fileUrl: uploadRes.fileUrl,
-            size: uploadRes.size,
-            mimeType: uploadRes.mimeType,
-          });
+          if (data && data._id) {
+            setFiles((prev) => [...prev, data]);
+          }
         }),
       );
-
-      console.log("File drops successful!");
     } catch {
       setNetworkError("Network error. Please try again.");
     } finally {
       setUploading(false);
-    }
-  };
-
-  const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch(`${API}/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setNetworkError(data.message || "Upload failed");
-        return;
-      }
-
-      console.log("Upload successful!");
-      return data;
-    } catch {
-      setNetworkError("Upload error");
     }
   };
 
@@ -378,7 +351,7 @@ const Attachments = ({ taskId, token }) => {
                   {/* File info + download link */}
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <a
-                      href={`${API.replace("/api", "")}${file.fileUrl}`}
+                      href={file.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -441,11 +414,11 @@ const Attachments = ({ taskId, token }) => {
 const DropFileInput = ({ onFilesDropped }) => {
   const wrapperRef = useRef(null);
 
-  const onDragEnter = () => wrapperRef.current.classList.add("dragover");
-  const onDragLeave = () => wrapperRef.current.classList.remove("dragover");
+  const onDragEnter = () => wrapperRef.current?.classList.add("dragover");
+  const onDragLeave = () => wrapperRef.current?.classList.remove("dragover");
   const onDrop = (e) => {
     e.preventDefault();
-    wrapperRef.current.classList.remove("dragover");
+    wrapperRef.current?.classList.remove("dragover");
 
     const files = Array.from(e.dataTransfer.files);
 
