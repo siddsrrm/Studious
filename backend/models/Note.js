@@ -10,7 +10,8 @@ const noteSchema = new mongoose.Schema({
   content: String,
   tags: [String],
   attachments: [String],
-  summary: String // populated by AI service
+  summary: String, // populated by AI service
+  groupId: { type: mongoose.Schema.Types.ObjectId, ref: "StudyGroup", default: null }
 })
 
 //updateNote - update certain fields of note
