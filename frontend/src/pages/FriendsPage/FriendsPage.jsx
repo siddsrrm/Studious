@@ -206,6 +206,12 @@ function FriendsPage() {
                       </div>
                       <div className={styles.actions}>
                         <button
+                          className={styles.messageButton}
+                          onClick={() => navigate("/messages")}
+                        >
+                          Message
+                        </button>
+                        <button
                           className={styles.outlineButton}
                           onClick={() => navigate(`/profile/${user._id}`)}
                         >

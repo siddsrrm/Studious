@@ -14,7 +14,8 @@ import PeoplePage from "./pages/PeoplePage/PeoplePage";
 import FriendsPage from "./pages/FriendsPage/FriendsPage";
 import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
-import AchievementsPage from "./pages/AchievementsPage/AchievementsPage";
+import AchievementsPage from "./pages/AchievementsPage/AchievementsPage"
+import MessagingPage from "./pages/MessagingPage/MessagingPage";
 
 function App() {
   const [notif, setNotif] = useState(null)
@@ -111,6 +112,7 @@ function App() {
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/messages" element={<MessagingPage />} />
       </Routes>
     </BrowserRouter>
   );
