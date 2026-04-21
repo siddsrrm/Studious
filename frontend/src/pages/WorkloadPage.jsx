@@ -10,8 +10,8 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    setCreditHours(plan.creditHours || "");
-    setWorkload(plan.workload || "");
+    setCreditHours(plan.creditHours ?? "");
+    setWorkload(plan.workload ?? "");
   }, [plan]);
 
   async function handleSave() {
@@ -29,8 +29,8 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            creditHours,
-            workload,
+            creditHours: creditHours === "" ? null : Number(creditHours),
+            workload: workload === "" ? null : Number(workload),
           }),
         },
       );
@@ -40,7 +40,13 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
       if (res.ok) {
         setStudyPlans((prev) =>
           prev.map((p) =>
-            p.id === plan.id ? { ...p, creditHours, workload } : p,
+            p.id === plan.id
+              ? {
+                  ...p,
+                  creditHours: creditHours === "" ? null : Number(creditHours),
+                  workload: workload === "" ? null : Number(workload),
+                }
+              : p,
           ),
         );
         setSuccess("Saved successfully!");
@@ -62,7 +68,7 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
       <input
         type="number"
         value={creditHours}
-        onChange={(e) => setCreditHours(Number(e.target.value))}
+        onChange={(e) => setCreditHours(e.target.value)}
         className="w-full border p-2 rounded mb-4"
       />
 
@@ -72,7 +78,7 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
       <input
         type="number"
         value={workload}
-        onChange={(e) => setWorkload(Number(e.target.value))}
+        onChange={(e) => setWorkload(e.target.value)}
         className="w-full border p-2 rounded mb-4"
       />
 
