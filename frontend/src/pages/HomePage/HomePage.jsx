@@ -11,14 +11,15 @@ const HomePage = () => {
   // Current States
   const [studyPlans, setStudyPlans] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [activePlan, setActivePlan] = useState(null);
-  const [activeTab, setActiveTab] = useState("todo");
+  const [activePlanId, setActivePlanId] = useState(null);
   const [showToken, setShowToken] = useState(
     () => !sessionStorage.getItem("tokenShown"),
   );
   const [tokenOpacity, setTokenOpacity] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const activePlan = studyPlans.find((p) => p.id === activePlanId);
 
   useEffect(() => {
     if (showToken) {
@@ -120,7 +121,7 @@ const HomePage = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-      if (activePlan?.id === planId) setActivePlan(null);
+      if (activePlan?.id === planId) setActivePlanId(null);
       return;
     }
 
@@ -137,31 +138,31 @@ const HomePage = () => {
 
         if (res.ok) {
           setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-          if (activePlan?.id === planId) setActivePlan(null);
+          if (activePlan?.id === planId) setActivePlanId(null);
         } else {
           setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-          if (activePlan?.id === planId) setActivePlan(null);
+          if (activePlan?.id === planId) setActivePlanId(null);
         }
       } catch (err) {
         setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-        if (activePlan?.id === planId) setActivePlan(null);
+        if (activePlan?.id === planId) setActivePlanId(null);
       }
     })();
   };
 
   const handleSelectPlan = (plan) => {
-    setActivePlan(plan);
-    setActiveTab("todo");
+    setActivePlanId(plan.id);
   };
 
   const handleBack = () => {
-    setActivePlan(null);
+    setActivePlanId(null);
   };
 
   // Renders study plan interface
   if (activePlan) {
     return (
       <StudyPlanPage
+        key={activePlan.id}
         plan={activePlan}
         onBack={handleBack}
         setStudyPlans={setStudyPlans}
