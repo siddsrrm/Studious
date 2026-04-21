@@ -15,6 +15,11 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
   }, [plan]);
 
   async function handleSave() {
+    if (creditHours === "" || workload === "") {
+      setError("Both fields are required.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -29,8 +34,8 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            creditHours: creditHours === "" ? null : Number(creditHours),
-            workload: workload === "" ? null : Number(workload),
+            creditHours: Number(creditHours),
+            workload: Number(workload),
           }),
         },
       );
@@ -63,32 +68,43 @@ const WorkloadPage = ({ plan, setStudyPlans }) => {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4 max-w-md">
       <h2 className="text-lg font-semibold mb-4">Course Info</h2>
-
       <label className="block mb-2 text-sm">Credit Hours</label>
       <input
         type="number"
         value={creditHours}
-        onChange={(e) => setCreditHours(e.target.value)}
+        onChange={(e) => {
+          setCreditHours(e.target.value);
+          setSuccess("");
+          setError("");
+        }}
+        placeholder="e.g. 3"
         className="w-full border p-2 rounded mb-4"
       />
-
       <label className="block mb-2 text-sm">
         Estimated Weekly Workload (hrs)
       </label>
       <input
         type="number"
         value={workload}
-        onChange={(e) => setWorkload(e.target.value)}
+        onChange={(e) => {
+          setWorkload(e.target.value);
+          setSuccess("");
+          setError("");
+        }}
+        placeholder="e.g. 10"
         className="w-full border p-2 rounded mb-4"
       />
-
       {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
       {success && <p className="text-green-600 text-sm mb-2">{success}</p>}
 
       <button
         onClick={handleSave}
-        disabled={loading}
-        className="bg-indigo-600 text-white px-4 py-2 rounded"
+        disabled={loading || creditHours === "" || workload === ""}
+        className={`px-4 py-2 rounded text-white ${
+          loading || creditHours === "" || workload === ""
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-indigo-600 hover:bg-indigo-700"
+        }`}
       >
         {loading ? "Saving..." : "Save"}
       </button>
