@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import GeneratePlanFromSyllabusModal from "./GeneratePlanFromSyllabusModal";
 
-const CreatePlanForm = ({ onCreatePlan, onCancel }) => {
+const CreatePlanForm = ({ onCreatePlan, onCancel, onPlanReady }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [showGenerator, setShowGenerator] = useState(false);
@@ -105,8 +105,9 @@ const CreatePlanForm = ({ onCreatePlan, onCancel }) => {
 
         {showGenerator && (
           <GeneratePlanFromSyllabusModal
-            onClose={() => setShowGenerator(false)}
+            onClose={onCancel}
             onCreatePlan={onCreatePlan}
+            onPlanReady={onPlanReady}
           />
         )}
       </div>
