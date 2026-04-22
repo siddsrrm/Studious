@@ -274,4 +274,167 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
   }
 });
 
+router.post("/generate-tasks", protect, async (req, res) => {
+  try {
+    console.log("\n--- TASK GENERATION STARTED ---");
+    console.log("1. Request body keys:", Object.keys(req.body));
+    console.log("2. Syllabus text length:", req.body.syllabusText ? req.body.syllabusText.length : "UNDEFINED OR NULL");
+    const { studyPlanId, syllabusText, startDate, endDate, maxTasks } = req.body || {};
+    if (!studyPlanId) {
+      return res.status(400).json({ message: "studyPlanId is required" });
+    }
+    if (!syllabusText || typeof syllabusText !== "string") {
+      return res.status(400).json({ message: "Missing text" });
+    }
+
+    const ollamaUrl = process.env.OLLAMA_URL;
+    const ollamaModel = process.env.OLLAMA_MODEL;
+    if (!ollamaUrl || !ollamaModel) {
+      return res.status(500).json({ message: "OLLAMA configuration missing" });
+    }
+
+    const start = startDate ? new Date(startDate) : new Date();
+    const end = endDate ? new Date(endDate) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return res.status(400).json({ message: "Invalid startDate or endDate" });
+    }
+    if (end.getTime() < start.getTime()) {
+      return res.status(400).json({ message: "endDate must be after startDate" });
+    }
+
+    const safeMax = Math.min(Math.max(parseInt(maxTasks || 18, 10), 1), 50);
+
+    const currentDate = new Date().toISOString().split('T')[0];
+
+const prompt = `You are a scheduling assistant. Your job is to extract assignments, exams, and readings from a college syllabus and convert them into a structured to-do list.
+
+Today's date is: ${currentDate}. Use this to resolve any ambiguous dates or missing years.
+
+### MANDATORY OUTPUT FORMAT:
+Return ONLY a valid JSON object with a "tasks" array.
+
+{
+  "tasks": [
+    {
+      "title": "Read Chapter 4",
+      "type": "reading", // must be "reading", "assignment", or "exam"
+      "dueDate": "2026-09-15T23:59:00Z", // ISO-8601 format
+      "priority": "medium", // "low", "medium", or "high"
+      "estimatedHours": 2
+    }
+  ]
+}
+
+### CRITICAL RULES:
+1. Output ONLY JSON. No markdown formatting around the output, no explanations.
+2. If a specific time is not given for a due date, default to 23:59:00Z.
+3. If no explicit assignments are found, infer reasonable study tasks 
+(e.g., readings, review sessions, weekly study blocks) based on the syllabus.
+Always return at least 5 tasks.
+4. Break down large projects into smaller tasks if the syllabus provides milestones.
+
+### SYLLABUS TEXT:
+"""
+${syllabusText.slice(0, 12000)}
+"""`;
+    const aiRes = await fetch(ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [
+          { role: "system", content: "You only output raw JSON." },
+          { role: "user", content: prompt },
+        ],
+        format: "json",
+        stream: false,
+        options: { temperature: 0.2, num_ctx: 8192 },
+      }),
+    });
+
+    console.log("3. Ollama Fetch Status:", aiRes.status); // Did Ollama crash?
+    if (!aiRes.ok) {
+      const errorText = await aiRes.text().catch(() => "");
+      console.error("Ollama error:", aiRes.status, errorText);
+      return res.status(502).json({ message: "Ollama request failed" });
+    }
+
+    const aiJson = await aiRes.json();
+    const contentString = aiJson?.message?.content || "{}";
+
+    console.log("4. Raw AI Content String:", contentString); // What did Ollama actually say?
+
+    let parsed;
+    try {
+      parsed = JSON.parse(contentString);
+      console.log("5. Successfully Parsed JSON:", parsed);
+    } catch (e) {
+      console.warn("Failed to parse AI JSON for tasks:", e.message);
+      return res.status(500).json({ message: "Failed to parse AI response" });
+    }
+
+    const rawTasks = Array.isArray(parsed?.tasks) ? parsed.tasks : [];
+    console.log("6. Final Array Length extracted:", rawTasks.length);
+    if (rawTasks.length === 0) {
+      console.log("7. BAILING OUT: Array is empty!");
+      return res.status(200).json({ message: "No tasks extracted", tasks: [] });
+    }
+
+    // Lazy-load to avoid circular requires at top of file
+    const Task = require("../models/Task");
+
+    const clampDateToWindow = (d) => {
+      const t = d.getTime();
+      if (t < start.getTime()) return new Date(start);
+      if (t > end.getTime()) return new Date(end);
+      return d;
+    };
+
+  // Fill missing due dates evenly across the range
+  const windowMs = Math.max(end.getTime() - start.getTime(), 1);
+  const sliced = rawTasks.slice(0, safeMax);
+  const count = sliced.length;
+  const normalized = sliced.map((t, idx) => {
+      const title = String(t?.title || "Untitled").slice(0, 80).trim() || "Untitled";
+      const description = String(t?.description || "").trim();
+      const priority = ["low", "medium", "high"].includes(t?.priority)
+        ? t.priority
+        : "medium";
+
+      let due = null;
+      if (t?.dueDate) {
+        const parsedDate = new Date(t.dueDate);
+        if (!Number.isNaN(parsedDate.getTime())) {
+          due = clampDateToWindow(parsedDate);
+        }
+      }
+      if (!due) {
+  const frac = count <= 1 ? 1 : idx / Math.max(count - 1, 1);
+        const dt = new Date(start.getTime() + frac * windowMs);
+        due = dt;
+      }
+
+      return {
+        ownerID: req.user.userId,
+        studyPlanID: studyPlanId,
+        title,
+        description,
+        completed: false,
+        priority,
+        dueDate: due,
+        subTasks: [],
+      };
+    });
+
+    const created = await Task.insertMany(normalized);
+    return res.status(201).json({
+      message: `Created ${created.length} tasks`,
+      tasks: created,
+    });
+  } catch (err) {
+    console.error("Error generating tasks with Ollama:", err);
+    return res.status(500).json({ message: "Failed to generate tasks" });
+  }
+});
+
 module.exports = router;

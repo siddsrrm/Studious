@@ -29,6 +29,10 @@ jest.mock('fluent-ffmpeg', () => {
 
 jest.mock('whisper-node', () => jest.fn(async (_audioPath, _opts) => [{ speech: 'transcribed speech from video' }]));
 
+jest.mock('../models/Task', () => ({
+  insertMany: jest.fn(async (docs) => docs.map((d, i) => ({ _id: String(i + 1), ...d }))),
+}));
+
 describe('uploadRoutes', () => {
   let app;
 
@@ -107,5 +111,52 @@ describe('uploadRoutes', () => {
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ message: 'Missing text to summarize' });
+  });
+
+  test('POST /api/upload/generate-tasks returns 400 when missing studyPlanId', async () => {
+    const res = await request(app)
+      .post('/api/upload/generate-tasks')
+      .send({ text: 'syllabus text' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: 'studyPlanId is required' });
+  });
+
+  test('POST /api/upload/generate-tasks creates tasks from Ollama JSON', async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        message: {
+          content: JSON.stringify({
+            tasks: [
+              { title: 'Read Chapter 1', description: 'Intro', dueDate: '2026-01-10', priority: 'high' },
+              { title: 'HW1', description: 'Problems 1-10', dueDate: null, priority: 'medium' },
+            ],
+          }),
+        },
+      }),
+      text: async () => '',
+      status: 200,
+    }));
+
+    const res = await request(app)
+      .post('/api/upload/generate-tasks')
+      .send({
+        studyPlanId: 'plan123',
+        text: 'Course syllabus... ',
+        startDate: '2026-01-01',
+        endDate: '2026-01-20',
+        maxTasks: 10,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.tasks).toHaveLength(2);
+    expect(res.body.tasks[0]).toMatchObject({
+      studyPlanID: 'plan123',
+      title: 'Read Chapter 1',
+      priority: 'high',
+      completed: false,
+    });
+    expect(res.body.tasks[0].dueDate).toBeTruthy();
   });
 });
