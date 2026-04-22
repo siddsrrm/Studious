@@ -8,11 +8,6 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
   const [error, setError] = useState("");
   const [preview, setPreview] = useState("");
   const [includeTasks, setIncludeTasks] = useState(true);
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-    return d.toISOString().slice(0, 10);
-  });
 
   const canGenerate = useMemo(() => !!file && !loading, [file, loading]);
 
@@ -28,16 +23,8 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
 
     setLoading(true);
     try {
-      if (includeTasks) {
-        const s = new Date(startDate);
-        const e = new Date(endDate);
-        if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) {
-          throw new Error("Please provide valid start and end dates.");
-        }
-        if (e.getTime() < s.getTime()) {
-          throw new Error("End date must be after start date.");
-        }
-      }
+  // Dates will be extracted from the syllabus text by the backend AI step.
+  // No local startDate/endDate validation here to avoid referencing removed state.
 
       const formData = new FormData();
       formData.append("file", file);
@@ -89,9 +76,7 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
           body: JSON.stringify({
             studyPlanId: planId,
             syllabusText: text,
-            startDate,
-            endDate,
-            maxTasks: 18,
+            maxTasks: 50,
           }),
         });
         if (!taskRes.ok) {
@@ -167,29 +152,6 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
             />
             Generate To-Do tasks from syllabus
           </label>
-
-          {includeTasks && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Start date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">End date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-5">

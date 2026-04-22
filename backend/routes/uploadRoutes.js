@@ -279,7 +279,7 @@ router.post("/generate-tasks", protect, async (req, res) => {
     console.log("\n--- TASK GENERATION STARTED ---");
     console.log("1. Request body keys:", Object.keys(req.body));
     console.log("2. Syllabus text length:", req.body.syllabusText ? req.body.syllabusText.length : "UNDEFINED OR NULL");
-    const { studyPlanId, syllabusText, startDate, endDate, maxTasks } = req.body || {};
+    const { studyPlanId, syllabusText, maxTasks } = req.body || {};
     if (!studyPlanId) {
       return res.status(400).json({ message: "studyPlanId is required" });
     }
@@ -293,20 +293,11 @@ router.post("/generate-tasks", protect, async (req, res) => {
       return res.status(500).json({ message: "OLLAMA configuration missing" });
     }
 
-    const start = startDate ? new Date(startDate) : new Date();
-    const end = endDate ? new Date(endDate) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return res.status(400).json({ message: "Invalid startDate or endDate" });
-    }
-    if (end.getTime() < start.getTime()) {
-      return res.status(400).json({ message: "endDate must be after startDate" });
-    }
-
-    const safeMax = Math.min(Math.max(parseInt(maxTasks || 18, 10), 1), 50);
+    const safeMax = Math.min(Math.max(parseInt(maxTasks || 50, 10), 1), 100);
 
     const currentDate = new Date().toISOString().split('T')[0];
 
-const prompt = `You are a scheduling assistant. Your job is to extract assignments, exams, and readings from a college syllabus and convert them into a structured to-do list.
+const prompt = `You are a scheduling assistant. Your job is to extract EVERY assignment, exam, reading, and deadline mentioned in a college syllabus and convert them into individual tasks.
 
 Today's date is: ${currentDate}. Use this to resolve any ambiguous dates or missing years.
 
@@ -316,9 +307,9 @@ Return ONLY a valid JSON object with a "tasks" array.
 {
   "tasks": [
     {
-      "title": "Read Chapter 4",
-      "type": "reading", // must be "reading", "assignment", or "exam"
-      "dueDate": "2026-09-15T23:59:00Z", // ISO-8601 format
+      "title": "Assignment 1: Read Chapter 4",
+      "type": "reading", // must be "reading", "assignment", "exam", or "other"
+      "dueDate": "2026-09-15T23:59:00Z", // ISO-8601 format, use exact date from syllabus
       "priority": "medium", // "low", "medium", or "high"
       "estimatedHours": 2
     }
@@ -327,11 +318,11 @@ Return ONLY a valid JSON object with a "tasks" array.
 
 ### CRITICAL RULES:
 1. Output ONLY JSON. No markdown formatting around the output, no explanations.
-2. If a specific time is not given for a due date, default to 23:59:00Z.
-3. If no explicit assignments are found, infer reasonable study tasks 
-(e.g., readings, review sessions, weekly study blocks) based on the syllabus.
-Always return at least 5 tasks.
-4. Break down large projects into smaller tasks if the syllabus provides milestones.
+2. Extract EVERY single assignment, exam, quiz, reading, project, etc. mentioned in the syllabus. Do not infer or add extra tasks unless explicitly mentioned.
+3. Use the EXACT dates from the syllabus. Do not modify or clamp dates.
+4. If a specific time is not given for a due date, default to 23:59:00Z.
+5. If no due date is specified for a task, omit the dueDate field or set to null.
+6. Break down large projects into individual tasks if the syllabus provides milestones or subtasks.
 
 ### SYLLABUS TEXT:
 """
@@ -383,18 +374,8 @@ ${syllabusText.slice(0, 12000)}
     // Lazy-load to avoid circular requires at top of file
     const Task = require("../models/Task");
 
-    const clampDateToWindow = (d) => {
-      const t = d.getTime();
-      if (t < start.getTime()) return new Date(start);
-      if (t > end.getTime()) return new Date(end);
-      return d;
-    };
-
-  // Fill missing due dates evenly across the range
-  const windowMs = Math.max(end.getTime() - start.getTime(), 1);
-  const sliced = rawTasks.slice(0, safeMax);
-  const count = sliced.length;
-  const normalized = sliced.map((t, idx) => {
+    const sliced = rawTasks.slice(0, safeMax);
+    const normalized = sliced.map((t) => {
       const title = String(t?.title || "Untitled").slice(0, 80).trim() || "Untitled";
       const description = String(t?.description || "").trim();
       const priority = ["low", "medium", "high"].includes(t?.priority)
@@ -405,13 +386,8 @@ ${syllabusText.slice(0, 12000)}
       if (t?.dueDate) {
         const parsedDate = new Date(t.dueDate);
         if (!Number.isNaN(parsedDate.getTime())) {
-          due = clampDateToWindow(parsedDate);
+          due = parsedDate;
         }
-      }
-      if (!due) {
-  const frac = count <= 1 ? 1 : idx / Math.max(count - 1, 1);
-        const dt = new Date(start.getTime() + frac * windowMs);
-        due = dt;
       }
 
       return {
