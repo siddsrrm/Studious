@@ -46,6 +46,12 @@ exports.createAttachment = async (req, res) => {
       return res.status(400).json({ message: "Invalid attachment type" });
     }
 
+    const data = {
+      ownerID: userId,
+      taskId,
+      type,
+    };
+
     if (type === "link") {
       if (!url) {
         return res.status(400).json({
@@ -54,7 +60,7 @@ exports.createAttachment = async (req, res) => {
       }
 
       try {
-        new URL(url);
+        data.url = new URL(url);
       } catch {
         return res.status(400).json({
           message: 'Invalid URL format for attachment type "link"',
@@ -96,17 +102,7 @@ exports.createAttachment = async (req, res) => {
           });
         }
       }
-    }
 
-    const data = {
-      ownerID: userId,
-      taskId,
-      type,
-    };
-
-    if (type === "link") {
-      data.url = url;
-    } else {
       data.filename = filename;
       data.fileUrl = fileUrl;
       data.size = size;

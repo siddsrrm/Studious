@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../css/Attachments.css";
-import { ImageConfig } from "../../../backend/config/imageConfig";
+import { ImageConfig } from "../../config/ImageConfig";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -85,8 +85,19 @@ const Attachments = ({ taskId, token }) => {
         setNetworkError(data.message || "Failed to create attachment.");
         return;
       }
-      if (type === "file") setFiles((prev) => [...prev, data]);
-      if (type === "link") setLinks((prev) => [...prev, data]);
+
+      // Check for duplicates before adding
+      if (type === "file")
+        setFiles((prev) => {
+          const exists = prev.some((f) => f._id === data._id);
+          return exists ? prev : [...prev, data];
+        });
+      if (type === "link")
+        setLinks((prev) => {
+          const exists = prev.some((l) => l._id === data._id);
+          return exists ? prev : [...prev, data];
+        });
+
       console.log("Add successful!");
     } catch {
       setNetworkError("Network error. Please try again.");
@@ -378,7 +389,7 @@ const Attachments = ({ taskId, token }) => {
                   {/* File info + download link */}
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <a
-                      href={`${API.replace("/api", "")}${file.fileUrl}`}
+                      href={file.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -441,11 +452,11 @@ const Attachments = ({ taskId, token }) => {
 const DropFileInput = ({ onFilesDropped }) => {
   const wrapperRef = useRef(null);
 
-  const onDragEnter = () => wrapperRef.current.classList.add("dragover");
-  const onDragLeave = () => wrapperRef.current.classList.remove("dragover");
+  const onDragEnter = () => wrapperRef.current?.classList.add("dragover");
+  const onDragLeave = () => wrapperRef.current?.classList.remove("dragover");
   const onDrop = (e) => {
     e.preventDefault();
-    wrapperRef.current.classList.remove("dragover");
+    wrapperRef.current?.classList.remove("dragover");
 
     const files = Array.from(e.dataTransfer.files);
 

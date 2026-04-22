@@ -13,7 +13,24 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 
 // Generic file upload (used by Attachments frontend)
-const uploadGeneric = multer({ storage: multer.memoryStorage() });
+const uploadGeneric = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      "image/png",
+      "image/jpeg",
+      "application/pdf",
+      "text/plain",
+    ];
+
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Unsupported file type"));
+    }
+  },
+});
 
 router.post("/", protect, uploadGeneric.single("file"), async (req, res) => {
   try {
@@ -27,7 +44,7 @@ router.post("/", protect, uploadGeneric.single("file"), async (req, res) => {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    const fileName = `${Date.now()}-${req.file.originalname}`;
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}-${req.file.originalname}`;
     const filePath = path.join(uploadDir, fileName);
 
     // write buffer to disk
@@ -35,7 +52,7 @@ router.post("/", protect, uploadGeneric.single("file"), async (req, res) => {
 
     return res.json({
       filename: req.file.originalname,
-      fileUrl: `/uploads/${fileName}`,
+      fileUrl: `${req.protocol}://${req.get("host")}/uploads/${fileName}`,
       size: req.file.size,
       mimeType: req.file.mimetype,
     });
