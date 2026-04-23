@@ -61,6 +61,97 @@ const HomePage = () => {
     })();
   }, []);
 
+  // ----------------------------- GPA calculation -----------------------------
+  const [gpaError, setGpaError] = useState(false);
+  const [gpa, setGpa] = useState(0);
+  const [overallGrades, setOverallGrades] = useState({});
+  const [allCreditHours, setAllCreditHours] = useState({});
+
+  const API = import.meta.env.VITE_API_URL;
+
+  const gradeScale = [
+    { min: 90.0, gpa: 4.0 },
+    { min: 85.0, gpa: 3.7 },
+    { min: 80.0, gpa: 3.3 },
+    { min: 75.0, gpa: 3.0 },
+    { min: 70.0, gpa: 2.7 },
+    { min: 65.0, gpa: 2.3 },
+    { min: 60.0, gpa: 2.0 },
+    { min: 55.0, gpa: 1.7 },
+    { min: 50.0, gpa: 1.3 },
+    { min: 45.0, gpa: 1.0 },
+    { min: 40.0, gpa: 0.7 },
+    { min: 0.0, gpa: 0.0 },
+  ];
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token || studyPlans.length === 0) return;
+
+    const fetchAllGrades = async () => {
+      const results = await Promise.all(
+        studyPlans.map(async (plan) => {
+          const grade = await fetchOverallGrade(plan.id, token);
+          return { planId: plan.id, grade };
+        }),
+      );
+
+      const gradeMap = {};
+      results.forEach(({ planId, grade }) => {
+        gradeMap[planId] = grade;
+      });
+
+      setOverallGrades(gradeMap);
+    };
+
+    const creditHoursMap = Object.fromEntries(
+      studyPlans.map((plan) => [plan.id, plan.creditHours ?? 0]),
+    );
+
+    fetchAllGrades();
+    setAllCreditHours(creditHoursMap);
+  }, [studyPlans]);
+
+  useEffect(() => {
+    let totalPoints = 0;
+    let totalCredits = 0;
+
+    for (const planId in overallGrades) {
+      const grade = overallGrades[planId];
+      const credits = allCreditHours[planId] ?? 0;
+
+      if (grade == null || grade === -1 || !credits) continue;
+
+      const converted = gradeScale.find((g) => grade >= g.min)?.gpa ?? 0;
+
+      totalPoints += converted * credits;
+      totalCredits += credits;
+    }
+
+    setGpa(totalCredits ? totalPoints / totalCredits : 0);
+  }, [overallGrades, allCreditHours]);
+
+  const fetchOverallGrade = async (studyPlanId, token) => {
+    try {
+      const res = await fetch(`${API}/gradebook/${studyPlanId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        return data.overallGrade ?? -1;
+      } else {
+        setGpaError(true);
+        return null;
+      }
+    } catch {
+      setGpaError(true);
+      return null;
+    }
+  };
+  // ---------------------------------------------------------------------------
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.dispatchEvent(new Event("auth-changed"));
@@ -203,6 +294,13 @@ const HomePage = () => {
           <h1 className="text-2xl font-bold text-gray-800">Studious</h1>
 
           <div className="flex items-center gap-3">
+            <p className="font-medium">
+              <span className="text-gray-700">GPA: </span>
+              <span className={gpaError ? "text-red-600" : "text-gray-700"}>
+                {gpaError ? "Error" : gpa.toFixed(2)}
+              </span>
+            </p>
+
             <button
               onClick={() => setShowCreateForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm"
@@ -223,7 +321,6 @@ const HomePage = () => {
               </svg>
               New Study Plan
             </button>
-
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
@@ -399,7 +496,6 @@ const HomePage = () => {
           </div>
         </div>
       </header>
-
       {/* Main Container updated to max-w-7xl for more horizontal room */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -447,7 +543,6 @@ const HomePage = () => {
           </div>
         </div>
       </main>
-
       {showCreateForm && (
         <CreatePlanForm
           onCreatePlan={handleCreatePlan}
@@ -455,7 +550,6 @@ const HomePage = () => {
           onPlanReady={handlePlanReady}
         />
       )}
-
       {showToken && (
         <div
           className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 w-72 border border-gray-200 transition-opacity duration-1000 ${tokenOpacity ? "opacity-100" : "opacity-0"}`}
