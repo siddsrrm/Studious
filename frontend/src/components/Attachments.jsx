@@ -212,23 +212,18 @@ const Attachments = ({ taskId, token }) => {
     setUploading(true);
 
     try {
-      await Promise.all(
-        files.map(async (file) => {
-          const uploadRes = await uploadFile(file);
-          if (!uploadRes) {
-            setNetworkError(`Failed uploading ${file.name}`);
-            return;
-          }
+      for (const file of files) {
+        const uploadRes = await uploadFile(file);
+        if (!uploadRes) continue;
 
-          return handleAddAttachment({
-            type: "file",
-            filename: uploadRes.filename,
-            fileUrl: uploadRes.fileUrl,
-            size: uploadRes.size,
-            mimeType: uploadRes.mimeType,
-          });
-        }),
-      );
+        await handleAddAttachment({
+          type: "file",
+          filename: uploadRes.filename,
+          fileUrl: uploadRes.fileUrl,
+          size: uploadRes.size,
+          mimeType: uploadRes.mimeType,
+        });
+      }
 
       console.log("File drops successful!");
     } catch {
@@ -243,7 +238,7 @@ const Attachments = ({ taskId, token }) => {
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${API}/upload`, {
+      const res = await fetch(`${API}/upload/file`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -54,7 +54,7 @@ const HomePage = () => {
           milestones: p.milestones || [],
         }));
         setStudyPlans(normalized);
-      } catch (err) { }
+      } catch (err) {}
     })();
   }, []);
 
@@ -155,7 +155,13 @@ const HomePage = () => {
 
   // Renders study plan interface
   if (activePlan) {
-    return <StudyPlanPage plan={activePlan} onBack={handleBack} setStudyPlans={setStudyPlans} />;
+    return (
+      <StudyPlanPage
+        plan={activePlan}
+        onBack={handleBack}
+        setStudyPlans={setStudyPlans}
+      />
+    );
   }
 
   // Homepage view
@@ -366,7 +372,6 @@ const HomePage = () => {
       {/* Main Container updated to max-w-7xl for more horizontal room */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-
           {/*Calendar */}
           <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
             <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
@@ -409,7 +414,6 @@ const HomePage = () => {
               </div>
             )}
           </div>
-
         </div>
       </main>
 

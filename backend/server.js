@@ -54,7 +54,7 @@ app.use("/api/achievements", achievementRoutes);
 app.use("/api/attachments", attachmentRoutes);
 
 const path = require("path");
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "data/assets")));
 
 app.get("/", (req, res) => {
   res.send("API is running...");

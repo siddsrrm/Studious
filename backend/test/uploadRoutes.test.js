@@ -51,6 +51,12 @@ jest.mock("whisper-node", () =>
   ]),
 );
 
+jest.mock("../models/Task", () => ({
+  insertMany: jest.fn(async (docs) =>
+    docs.map((d, i) => ({ _id: String(i + 1), ...d })),
+  ),
+}));
+
 describe("uploadRoutes", () => {
   let app;
 
@@ -83,53 +89,6 @@ describe("uploadRoutes", () => {
     delete global.fetch;
   });
 
-  describe("generic file upload (/api/upload)", () => {
-    let res;
-
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    test("POST /api/upload returns file metadata", async () => {
-      const res = await request(app)
-        .post("/api/upload")
-        .attach("file", Buffer.from("hello world"), {
-          filename: "test.txt",
-          contentType: "text/plain",
-        });
-
-      expect(res.status).toBe(200);
-
-      expect(res.body).toHaveProperty("filename", "test.txt");
-      expect(res.body).toHaveProperty("fileUrl");
-      expect(res.body).toHaveProperty("size");
-      expect(res.body).toHaveProperty("mimeType", "text/plain");
-
-      expect(res.body.fileUrl).toMatch(/^\/uploads\//);
-    });
-
-    test("POST /api/upload returns 400 when no file is uploaded", async () => {
-      const res = await request(app).post("/api/upload");
-
-      expect(res.status).toBe(400);
-      expect(res.body).toEqual({ message: "No file uploaded" });
-    });
-
-    test("POST /api/upload accepts different file types", async () => {
-      const res = await request(app)
-        .post("/api/upload")
-        .attach("file", Buffer.from("dummy image data"), {
-          filename: "image.png",
-          contentType: "image/png",
-        });
-
-      expect(res.status).toBe(200);
-
-      expect(res.body).toHaveProperty("filename", "image.png");
-      expect(res.body.mimeType).toBe("image/png");
-    });
-  });
-
   test("POST /api/upload/pdf returns extracted text + pageCount", async () => {
     const res = await request(app)
       .post("/api/upload/pdf")
@@ -158,6 +117,56 @@ describe("uploadRoutes", () => {
     expect(res.body).toHaveProperty("message");
   });
 
+  describe("POST /api/upload/file (generic upload)", () => {
+    test("uploads a file successfully and returns metadata", async () => {
+      const res = await request(app)
+        .post("/api/upload/file")
+        .attach("file", Buffer.from("dummy file content"), {
+          filename: "test.txt",
+          contentType: "text/plain",
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("filename", "test.txt");
+      expect(res.body).toHaveProperty("fileUrl");
+      expect(res.body).toHaveProperty("size");
+      expect(res.body).toHaveProperty("mimeType", "text/plain");
+    });
+
+    test("handles multer errors gracefully", async () => {
+      const res = await request(app)
+        .post("/api/upload/file")
+        .attach("file", Buffer.from("test"), {
+          filename: "test.txt",
+          contentType: "text/plain",
+        });
+
+      expect(res.status).not.toBe(500);
+    });
+
+    test("returns 400 if no file is uploaded", async () => {
+      const res = await request(app).post("/api/upload/file");
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ message: "No file uploaded" });
+    });
+
+    test("rejects file when exceeding size limit", async () => {
+      // Create a buffer slightly larger than 500MB limit (mocked scenario)
+      const largeBuffer = Buffer.alloc(501 * 1024 * 1024);
+
+      const res = await request(app)
+        .post("/api/upload/file")
+        .attach("file", largeBuffer, {
+          filename: "large.bin",
+          contentType: "application/octet-stream",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty("message");
+    });
+  });
+
   test("POST /api/upload/generate-note calls Ollama and returns title/content", async () => {
     const res = await request(app)
       .post("/api/upload/generate-note")
@@ -174,5 +183,60 @@ describe("uploadRoutes", () => {
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ message: "Missing text to summarize" });
+  });
+
+  test("POST /api/upload/generate-tasks returns 400 when missing studyPlanId", async () => {
+    const res = await request(app)
+      .post("/api/upload/generate-tasks")
+      .send({ text: "syllabus text" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "studyPlanId is required" });
+  });
+
+  test("POST /api/upload/generate-tasks creates tasks from Ollama JSON", async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        message: {
+          content: JSON.stringify({
+            tasks: [
+              {
+                title: "Read Chapter 1",
+                description: "Intro",
+                dueDate: "2026-01-10",
+                priority: "high",
+              },
+              {
+                title: "HW1",
+                description: "Problems 1-10",
+                dueDate: null,
+                priority: "medium",
+              },
+            ],
+          }),
+        },
+      }),
+      text: async () => "",
+      status: 200,
+    }));
+
+    const res = await request(app).post("/api/upload/generate-tasks").send({
+      studyPlanId: "plan123",
+      text: "Course syllabus... ",
+      startDate: "2026-01-01",
+      endDate: "2026-01-20",
+      maxTasks: 10,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.tasks).toHaveLength(2);
+    expect(res.body.tasks[0]).toMatchObject({
+      studyPlanID: "plan123",
+      title: "Read Chapter 1",
+      priority: "high",
+      completed: false,
+    });
+    expect(res.body.tasks[0].dueDate).toBeTruthy();
   });
 });

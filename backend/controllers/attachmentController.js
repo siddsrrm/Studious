@@ -60,7 +60,8 @@ exports.createAttachment = async (req, res) => {
       }
 
       try {
-        data.url = new URL(url);
+        new URL(url);
+        data.url = url;
       } catch {
         return res.status(400).json({
           message: 'Invalid URL format for attachment type "link"',
@@ -182,7 +183,7 @@ exports.deleteAttachment = async (req, res) => {
     }
 
     // DELETE DB RECORD
-    await attachment.deleteOne();
+    await Attachment.deleteOne({ _id: req.params.id });
 
     res.json({ message: "Attachment deleted" });
   } catch (err) {
