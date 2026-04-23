@@ -188,9 +188,10 @@ exports.updateNotificationSettings = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: "User not found" });
-        const { remindersEnabled, reminderDaysBefore } = req.body;
+        const { remindersEnabled, reminderDaysBefore, analyticsReportEnabled } = req.body;
         if (remindersEnabled !== undefined) user.notificationSettings.remindersEnabled = remindersEnabled;
         if (reminderDaysBefore !== undefined) user.notificationSettings.reminderDaysBefore = reminderDaysBefore;
+        if (analyticsReportEnabled !== undefined) user.notificationSettings.analyticsReportEnabled = analyticsReportEnabled;
         await user.save();
         res.json(user.notificationSettings);
     } catch (err) {

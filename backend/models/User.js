@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
   notificationSettings: {
     remindersEnabled: { type: Boolean, default: false },
     reminderDaysBefore: { type: Number, default: 1 },
+    analyticsReportEnabled: {
+  type: Boolean,
+  default: false
+}
 },
   googleId: { type: String, default: null },
   googleAccessToken: { type: String, default: null },

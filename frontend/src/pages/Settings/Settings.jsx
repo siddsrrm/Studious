@@ -455,6 +455,17 @@ function NotificationSection() {
         </p>
       )}
 
+      <hr className={styles.contentDivider} />
+<p className={styles.fieldLabel}>Weekly analytics report</p>
+<select
+  className={styles.input}
+  value={settings.analyticsReportEnabled}
+  onChange={(e) => setSettings({ ...settings, analyticsReportEnabled: e.target.value === "true" })}
+>
+  <option value="true">Enabled</option>
+  <option value="false">Disabled</option>
+</select>
+
       <button
         className={styles.button}
         onClick={handleSave}
