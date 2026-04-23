@@ -18,7 +18,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const practiceQuestionRoutes = require("./routes/practiceQuestionRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
-const { startReminderJob } = require("./utils/reminderJob");
+const { startReminderJob, startAnalyticsJob } = require("./utils/reminderJob");
 const friendRequestRoutes = require("./routes/friendRequestRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
 const studyLogRoutes = require("./routes/studyLogRoutes");
@@ -28,8 +28,12 @@ const app = express();
 const passport = require("./config/passport");
 app.use(passport.initialize());
 
+const { sendAnalyticsReport } = require("./utils/reminderJob");
+
+
 connectDB();
 startReminderJob();
+startAnalyticsJob();
 
 const { pollCalendarForAllUsers } = require("./services/calendarPoller");
 

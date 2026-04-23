@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const Task = require("../models/Task");
 const User = require("../models/User");
+const StudyLog = require("../models/StudyLog");
 const sendEmail = require("./email");
 
 //helper to format tasks by study plan for email body
@@ -85,6 +86,90 @@ async function sendReminders() {
     }
 }
 
+
+const formatHours = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
+
+
+async function sendAnalyticsReport() {
+    try {
+        const users = await User.find({ "notificationSettings.analyticsReportEnabled": true });
+        
+
+        for (const user of users) {
+            const now = new Date();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            monday.setHours(0, 0, 0, 0);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23, 59, 59, 999);
+
+            const logs = await StudyLog.find({
+    user: user._id,
+    date: { $gte: monday, $lte: sunday }
+});
+
+            if (logs.length === 0) continue;
+
+            const totalMins = logs.reduce((s, l) => s + l.durationMins, 0);
+            const sessionsCount = logs.length;
+            const avgSession = Math.round(totalMins / sessionsCount);
+
+            // Per-course breakdown
+            const courseMap = {};
+            for (const log of logs) {
+                const title = log.planTitle || "Unknown"; // remove log.planId?.title
+                if (!courseMap[title]) courseMap[title] = 0;
+                courseMap[title] += log.durationMins;
+            }
+            const topCourse = Object.entries(courseMap).sort((a, b) => b[1] - a[1])[0];
+
+            // Daily breakdown
+            const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+            const dailyLines = DAYS.map((day, i) => {
+                const dayDate = new Date(monday);
+                dayDate.setDate(monday.getDate() + i);
+                const mins = logs
+                    .filter(l => new Date(l.date).toDateString() === dayDate.toDateString())
+                    .reduce((s, l) => s + l.durationMins, 0);
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                const formatted = h > 0 ? `${h}h ${m}m` : mins > 0 ? `${m}m` : "-";
+                return `    ${day}: ${formatted}`;
+            }).join("\n");
+
+            let emailBody = `Hi ${user.username},\n\nHere's your weekly Studious study report:\n\n`;
+            emailBody += `SUMMARY\n`;
+            emailBody += `  Total study time: ${formatHours(totalMins)}\n`;
+            emailBody += `  Sessions completed: ${sessionsCount}\n`;
+            emailBody += `  Avg. session length: ${formatHours(avgSession)}\n\n`;
+            emailBody += `TOP COURSE\n  ${topCourse[0]}: ${formatHours(topCourse[1])}\n\n`;
+            emailBody += `DAILY BREAKDOWN\n${dailyLines}\n\n`;
+            emailBody += `Log in to Studious to keep the momentum going!\nTo update your notification preferences, visit your account settings.\n\nBest,\nThe Studious Team`;
+
+            await sendEmail({
+                to: user.email,
+                subject: "Studious - Weekly Study Report",
+                text: emailBody
+            });
+        }
+    } catch (err) {
+        console.error("Error sending analytics reports:", err.message);
+    }
+}
+
+// run every Monday at 8am
+function startAnalyticsJob() {
+    cron.schedule("0 8 * * 1", () => {
+        console.log("Running analytics report job...");
+        sendAnalyticsReport();
+    });
+}
+
 //run every day at 8am
 function startReminderJob() {
     cron.schedule("0 8 * * *", () => {
@@ -93,4 +178,4 @@ function startReminderJob() {
     });
 }
 
-module.exports = { startReminderJob, sendReminders }
+module.exports = { startReminderJob, sendReminders, startAnalyticsJob, sendAnalyticsReport }
