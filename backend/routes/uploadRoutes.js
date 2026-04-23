@@ -274,4 +274,137 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
   }
 });
 
+router.post("/generate-tasks", protect, async (req, res) => {
+  try {
+    const { studyPlanId, syllabusText, maxTasks } = req.body || {};
+    if (!studyPlanId) {
+      return res.status(400).json({ message: "studyPlanId is required" });
+    }
+    if (!syllabusText || typeof syllabusText !== "string") {
+      return res.status(400).json({ message: "Missing text" });
+    }
+
+    const ollamaUrl = process.env.OLLAMA_URL;
+    const ollamaModel = process.env.OLLAMA_MODEL;
+    if (!ollamaUrl || !ollamaModel) {
+      return res.status(500).json({ message: "OLLAMA configuration missing" });
+    }
+
+    const safeMax = Math.min(Math.max(parseInt(maxTasks || 50, 10), 1), 100);
+
+    const currentDate = new Date().toISOString().split('T')[0];
+
+const prompt = `You are a scheduling assistant. Your job is to extract EVERY assignment, exam, reading, and deadline mentioned in a college syllabus and convert them into individual tasks.
+
+Today's date is: ${currentDate}. Use this to resolve any ambiguous dates or missing years.
+
+### MANDATORY OUTPUT FORMAT:
+Return ONLY a valid JSON object with a "tasks" array.
+
+{
+  "tasks": [
+    {
+      "title": "Assignment 1: Read Chapter 4",
+      "type": "reading", // must be "reading", "assignment", "exam", or "other"
+      "dueDate": "2026-09-15T23:59:00Z", // ISO-8601 format, use exact date from syllabus
+      "priority": "medium", // "low", "medium", or "high"
+      "estimatedHours": 2
+    }
+  ]
+}
+
+### CRITICAL RULES:
+1. Output ONLY JSON. No markdown formatting around the output, no explanations.
+2. Extract EVERY single assignment, exam, quiz, reading, project, etc. mentioned in the syllabus. Do not infer or add extra tasks unless explicitly mentioned.
+3. Use the EXACT dates from the syllabus. Do not modify or clamp dates.
+4. If a specific time is not given for a due date, default to 23:59:00Z.
+5. If no due date is specified for a task, omit the dueDate field or set to null.
+6. Break down large projects into individual tasks if the syllabus provides milestones or subtasks.
+
+### SYLLABUS TEXT:
+"""
+${syllabusText.slice(0, 12000)}
+"""`;
+    const aiRes = await fetch(ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [
+          { role: "system", content: "You only output raw JSON." },
+          { role: "user", content: prompt },
+        ],
+        format: "json",
+        stream: false,
+        options: { temperature: 0.2, num_ctx: 8192 },
+      }),
+    });
+
+
+    if (!aiRes.ok) {
+      const errorText = await aiRes.text().catch(() => "");
+      console.error("Ollama error:", aiRes.status, errorText);
+      return res.status(502).json({ message: "Ollama request failed" });
+    }
+
+    const aiJson = await aiRes.json();
+    const contentString = aiJson?.message?.content || "{}";
+
+
+    let parsed;
+    try {
+      parsed = JSON.parse(contentString);
+      console.log("Successfully Parsed JSON:", parsed);
+    } catch (e) {
+      console.warn("Failed to parse AI JSON for tasks:", e.message);
+      return res.status(500).json({ message: "Failed to parse AI response" });
+    }
+
+    const rawTasks = Array.isArray(parsed?.tasks) ? parsed.tasks : [];
+    if (rawTasks.length === 0) {
+      return res.status(200).json({ message: "No tasks extracted", tasks: [] });
+    }
+
+    // Lazy-load to avoid circular requires at top of file
+    const Task = require("../models/Task");
+
+    const sliced = rawTasks.slice(0, safeMax);
+    const normalized = sliced.map((t) => {
+      const title = String(t?.title || "Untitled").slice(0, 80).trim() || "Untitled";
+      const description = String(t?.description || "").trim();
+      const priority = ["low", "medium", "high"].includes(t?.priority)
+        ? t.priority
+        : "medium";
+
+      let due = null;
+      if (t?.dueDate) {
+        const parsedDate = new Date(t.dueDate);
+        if (!Number.isNaN(parsedDate.getTime())) {
+          due = parsedDate;
+        }
+      }
+
+      return {
+        ownerID: req.user.userId,
+        studyPlanID: studyPlanId,
+        title,
+        description,
+        completed: false,
+        priority,
+        dueDate: due,
+        subTasks: [],
+      };
+    });
+
+    const created = await Task.insertMany(normalized);
+    return res.status(201).json({
+      message: `Created ${created.length} tasks`,
+      tasks: created,
+    });
+  } catch (err) {
+    console.error("Error generating tasks with Ollama:", err);
+    return res.status(500).json({ message: "Failed to generate tasks" });
+  }
+});
+
 module.exports = router;

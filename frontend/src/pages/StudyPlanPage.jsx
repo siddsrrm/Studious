@@ -4,6 +4,8 @@ import NoteEditor from "../components/NoteEditor";
 import NotePage from "./NotePage";
 import PracticeQuestionsPage from "./PracticeQuestionsPage";
 import WorkloadPage from "./WorkloadPage";
+import GradeBookPage from "./GradeBookPage";
+
 function MilestonesModal({
   studyPlanId,
   milestones,
@@ -399,7 +401,13 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [milestoneVersion, setMilestoneVersion] = useState(0);
 
-  const allTabs = ["To-Do List", "Notes", "Practice Questions", "Course Info"];
+  const allTabs = [
+    "To-Do List",
+    "Notes",
+    "Grade Book",
+    "Practice Questions",
+    "Course Info",
+  ];
 
   useEffect(() => {
     setMilestones((prev) =>
@@ -565,6 +573,12 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
         {activeTab === "Notes" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
             <NotePage studyPlanId={plan.id} />
+          </div>
+        )}
+
+        {activeTab === "Grade Book" && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <GradeBookPage studyPlanId={plan.id} />
           </div>
         )}
 

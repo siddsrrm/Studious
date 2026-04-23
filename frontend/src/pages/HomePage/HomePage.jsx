@@ -69,12 +69,15 @@ const HomePage = () => {
   };
 
   // Handle creation of study plans
-  const handleCreatePlan = async (newPlan) => {
+  // Supports an optional options object: { deferRender: boolean }
+  const handleCreatePlan = async (newPlan, options = {}) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setStudyPlans((prev) => [...prev, newPlan]);
+      if (!options.deferRender) {
+        setStudyPlans((prev) => [...prev, newPlan]);
+      }
       setShowCreateForm(false);
-      return;
+      return newPlan;
     }
 
     // Create study plan in backend
@@ -92,7 +95,10 @@ const HomePage = () => {
       });
 
       if (!res.ok) {
-        setStudyPlans((prev) => [...prev, newPlan]);
+        if (!options.deferRender) {
+          setStudyPlans((prev) => [...prev, newPlan]);
+        }
+        return newPlan;
       } else {
         const data = await res.json();
         const saved = data.studyPlan;
@@ -107,13 +113,32 @@ const HomePage = () => {
           creditHours: saved.creditHours ?? null,
           workload: saved.workload ?? null,
         };
-        setStudyPlans((prev) => [...prev, normalized]);
+        if (!options.deferRender) {
+          setStudyPlans((prev) => [...prev, normalized]);
+        }
+        return normalized;
       }
     } catch (err) {
-      setStudyPlans((prev) => [...prev, newPlan]);
+      if (!options.deferRender) {
+        setStudyPlans((prev) => [...prev, newPlan]);
+      }
+      return newPlan;
     } finally {
-      setShowCreateForm(false);
+      if (!options.deferRender) {
+        setShowCreateForm(false);
+      }
     }
+  };
+
+  // Allows syllabus generation flow to add the created plan only after tasks are generated.
+  const handlePlanReady = (createdPlan) => {
+    if (!createdPlan) return;
+    setStudyPlans((prev) => {
+      const id = createdPlan?.id;
+      if (!id) return prev;
+      if (prev.some((p) => p.id === id)) return prev;
+      return [...prev, createdPlan];
+    });
   };
 
   // Handle deletion of study plans
@@ -427,6 +452,7 @@ const HomePage = () => {
         <CreatePlanForm
           onCreatePlan={handleCreatePlan}
           onCancel={() => setShowCreateForm(false)}
+          onPlanReady={handlePlanReady}
         />
       )}
 
