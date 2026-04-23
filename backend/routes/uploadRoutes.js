@@ -343,7 +343,7 @@ ${syllabusText.slice(0, 12000)}
       }),
     });
 
-    console.log("3. Ollama Fetch Status:", aiRes.status); // Did Ollama crash?
+
     if (!aiRes.ok) {
       const errorText = await aiRes.text().catch(() => "");
       console.error("Ollama error:", aiRes.status, errorText);
@@ -353,19 +353,17 @@ ${syllabusText.slice(0, 12000)}
     const aiJson = await aiRes.json();
     const contentString = aiJson?.message?.content || "{}";
 
-    console.log("4. Raw AI Content String:", contentString); // What did Ollama actually say?
 
     let parsed;
     try {
       parsed = JSON.parse(contentString);
-      console.log("5. Successfully Parsed JSON:", parsed);
+      console.log("Successfully Parsed JSON:", parsed);
     } catch (e) {
       console.warn("Failed to parse AI JSON for tasks:", e.message);
       return res.status(500).json({ message: "Failed to parse AI response" });
     }
 
     const rawTasks = Array.isArray(parsed?.tasks) ? parsed.tasks : [];
-    console.log("6. Final Array Length extracted:", rawTasks.length);
     if (rawTasks.length === 0) {
       console.log("7. BAILING OUT: Array is empty!");
       return res.status(200).json({ message: "No tasks extracted", tasks: [] });

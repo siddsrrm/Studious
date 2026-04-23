@@ -23,13 +23,11 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
 
     setLoading(true);
     try {
-  // Dates will be extracted from the syllabus text by the backend AI step.
-  // No local startDate/endDate validation here to avoid referencing removed state.
+  
 
       const formData = new FormData();
       formData.append("file", file);
 
-      // Reuse existing extractor used by AI-notes upload.
       const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/pdf`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -46,11 +44,31 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
       if (!text) throw new Error("No text extracted from PDF.");
 
       const inferredTitle = (file.name || "Syllabus").replace(/\.pdf$/i, "").slice(0, 60);
-      const description = `Generated from uploaded syllabus: ${file.name}\n\nPreview:\n${text.slice(0, 800)}${text.length > 800 ? "…" : ""}`;
-      setPreview(text.slice(0, 800));
 
-      // Ask parent to create plan in backend, but defer showing it in the UI until
-      // task generation finishes (avoids the plan "popping in" before tasks exist).
+
+      let description = inferredTitle;
+      try {
+        const noteRes = await fetch(`${import.meta.env.VITE_API_URL}/upload/generate-note`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text: text.slice(0, 12000) }),
+        });
+        if (noteRes.ok) {
+          const noteJson = await noteRes.json();
+          const noteTitle = (noteJson.title || "").replace(/\s+/g, " ").trim();
+          const shortWords = noteTitle.split(/\s+/).filter(Boolean).slice(0, 10).join(" ");
+          if (shortWords) description = `${inferredTitle} — ${shortWords}`;
+        }
+      } catch (err) {
+        console.warn("Failed to get AI short description:", err?.message || err);
+      }
+
+      setPreview("");
+
+
       const createdPlan = await onCreatePlan(
         {
           id: Date.now().toString(),
@@ -64,7 +82,6 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
         { deferRender: true }
       );
 
-      // Optionally generate tasks from syllabus text into the new plan.
       const planId = createdPlan?.id;
       if (includeTasks && planId) {
         const taskRes = await fetch(`${import.meta.env.VITE_API_URL}/upload/generate-tasks`, {
@@ -80,7 +97,6 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
           }),
         });
         if (!taskRes.ok) {
-          // Don't fail the whole flow if tasks fail; we already created the plan.
           const errText = await taskRes.text().catch(() => "");
           console.warn("Task generation failed:", errText);
           setError(
@@ -89,12 +105,9 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
           return;
         }
 
-        // If tasks succeed, still wait for the response so the user doesn't see an "instant" completion.
-        // (Also helps surface unexpected non-JSON responses in dev.)
         await taskRes.json().catch(() => null);
       }
 
-      // Tell parent it's safe to show the plan now.
       if (typeof onPlanReady === "function") {
         onPlanReady(createdPlan);
       }
