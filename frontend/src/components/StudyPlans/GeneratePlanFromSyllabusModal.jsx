@@ -46,27 +46,9 @@ export default function GeneratePlanFromSyllabusModal({ onClose, onCreatePlan, o
       const inferredTitle = (file.name || "Syllabus").replace(/\.pdf$/i, "").slice(0, 60);
 
 
-      let description = inferredTitle;
-      try {
-        const noteRes = await fetch(`${import.meta.env.VITE_API_URL}/upload/generate-note`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ text: text.slice(0, 12000) }),
-        });
-        if (noteRes.ok) {
-          const noteJson = await noteRes.json();
-          const noteTitle = (noteJson.title || "").replace(/\s+/g, " ").trim();
-          const shortWords = noteTitle.split(/\s+/).filter(Boolean).slice(0, 10).join(" ");
-          if (shortWords) description = `${inferredTitle} — ${shortWords}`;
-        }
-      } catch (err) {
-        console.warn("Failed to get AI short description:", err?.message || err);
-      }
-
-      setPreview("");
+  // Do not generate or attach an AI-produced description for study plans.
+  const description = "";
+  setPreview("");
 
 
       const createdPlan = await onCreatePlan(

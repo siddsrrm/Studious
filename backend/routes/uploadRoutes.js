@@ -276,9 +276,6 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
 
 router.post("/generate-tasks", protect, async (req, res) => {
   try {
-    console.log("\n--- TASK GENERATION STARTED ---");
-    console.log("1. Request body keys:", Object.keys(req.body));
-    console.log("2. Syllabus text length:", req.body.syllabusText ? req.body.syllabusText.length : "UNDEFINED OR NULL");
     const { studyPlanId, syllabusText, maxTasks } = req.body || {};
     if (!studyPlanId) {
       return res.status(400).json({ message: "studyPlanId is required" });
@@ -365,7 +362,6 @@ ${syllabusText.slice(0, 12000)}
 
     const rawTasks = Array.isArray(parsed?.tasks) ? parsed.tasks : [];
     if (rawTasks.length === 0) {
-      console.log("7. BAILING OUT: Array is empty!");
       return res.status(200).json({ message: "No tasks extracted", tasks: [] });
     }
 
