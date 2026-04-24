@@ -72,6 +72,7 @@ function Login() {
       navigate("/verify-2fa", { state: { pendingToken: data.pendingToken } })
     } else {
       localStorage.setItem("token", data.token)
+      localStorage.setItem("userId", data.userId)
       localStorage.setItem("username", data.username)
       localStorage.setItem("email", data.email)
       localStorage.setItem("twoFactorEnabled", data.twoFactorEnabled)
