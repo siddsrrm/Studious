@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../css/Task.css";
 import Attachments from "./Attachments";
+import AITaskBreakdown from "./AITaskBreakdown";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -219,6 +220,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             <li key={subTask._id}>{subTask.title}</li>
           ))}
         </ul>
+        <AITaskBreakdown taskObj={taskObj} onAdd={handleAddSubTask} />
         <SubTaskForm onAdd={handleAddSubTask} />
         <p>Attachments:</p>
         <Attachments taskId={taskObj._id} token={token} />
