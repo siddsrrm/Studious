@@ -18,6 +18,11 @@ import Highlight from '@tiptap/extension-highlight'
 import { Extension } from '@tiptap/core' 
 import React, { useEffect, useState } from 'react'
 
+const getSpeechRecognition = () => {
+  if (typeof window === 'undefined') return null
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null
+}
+
 
 // Fontsize extension
 const FontSize = Extension.create({
@@ -212,6 +217,120 @@ const TagEditor = ({ tags, onUpdate }) => {
   );
 };
 
+const VoiceInputButton = ({ editor }) => {
+  const [isListening, setIsListening] = useState(false)
+  const [error, setError] = useState('')
+  const [interim, setInterim] = useState('')
+  const [finalText, setFinalText] = useState('')
+
+  useEffect(() => {
+    if (!finalText || !editor) return
+    editor.chain().focus().insertContent(finalText).run()
+    setFinalText('')
+  }, [finalText, editor])
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      setIsListening(false)
+    }
+  }, [])
+
+  const toggle = () => {
+    setError('')
+    const SpeechRecognition = getSpeechRecognition()
+    if (!SpeechRecognition) {
+      setError('Voice input isn\'t supported in this browser.')
+      return
+    }
+
+    if (isListening) {
+      // We can't reliably stop a previous instance without holding a ref;
+      // instead, flip state and rely on `onend` to settle.
+      setIsListening(false)
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = navigator?.language || 'en-US'
+
+    recognition.onresult = (event) => {
+      let interimTranscript = ''
+      let finalTranscript = ''
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i]
+        const text = result?.[0]?.transcript || ''
+        if (result.isFinal) finalTranscript += text
+        else interimTranscript += text
+      }
+
+      setInterim(interimTranscript)
+      if (finalTranscript.trim()) {
+        // Add a trailing space to feel natural while dictating.
+        setFinalText(prev => prev + finalTranscript + ' ')
+      }
+    }
+
+    recognition.onerror = (e) => {
+      // Common: not-allowed, service-not-allowed, no-speech
+      const msg = e?.error === 'not-allowed'
+        ? 'Microphone permission denied.'
+        : e?.error === 'no-speech'
+          ? 'No speech detected.'
+          : 'Voice input error.'
+      setError(msg)
+      setIsListening(false)
+    }
+
+    recognition.onend = () => {
+      setInterim('')
+      setIsListening(false)
+    }
+
+    try {
+      recognition.start()
+      setIsListening(true)
+    } catch (err) {
+      // start() can throw if called twice quickly
+      setError('Could not start voice input.')
+      setIsListening(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={toggle}
+        className={`px-3 py-2 rounded text-sm font-medium border transition-colors shadow-sm ${
+          isListening
+            ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
+            : 'bg-gray-500 text-white border-gray-300 hover:bg-blue-600'
+        }`}
+        title={isListening ? 'Stop voice input' : 'Start voice input'}
+        aria-pressed={isListening}
+      >
+        {isListening ? '⏹ Stop' : '🎙 Voice'}
+      </button>
+
+      {isListening && (
+        <span className="text-xs text-gray-600" aria-live="polite">
+          Listening… {interim ? `“${interim}”` : ''}
+        </span>
+      )}
+
+      {!isListening && error && (
+        <span className="text-xs text-red-600" role="alert">
+          {error}
+        </span>
+      )}
+    </div>
+  )
+}
+
 // Main NoteEditor component
 export default function NoteEditor({ note, onUpdate }) {
   const editor = useEditor({
@@ -277,6 +396,13 @@ export default function NoteEditor({ note, onUpdate }) {
       />
 
       <TagEditor key={note._id} tags={note.tags || []} onUpdate={onUpdate} />
+
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="text-xs text-gray-500">
+          Tip: Use voice input to dictate, then edit normally.
+        </div>
+        <VoiceInputButton editor={editor} />
+      </div>
 
       <MenuBar editor={editor} />
 
