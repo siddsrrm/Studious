@@ -555,4 +555,52 @@ describe("updateNotificationSettings", () => {
         await updateNotificationSettings(req, res);
         expect(res.status).toHaveBeenCalledWith(500);
     });
+
+    // In the existing updateNotificationSettings describe block, add these two tests:
+
+test("updates analyticsReportEnabled and saves", async () => {
+    const mockUser = {
+        notificationSettings: { remindersEnabled: true, reminderDaysBefore: 1, analyticsReportEnabled: false },
+        save: jest.fn().mockResolvedValue(true)
+    };
+    User.findById.mockResolvedValue(mockUser);
+    const req = {
+        body: { analyticsReportEnabled: true },
+        user: { userId: "user123" }
+    };
+    await updateNotificationSettings(req, res);
+    expect(mockUser.notificationSettings.analyticsReportEnabled).toBe(true);
+    expect(mockUser.notificationSettings.remindersEnabled).toBe(true);   // unchanged
+    expect(mockUser.notificationSettings.reminderDaysBefore).toBe(1);    // unchanged
+    expect(mockUser.save).toHaveBeenCalled();
+});
+
+test("updates all three fields at once", async () => {
+    const mockUser = {
+        notificationSettings: { remindersEnabled: true, reminderDaysBefore: 1, analyticsReportEnabled: false },
+        save: jest.fn().mockResolvedValue(true)
+    };
+    User.findById.mockResolvedValue(mockUser);
+    const req = {
+        body: { remindersEnabled: false, reminderDaysBefore: 7, analyticsReportEnabled: true },
+        user: { userId: "user123" }
+    };
+    await updateNotificationSettings(req, res);
+    expect(mockUser.notificationSettings.remindersEnabled).toBe(false);
+    expect(mockUser.notificationSettings.reminderDaysBefore).toBe(7);
+    expect(mockUser.notificationSettings.analyticsReportEnabled).toBe(true);
+    expect(mockUser.save).toHaveBeenCalled();
+});
+
+test("does not update analyticsReportEnabled when not provided", async () => {
+    const mockUser = {
+        notificationSettings: { remindersEnabled: true, reminderDaysBefore: 3, analyticsReportEnabled: true },
+        save: jest.fn().mockResolvedValue(true)
+    };
+    User.findById.mockResolvedValue(mockUser);
+    const req = { body: { remindersEnabled: false }, user: { userId: "user123" } };
+    await updateNotificationSettings(req, res);
+    expect(mockUser.notificationSettings.analyticsReportEnabled).toBe(true); // unchanged
+    expect(mockUser.save).toHaveBeenCalled();
+});
 });
