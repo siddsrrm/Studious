@@ -18,14 +18,19 @@ exports.getOrCreateConversation = async (req, res) => {
     const userId = req.user.userId
     const { friendId } = req.body
 
-    const convo = await Conversation.findOneAndUpdate(
-      { participants: { $all: [userId, friendId] } },
-      { $setOnInsert: { participants: [userId, friendId] } },
-      { upsert: true, new: true }
-    )
+    // find convo
+    let convo = await Conversation.findOne({
+      participants: { $all: [userId, friendId], $size: 2 }
+    }).populate("participants", "username avatar")
+
+    if (!convo) { // if not found, create
+      convo = await Conversation.create({ participants: [userId, friendId] })
+      convo = await convo.populate("participants", "username avatar")
+    }
 
     res.json(convo)
   } catch (err) {
+    console.log(err) // for debugging
     res.status(500).json({ message: "Failed to fetch or create conversation" })
   }
 }
