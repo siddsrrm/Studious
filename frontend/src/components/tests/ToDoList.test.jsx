@@ -135,6 +135,49 @@ describe("ToDoList", () => {
       expect(newTask).toBeInTheDocument();
     });
 
+    test("uploads an assignment PDF and appends generated tasks", async () => {
+      const uploadButton = screen.getByRole("button", {
+        name: /upload assignment pdf/i,
+      });
+
+      await user.click(uploadButton);
+
+      const fileInput = screen.getByLabelText(/assignment pdf/i);
+      const pdfFile = new File(["assignment text"], "assignment.pdf", {
+        type: "application/pdf",
+      });
+
+      await user.upload(fileInput, pdfFile);
+
+      // Mock response for generate-from-document endpoint
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          message: "Created 1 tasks",
+          tasks: [
+            {
+              _id: "task-3",
+              title: "Read assignment brief",
+              completed: false,
+              priority: "medium",
+              dueDate: null,
+              subTasks: [],
+            },
+          ],
+        }),
+      });
+
+      await user.click(screen.getByRole("button", { name: /generate tasks/i }));
+
+      const created = await findTaskByTitle("Read assignment brief");
+      expect(created).toBeInTheDocument();
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/tasks/generate-from-document"),
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+
     test("updates a task", async () => {
       const task1Container = await findTaskByTitle("Task 1");
 

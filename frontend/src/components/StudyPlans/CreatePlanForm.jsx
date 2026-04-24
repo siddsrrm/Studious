@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import GeneratePlanFromSyllabusModal from "./GeneratePlanFromSyllabusModal";
 
-const CreatePlanForm = ({ onCreatePlan, onCancel }) => {
+const CreatePlanForm = ({ onCreatePlan, onCancel, onPlanReady }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [showGenerator, setShowGenerator] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +30,24 @@ const CreatePlanForm = ({ onCreatePlan, onCancel }) => {
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
           Create New Study Plan
         </h2>
+
+        <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-indigo-900">Generate from syllabus/schedule</p>
+              <p className="text-xs text-indigo-900/70 mt-1">
+                Upload a course syllabus or schedule (PDF) and we’ll create a starter study plan.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowGenerator(true)}
+              className="shrink-0 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm"
+            >
+              Upload
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -82,6 +102,14 @@ const CreatePlanForm = ({ onCreatePlan, onCancel }) => {
             </button>
           </div>
         </form>
+
+        {showGenerator && (
+          <GeneratePlanFromSyllabusModal
+            onClose={onCancel}
+            onCreatePlan={onCreatePlan}
+            onPlanReady={onPlanReady}
+          />
+        )}
       </div>
     </div>
   );

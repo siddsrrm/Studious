@@ -1,0 +1,305 @@
+.gradebook-container {
+    padding-bottom: 40px;
+}
+
+.gradebook-loading {
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+/* Banner */
+.gradebook-banner {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.gradebook-banner-label {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.gradebook-banner-score {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.gradebook-overall-percent {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.gradebook-overall-letter {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.gradebook-banner-empty {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+    color: #9ca3af;
+}
+
+.gradebook-banner-meta {
+    margin: 4px 0 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.gradebook-add-btn {
+    padding: 8px 16px;
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.gradebook-add-btn:hover {
+    background-color: #4338ca;
+}
+
+/* Error */
+.gradebook-error {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+}
+
+/* Form card */
+.gradebook-form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.gradebook-form-title {
+    margin: 0 0 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.gradebook-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.gradebook-form-full {
+    grid-column: 1 / -1;
+}
+
+.gradebook-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.gradebook-label-optional {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.gradebook-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.875rem;
+    color: #111827;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+.gradebook-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.gradebook-textarea {
+    resize: vertical;
+    min-height: 64px;
+}
+
+.gradebook-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.gradebook-cancel-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: #374151;
+    transition: background-color 0.2s ease;
+}
+
+.gradebook-cancel-btn:hover {
+    background-color: #f9fafb;
+}
+
+.gradebook-save-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 0.875rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.gradebook-save-btn:hover {
+    background-color: #4338ca;
+}
+
+/* Empty state */
+.gradebook-empty {
+    background: white;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.gradebook-empty p {
+    margin: 0;
+}
+
+.gradebook-empty-sub {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-top: 4px !important;
+}
+
+/* Entries */
+.gradebook-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gradebook-entry-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    transition: box-shadow 0.2s ease;
+}
+
+.gradebook-entry-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.gradebook-type-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+.gradebook-entry-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.gradebook-entry-title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.gradebook-entry-meta {
+    margin: 2px 0 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.gradebook-entry-score {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.gradebook-score-percent {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.gradebook-score-letter {
+    margin-left: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.gradebook-entry-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.gradebook-edit-btn {
+    font-size: 0.75rem;
+    color: #4f46e5;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.gradebook-edit-btn:hover {
+    text-decoration: underline;
+}
+
+.gradebook-delete-btn {
+    font-size: 0.75rem;
+    color: #ef4444;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.gradebook-delete-btn:hover {
+    text-decoration: underline;
+}

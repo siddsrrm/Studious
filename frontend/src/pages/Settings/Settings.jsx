@@ -8,6 +8,7 @@ const SECTIONS = {
   PROFILE: "profile",
   USERNAME: "username",
   EMAIL: "email",
+  PRIVACY: "privacy",
   NOTIFICATION: "notification",
   TWO_FACTOR: "two_factor",
   GOOGLE: "google",
@@ -20,6 +21,77 @@ const PRESET_AVATARS = [
   "/avatars/avatar3.png",
   "/avatars/avatar4.png"
 ];
+
+function PrivacySection() {
+  const [visibility, setVisibility] = useState("public");
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    async function fetchPrivacy() {
+      try {
+        const res = await fetch(`${API_BASE}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setVisibility(data.profileVisibility || "public");
+      } catch {
+        // fail silently
+      }
+    }
+    fetchPrivacy();
+  }, []);
+
+  async function handleSave() {
+    setLoading(true);
+    setSuccess(""); setError("");
+    try {
+      const res = await fetch(`${API_BASE}/users/privacy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ profileVisibility: visibility })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess("Privacy settings saved.");
+      } else {
+        setError(data.message || "Failed to save privacy settings.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className={styles.contentTitle}>Privacy</h2>
+      <p className={styles.contentDescription}>Control who can see your profile.</p>
+      <hr className={styles.contentDivider} />
+      <p className={styles.fieldLabel}>Profile visibility</p>
+      <select
+        className={styles.input}
+        value={visibility}
+        onChange={(e) => setVisibility(e.target.value)}
+      >
+        <option value="public">Public — anyone can view your profile</option>
+        <option value="friends">Friends Only — only friends can view your profile</option>
+        <option value="hidden">Hidden — your profile is not visible to others</option>
+      </select>
+      {success && <p className={styles.success}>{success}</p>}
+      {error && <p className={styles.error}>{error}</p>}
+      <button className={styles.button} onClick={handleSave} disabled={loading}>
+        {loading ? "Saving..." : "Save Privacy Settings"}
+      </button>
+    </div>
+  );
+}
 
 function ProfileSection() {
   const [selected, setSelected] = useState(localStorage.getItem("avatar") || PRESET_AVATARS[0]);
@@ -645,6 +717,13 @@ export default function SettingsPage() {
           Change Email
         </button>
 
+        <button
+  className={`${styles.sidebarItem} ${activeSection === SECTIONS.PRIVACY ? styles.sidebarItemActive : ""}`}
+  onClick={() => setActiveSection(SECTIONS.PRIVACY)}
+>
+  Privacy
+</button>
+
         {/* Toggle 2FA */}
         <button
           className={`${styles.sidebarItem} ${activeSection === SECTIONS.TWO_FACTOR ? styles.sidebarItemActive : ""}`}
@@ -688,6 +767,7 @@ export default function SettingsPage() {
         )}
         {activeSection === SECTIONS.EMAIL && <EmailSection />}
         {activeSection === SECTIONS.TWO_FACTOR && <TwoFactorSection />}
+        {activeSection === SECTIONS.PRIVACY && <PrivacySection />}
         {activeSection === SECTIONS.GOOGLE && <GoogleSection />}
         {activeSection === SECTIONS.NOTIFICATION && <NotificationSection />}
         {activeSection === SECTIONS.DELETE && (

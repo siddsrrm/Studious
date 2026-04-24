@@ -11,14 +11,15 @@ const HomePage = () => {
   // Current States
   const [studyPlans, setStudyPlans] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [activePlan, setActivePlan] = useState(null);
-  const [activeTab, setActiveTab] = useState("todo");
+  const [activePlanId, setActivePlanId] = useState(null);
   const [showToken, setShowToken] = useState(
     () => !sessionStorage.getItem("tokenShown"),
   );
   const [tokenOpacity, setTokenOpacity] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const activePlan = studyPlans.find((p) => p.id === activePlanId);
 
   useEffect(() => {
     if (showToken) {
@@ -52,11 +53,105 @@ const HomePage = () => {
           to_do_list: p.to_do_list || [],
           practiceQuestions: p.practiceQuestions || [],
           milestones: p.milestones || [],
+          creditHours: p.creditHours ?? null,
+          workload: p.workload ?? null,
         }));
         setStudyPlans(normalized);
-      } catch (err) { }
+      } catch (err) {}
     })();
   }, []);
+
+  // ----------------------------- GPA calculation -----------------------------
+  const [gradeRefreshKey, setGradeRefreshKey] = useState(0);
+  const [gpaError, setGpaError] = useState(false);
+  const [gpa, setGpa] = useState(0);
+  const [overallGrades, setOverallGrades] = useState({});
+  const [allCreditHours, setAllCreditHours] = useState({});
+
+  const API = import.meta.env.VITE_API_URL;
+
+  const gradeScale = [
+    { min: 90.0, gpa: 4.0 },
+    { min: 85.0, gpa: 3.7 },
+    { min: 80.0, gpa: 3.3 },
+    { min: 75.0, gpa: 3.0 },
+    { min: 70.0, gpa: 2.7 },
+    { min: 65.0, gpa: 2.3 },
+    { min: 60.0, gpa: 2.0 },
+    { min: 55.0, gpa: 1.7 },
+    { min: 50.0, gpa: 1.3 },
+    { min: 45.0, gpa: 1.0 },
+    { min: 40.0, gpa: 0.7 },
+    { min: 0.0, gpa: 0.0 },
+  ];
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token || studyPlans.length === 0) return;
+
+    const fetchAllGrades = async () => {
+      const results = await Promise.all(
+        studyPlans.map(async (plan) => {
+          const grade = await fetchOverallGrade(plan.id, token);
+          return { planId: plan.id, grade };
+        }),
+      );
+
+      const gradeMap = {};
+      results.forEach(({ planId, grade }) => {
+        gradeMap[planId] = grade;
+      });
+
+      setOverallGrades(gradeMap);
+    };
+
+    const creditHoursMap = Object.fromEntries(
+      studyPlans.map((plan) => [plan.id, plan.creditHours ?? 0]),
+    );
+
+    fetchAllGrades();
+    setAllCreditHours(creditHoursMap);
+  }, [studyPlans, gradeRefreshKey]);
+
+  useEffect(() => {
+    let totalPoints = 0;
+    let totalCredits = 0;
+
+    for (const planId in overallGrades) {
+      const grade = overallGrades[planId];
+      const credits = allCreditHours[planId] ?? 0;
+
+      if (grade == null || grade === -1 || !credits) continue;
+
+      const converted = gradeScale.find((g) => grade >= g.min)?.gpa ?? 0;
+
+      totalPoints += converted * credits;
+      totalCredits += credits;
+    }
+
+    setGpa(totalCredits ? totalPoints / totalCredits : 0);
+  }, [overallGrades, allCreditHours]);
+
+  const fetchOverallGrade = async (studyPlanId, token) => {
+    try {
+      const res = await fetch(`${API}/gradebook/${studyPlanId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        return data.overallGrade ?? -1;
+      } else {
+        setGpaError(true);
+        return null;
+      }
+    } catch {
+      setGpaError(true);
+      return null;
+    }
+  };
+  // ---------------------------------------------------------------------------
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -66,12 +161,15 @@ const HomePage = () => {
   };
 
   // Handle creation of study plans
-  const handleCreatePlan = async (newPlan) => {
+  // Supports an optional options object: { deferRender: boolean }
+  const handleCreatePlan = async (newPlan, options = {}) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setStudyPlans((prev) => [...prev, newPlan]);
+      if (!options.deferRender) {
+        setStudyPlans((prev) => [...prev, newPlan]);
+      }
       setShowCreateForm(false);
-      return;
+      return newPlan;
     }
 
     // Create study plan in backend
@@ -89,7 +187,10 @@ const HomePage = () => {
       });
 
       if (!res.ok) {
-        setStudyPlans((prev) => [...prev, newPlan]);
+        if (!options.deferRender) {
+          setStudyPlans((prev) => [...prev, newPlan]);
+        }
+        return newPlan;
       } else {
         const data = await res.json();
         const saved = data.studyPlan;
@@ -100,14 +201,36 @@ const HomePage = () => {
           notes: saved.notes || [],
           to_do_list: saved.to_do_list || [],
           practiceQuestions: saved.practiceQuestions || [],
+          milestones: saved.milestones || [],
+          creditHours: saved.creditHours ?? null,
+          workload: saved.workload ?? null,
         };
-        setStudyPlans((prev) => [...prev, normalized]);
+        if (!options.deferRender) {
+          setStudyPlans((prev) => [...prev, normalized]);
+        }
+        return normalized;
       }
     } catch (err) {
-      setStudyPlans((prev) => [...prev, newPlan]);
+      if (!options.deferRender) {
+        setStudyPlans((prev) => [...prev, newPlan]);
+      }
+      return newPlan;
     } finally {
-      setShowCreateForm(false);
+      if (!options.deferRender) {
+        setShowCreateForm(false);
+      }
     }
+  };
+
+  // Allows syllabus generation flow to add the created plan only after tasks are generated.
+  const handlePlanReady = (createdPlan) => {
+    if (!createdPlan) return;
+    setStudyPlans((prev) => {
+      const id = createdPlan?.id;
+      if (!id) return prev;
+      if (prev.some((p) => p.id === id)) return prev;
+      return [...prev, createdPlan];
+    });
   };
 
   // Handle deletion of study plans
@@ -115,7 +238,7 @@ const HomePage = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-      if (activePlan?.id === planId) setActivePlan(null);
+      if (activePlan?.id === planId) setActivePlanId(null);
       return;
     }
 
@@ -132,30 +255,37 @@ const HomePage = () => {
 
         if (res.ok) {
           setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-          if (activePlan?.id === planId) setActivePlan(null);
+          if (activePlan?.id === planId) setActivePlanId(null);
         } else {
           setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-          if (activePlan?.id === planId) setActivePlan(null);
+          if (activePlan?.id === planId) setActivePlanId(null);
         }
       } catch (err) {
         setStudyPlans((prev) => prev.filter((p) => p.id !== planId));
-        if (activePlan?.id === planId) setActivePlan(null);
+        if (activePlan?.id === planId) setActivePlanId(null);
       }
     })();
   };
 
   const handleSelectPlan = (plan) => {
-    setActivePlan(plan);
-    setActiveTab("todo");
+    setActivePlanId(plan.id);
   };
 
   const handleBack = () => {
-    setActivePlan(null);
+    setActivePlanId(null);
+    setGradeRefreshKey((k) => k + 1);
   };
 
   // Renders study plan interface
   if (activePlan) {
-    return <StudyPlanPage plan={activePlan} onBack={handleBack} setStudyPlans={setStudyPlans} />;
+    return (
+      <StudyPlanPage
+        key={activePlan.id}
+        plan={activePlan}
+        onBack={handleBack}
+        setStudyPlans={setStudyPlans}
+      />
+    );
   }
 
   // Homepage view
@@ -166,6 +296,13 @@ const HomePage = () => {
           <h1 className="text-2xl font-bold text-gray-800">Studious</h1>
 
           <div className="flex items-center gap-3">
+            <p className="font-medium">
+              <span className="text-gray-700">GPA: </span>
+              <span className={gpaError ? "text-red-600" : "text-gray-700"}>
+                {gpaError ? "Error" : gpa.toFixed(2)}
+              </span>
+            </p>
+
             <button
               onClick={() => setShowCreateForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm"
@@ -186,7 +323,6 @@ const HomePage = () => {
               </svg>
               New Study Plan
             </button>
-
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
@@ -383,11 +519,9 @@ const HomePage = () => {
           </div>
         </div>
       </header>
-
       {/* Main Container updated to max-w-7xl for more horizontal room */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-
           {/*Calendar */}
           <div className="w-full lg:w-5/12 bg-white p-4 rounded-lg shadow-md shrink-0">
             <h2 className="text-lg font-semibold mb-4 text-gray-700 text-center">
@@ -430,17 +564,15 @@ const HomePage = () => {
               </div>
             )}
           </div>
-
         </div>
       </main>
-
       {showCreateForm && (
         <CreatePlanForm
           onCreatePlan={handleCreatePlan}
           onCancel={() => setShowCreateForm(false)}
+          onPlanReady={handlePlanReady}
         />
       )}
-
       {showToken && (
         <div
           className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 w-72 border border-gray-200 transition-opacity duration-1000 ${tokenOpacity ? "opacity-100" : "opacity-0"}`}
