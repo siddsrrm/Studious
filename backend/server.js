@@ -23,6 +23,7 @@ const friendRequestRoutes = require("./routes/friendRequestRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
 const gradeBookRoutes = require("./routes/gradeBookRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
+const attachmentRoutes = require("./routes/attachmentRoutes");
 
 const app = express();
 
@@ -54,6 +55,10 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/achievements", achievementRoutes);
 app.use("/api/gradebook", gradeBookRoutes);
 app.use("/api/schedule", scheduleRoutes);
+app.use("/api/attachments", attachmentRoutes);
+
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "data/assets")));
 
 app.get("/", (req, res) => {
   res.send("API is running...");
