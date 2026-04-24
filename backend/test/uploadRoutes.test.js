@@ -63,12 +63,26 @@ describe("uploadRoutes", () => {
   beforeEach(() => {
     jest.resetModules();
 
-    // Mock fetch for the Ollama call
     global.fetch = jest.fn(async () => ({
       ok: true,
       json: async () => ({
         message: {
-          content: "Generated Title\n\n- Bullet 1\n- Bullet 2",
+          content: JSON.stringify({
+            tasks: [
+              {
+                title: "Read Chapter 1",
+                description: "Intro",
+                dueDate: "2026-01-10",
+                priority: "high",
+              },
+              {
+                title: "HW1",
+                description: "Problems 1-10",
+                dueDate: null,
+                priority: "medium",
+              },
+            ],
+          }),
         },
       }),
       text: async () => "",
@@ -87,6 +101,7 @@ describe("uploadRoutes", () => {
 
   afterEach(() => {
     delete global.fetch;
+    jest.clearAllMocks();
   });
 
   test("POST /api/upload/pdf returns extracted text + pageCount", async () => {
@@ -168,6 +183,20 @@ describe("uploadRoutes", () => {
   });
 
   test("POST /api/upload/generate-note calls Ollama and returns title/content", async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        message: {
+          content: JSON.stringify({
+            title: "Generated Title",
+            body: "- Bullet 1\n- Bullet 2",
+          }),
+        },
+      }),
+      text: async () => "",
+      status: 200,
+    }));
+
     const res = await request(app)
       .post("/api/upload/generate-note")
       .send({ text: "Some extracted text" });
@@ -183,61 +212,6 @@ describe("uploadRoutes", () => {
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ message: "Missing text to summarize" });
-  });
-
-  test("POST /api/upload/generate-tasks returns 400 when missing studyPlanId", async () => {
-    const res = await request(app)
-      .post("/api/upload/generate-tasks")
-      .send({ text: "syllabus text" });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toEqual({ message: "studyPlanId is required" });
-  });
-
-  test("POST /api/upload/generate-tasks creates tasks from Ollama JSON", async () => {
-    global.fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        message: {
-          content: JSON.stringify({
-            tasks: [
-              {
-                title: "Read Chapter 1",
-                description: "Intro",
-                dueDate: "2026-01-10",
-                priority: "high",
-              },
-              {
-                title: "HW1",
-                description: "Problems 1-10",
-                dueDate: null,
-                priority: "medium",
-              },
-            ],
-          }),
-        },
-      }),
-      text: async () => "",
-      status: 200,
-    }));
-
-    const res = await request(app).post("/api/upload/generate-tasks").send({
-      studyPlanId: "plan123",
-      text: "Course syllabus... ",
-      startDate: "2026-01-01",
-      endDate: "2026-01-20",
-      maxTasks: 10,
-    });
-
-    expect(res.status).toBe(201);
-    expect(res.body.tasks).toHaveLength(2);
-    expect(res.body.tasks[0]).toMatchObject({
-      studyPlanID: "plan123",
-      title: "Read Chapter 1",
-      priority: "high",
-      completed: false,
-    });
-    expect(res.body.tasks[0].dueDate).toBeTruthy();
   });
 
   test("POST /api/upload/generate-tasks returns 400 when missing studyPlanId", async () => {

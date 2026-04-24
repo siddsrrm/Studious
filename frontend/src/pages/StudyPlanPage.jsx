@@ -395,9 +395,12 @@ function MilestonesModal({
 }
 
 const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
+  const safePlan = plan ?? { milestones: [] };
+  const planId = safePlan.id || safePlan._id;
+
   const [activeTab, setActiveTab] = useState("To-Do List");
   const [progress, setProgress] = useState(0);
-  const [milestones, setMilestones] = useState(plan.milestones || []);
+  const [milestones, setMilestones] = useState(safePlan.milestones);
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [milestoneVersion, setMilestoneVersion] = useState(0);
 
@@ -417,6 +420,8 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
       })),
     );
   }, [progress, milestoneVersion]);
+
+  if (!plan) return <p>Loading...</p>;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -564,26 +569,26 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
         {/* Rendering selected component*/}
         {activeTab === "To-Do List" && (
           <ToDoList
-            studyPlanId={plan.id}
-            toDoListId={plan.id}
+            studyPlanId={planId}
+            toDoListId={planId}
             onProgressChange={(progress) => setProgress(progress)}
           />
         )}
 
         {activeTab === "Notes" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <NotePage studyPlanId={plan.id} />
+            <NotePage studyPlanId={planId} />
           </div>
         )}
 
         {activeTab === "Grade Book" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <GradeBookPage studyPlanId={plan.id} />
+            <GradeBookPage studyPlanId={planId} />
           </div>
         )}
 
         {activeTab === "Practice Questions" && (
-          <PracticeQuestionsPage studyPlanId={plan.id} />
+          <PracticeQuestionsPage studyPlanId={planId} />
         )}
 
         {activeTab === "Course Info" && (
@@ -592,7 +597,7 @@ const StudyPlanPage = ({ plan, onBack, setStudyPlans }) => {
       </div>
       {showMilestoneModal && (
         <MilestonesModal
-          studyPlanId={plan.id}
+          studyPlanId={planId}
           milestones={milestones}
           setMilestones={setMilestones}
           setStudyPlans={setStudyPlans}

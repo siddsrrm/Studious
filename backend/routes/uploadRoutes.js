@@ -292,8 +292,7 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
     }
 
     const aiJson = await aiRes.json();
-    const contentString = aiJson?.message?.content || "{}";
-
+    const contentString = aiJson?.message?.content || aiJson?.response || "{}";
     let parsedContent;
     try {
       parsedContent = JSON.parse(contentString);
@@ -323,7 +322,8 @@ OUTPUT ONLY JSON. No explanation, no extra text.`;
 
 router.post("/generate-tasks", protect, async (req, res) => {
   try {
-    const { studyPlanId, syllabusText, maxTasks } = req.body || {};
+    const { studyPlanId, maxTasks } = req.body || {};
+    const syllabusText = req.body?.syllabusText || req.body?.text;
     if (!studyPlanId) {
       return res.status(400).json({ message: "studyPlanId is required" });
     }
@@ -394,7 +394,7 @@ ${syllabusText.slice(0, 12000)}
     }
 
     const aiJson = await aiRes.json();
-    const contentString = aiJson?.message?.content || "{}";
+    const contentString = aiJson?.message?.content || aiJson?.response || "{}";
 
     let parsed;
     try {

@@ -1,5 +1,6 @@
 const path = require("path");
-const fs = require("fs/promises");
+const fs = require("fs");
+const fsp = require("fs/promises");
 const Attachment = require("../models/Attachment");
 
 // Helper to safely get user ID
@@ -101,33 +102,22 @@ exports.createAttachment = async (req, res) => {
       fileName = `${Date.now()}-${req.file.originalname}`;
       filePath = path.join(__dirname, "../uploads", fileName);
 
-      await fs.writeFile(filePath, req.file.buffer);
+      await fsp.writeFile(filePath, req.file.buffer);
 
-      if (fileUrl.startsWith("http")) {
-        try {
-          new URL(fileUrl);
-        } catch {
-          return res.status(400).json({
-            message: 'Invalid URL format for attachment type "file"',
-          });
-        }
-      }
-
-      data.filename = filename;
-      data.fileUrl = fileUrl;
-      data.size = size;
-      data.mimeType = mimeType;
+      data.filename = req.file.originalname;
+      data.fileUrl = `/uploads/${fileName}`;
+      data.size = req.file.size;
+      data.mimeType = req.file.mimetype;
     }
 
     const attachment = await Attachment.create(data);
     res.status(201).json(attachment);
   } catch (err) {
     try {
-      await fs.unlink(filePath);
-      console.log("[deleteAttachment] File deleted:", filePath);
+      if (filePath) await fsp.unlink(filePath);
     } catch (err) {
       if (err.code !== "ENOENT") {
-        console.error("[deleteAttachment] File deletion error:", err);
+        console.error("[createAttachment] cleanup error:", err);
       }
     }
     res.status(500).json({
@@ -179,7 +169,7 @@ exports.updateAttachment = async (req, res) => {
         const filePath = path.join(__dirname, "../uploads", fileName);
 
         if (fs.existsSync(filePath)) {
-          await fs.unlink(filePath);
+          await fsp.unlink(filePath);
           console.log("[updateAttachment] Old file deleted:", filePath);
         }
       } catch (err) {
@@ -218,7 +208,7 @@ exports.deleteAttachment = async (req, res) => {
         const filePath = path.join(__dirname, "../uploads", fileName);
 
         if (fs.existsSync(filePath)) {
-          await fs.unlink(filePath);
+          await fsp.unlink(filePath);
           console.log("[deleteAttachment] File deleted:", filePath);
         } else {
           console.warn("[deleteAttachment] File not found on disk:", filePath);

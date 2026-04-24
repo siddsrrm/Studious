@@ -1,10 +1,19 @@
 const attachmentController = require("../controllers/attachmentController");
 const Attachment = require("../models/Attachment");
 const fs = require("fs");
+const fsp = require("fs/promises");
 const path = require("path");
 
 jest.mock("../models/Attachment");
-jest.mock("fs");
+
+jest.mock("fs", () => ({
+  existsSync: jest.fn(),
+}));
+
+jest.mock("fs/promises", () => ({
+  unlink: jest.fn(),
+  writeFile: jest.fn(),
+}));
 
 const makeRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -64,6 +73,8 @@ describe("createAttachment", () => {
   beforeEach(() => {
     res = makeRes();
     jest.clearAllMocks();
+    Attachment.findOne = jest.fn();
+    fsp.writeFile.mockResolvedValue();
   });
 
   test("returns 400 if taskId missing", async () => {
@@ -128,13 +139,16 @@ describe("createAttachment", () => {
     Attachment.create.mockResolvedValue(mockAttachment);
 
     const req = makeReq({
+      user: { userId: USER_ID },
       body: {
         taskId: "t1",
         type: "file",
-        filename: "test.pdf",
-        fileUrl: "/uploads/test.pdf",
+      },
+      file: {
+        originalname: "test.pdf",
+        buffer: Buffer.from("dummy"),
         size: 100,
-        mimeType: "application/pdf",
+        mimetype: "application/pdf",
       },
     });
 
@@ -158,6 +172,8 @@ describe("updateAttachment", () => {
   beforeEach(() => {
     res = makeRes();
     jest.clearAllMocks();
+    Attachment.findById = jest.fn();
+    Attachment.deleteOne = jest.fn();
   });
 
   test("returns 404 if not found", async () => {
@@ -210,9 +226,9 @@ describe("deleteAttachment", () => {
   beforeEach(() => {
     res = makeRes();
     jest.clearAllMocks();
-
+    Attachment.findById = jest.fn();
+    Attachment.deleteOne = jest.fn();
     fs.existsSync.mockReturnValue(true);
-    fs.unlinkSync.mockImplementation(() => {});
   });
 
   test("returns 404 if not found", async () => {
