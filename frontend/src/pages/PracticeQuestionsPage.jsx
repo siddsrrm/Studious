@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PracticeQuestion from "../components/PracticeQuestion";
 import Flashcard from "../components/Flashcard";
+import GenerateFromWrongModal from "../components/PracticeQuestions/GenerateFromWrongModal";
 import "../css/PracticeQuestionsPage.css";
 
 const API = import.meta.env.VITE_API_URL;
@@ -22,6 +23,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
 
   // Flashcard state
   const [displayAsFlashcards, setDisplayAsFlashcards] = useState(false);
+  const [showGenerateWrongModal, setShowGenerateWrongModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -374,10 +376,70 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
               >
                 {generating ? "Generating..." : "Generate Questions"}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowGenerateWrongModal(true)}
+                style={{
+                  marginLeft: 12,
+                  padding: "10px 16px",
+                  backgroundColor: generating ? "#94a3b8" : "#10b981",
+                  color: 'white',
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: generating ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                }}
+                title="Generate questions from past incorrect answers"
+              >
+                Generate from Mastery
+              </button>
             </form>
           )}
         </div>
       </div>
+
+      {showGenerateWrongModal && (
+        <GenerateFromWrongModal
+          onClose={() => setShowGenerateWrongModal(false)}
+          disabled={generating}
+          onGenerate={async () => {
+            setShowGenerateWrongModal(false);
+            setGenerating(true);
+            setError("");
+            try {
+              const res = await fetch(`${API}/practice-questions/generate-mastery`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  studyPlanId,
+                  numQuestions: numQuestions ? parseInt(numQuestions) : undefined,
+                }),
+              });
+
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                setError(data.message || "Failed to generate mastery questions.");
+                return;
+              }
+
+              const newQs = Array.isArray(data.questions) ? data.questions : [];
+              if (newQs.length > 0) {
+                setQuestions((prev) => [...prev, ...newQs]);
+              }
+
+              setError(`Successfully generated ${newQs.length} mastery questions!`);
+              setTimeout(() => setError(""), 3000);
+            } catch {
+              setError("Network error. Please try again.");
+            } finally {
+              setGenerating(false);
+            }
+          }}
+        />
+      )}
 
       {/* Questions list */}
       <div>
