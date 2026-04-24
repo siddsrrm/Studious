@@ -124,6 +124,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     if (!studyPlanId || generatingSchedule) return;
 
     setGeneratingSchedule(true);
+    setError("");
 
     try {
       const res = await fetch(`${API}/schedule/generate`, {

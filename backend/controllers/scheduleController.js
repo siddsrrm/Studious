@@ -83,7 +83,7 @@ SCHEDULING RULES
 7. Spread work across days
 8. Prefer scheduling within next 14 days
 9. Avoid back-to-back long sessions
-10. If due date is قريب (soon), prioritize it even if priority is lower
+10. If due date is soon, prioritize it even if priority is lower
 
 ----------------------------------------
 OUTPUT REQUIREMENTS
