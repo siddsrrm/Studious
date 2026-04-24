@@ -214,7 +214,10 @@ exports.deleteSubTask = async (req, res) => {
 exports.generateTaskBreakdown = async (req, res) => {
   try {
     const taskId = req.params.id;
-    console.log("[POST] /tasks/:id/generate-breakdown", { id: taskId, userId: req.user.userId });
+    console.log("[POST] /tasks/:id/generate-breakdown", {
+      id: taskId,
+      userId: req.user.userId,
+    });
 
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ message: "Task not found" });
@@ -226,8 +229,37 @@ exports.generateTaskBreakdown = async (req, res) => {
 
     const combinedText = `Title: ${title}\n${description}`.slice(0, 12000);
 
-    //TODO
-    const prompt = `PROMPT HERE - specify JSON format`;
+    if (!process.env.OLLAMA_URL || !process.env.OLLAMA_MODEL) {
+      return res.status(500).json({ message: "OLLAMA configuration missing" });
+    }
+
+    const prompt = `You are an expert project planner and execution assistant.
+Break down the task into relevant, actionable subtasks.
+
+MANDATORY OUTPUT FORMAT:
+Return ONLY one valid JSON object with this exact root key:
+{
+  "subtasks": [
+    {
+      "title": "Short subtask title",
+      "description": "Optional brief detail"
+    }
+  ]
+}
+
+STRICT RULES:
+1. Output ONLY valid JSON. No markdown. No commentary.
+2. Root key must be "subtasks".
+3. Each item must include a non-empty "title" string.
+4. "description" is optional but recommended.
+5. Generate 3 to 8 subtasks when enough context exists.
+6. Subtask titles must be concise and action-oriented.
+7. Do not include IDs, timestamps, or extra keys.
+
+TASK CONTEXT:
+"""
+${combinedText}
+"""`;
     console.log("Sending AI request for task breakdown...");
 
     const aiRes = await fetch(process.env.OLLAMA_URL, {
@@ -259,7 +291,10 @@ exports.generateTaskBreakdown = async (req, res) => {
       const parsed = JSON.parse(content);
       const rawSubtasks = parsed.subtasks || [];
       const subtasks = rawSubtasks
-        .map((s) => ({ title: String(s.title || "").trim(), description: String(s.description || "").trim() }))
+        .map((s) => ({
+          title: String(s.title || "").trim(),
+          description: String(s.description || "").trim(),
+        }))
         .filter((s) => s.title)
         .slice(0, 50);
 
@@ -267,11 +302,20 @@ exports.generateTaskBreakdown = async (req, res) => {
 
       return res.json({ subtasks, raw: content });
     } catch (parseErr) {
-      console.error("Failed to parse AI JSON for task breakdown:", parseErr.message);
-      return res.status(500).json({ message: "Failed to parse AI response into subtasks", raw: content });
+      console.error(
+        "Failed to parse AI JSON for task breakdown:",
+        parseErr.message,
+      );
+      return res.status(500).json({
+        message: "Failed to parse AI response into subtasks",
+        raw: content,
+      });
     }
   } catch (err) {
     console.error("Error generating task breakdown:", err.message || err);
-    return res.status(500).json({ message: "Internal server error", error: err.message || String(err) });
+    return res.status(500).json({
+      message: "Internal server error",
+      error: err.message || String(err),
+    });
   }
 };

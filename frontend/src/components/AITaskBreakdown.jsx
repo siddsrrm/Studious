@@ -12,14 +12,20 @@ const AITaskBreakdown = ({ taskObj, onAdd }) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API}/tasks/${taskObj._id}/generate-breakdown`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${API}/tasks/${taskObj._id}/generate-breakdown`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: taskObj.title,
+            description: taskObj.description,
+          }),
         },
-        body: JSON.stringify({ title: taskObj.title, description: taskObj.description }),
-      });
+      );
       const data = await res.json();
       if (!res.ok) {
         setError(data.message || "AI request failed");
@@ -42,6 +48,10 @@ const AITaskBreakdown = ({ taskObj, onAdd }) => {
     }
   };
 
+  const handleReject = (index) => {
+    setSuggestions((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="ai-task-breakdown" style={{ marginTop: 8 }}>
       <button onClick={generate} disabled={loading}>
@@ -55,10 +65,18 @@ const AITaskBreakdown = ({ taskObj, onAdd }) => {
               <div>
                 <strong>{s.title}</strong>
               </div>
-              {s.description && <div style={{ fontSize: 13 }}>{s.description}</div>}
-              <button onClick={() => handleAdd(s)} style={{ marginTop: 4 }}>
-                Add
-              </button>
+              {s.description && (
+                <div style={{ fontSize: 13 }}>{s.description}</div>
+              )}
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <button onClick={() => handleAdd(s)}>Add</button>
+                <button
+                  onClick={() => handleReject(i)}
+                  style={{ backgroundColor: "#e53e3e", color: "white", border: "none", padding: "6px 10px", borderRadius: 4 }}
+                >
+                  Reject
+                </button>
+              </div>
             </li>
           ))}
         </ul>
