@@ -50,6 +50,9 @@ describe("generateSchedule", () => {
     Event.find.mockResolvedValue(mockEvents);
 
     global.fetch.mockResolvedValue({
+  ok: true,
+  status: 200,
+  text: jest.fn().mockResolvedValue(""),
       json: jest.fn().mockResolvedValue({
         message: {
           content: JSON.stringify({
@@ -98,6 +101,9 @@ describe("generateSchedule", () => {
     Event.find.mockResolvedValue([]);
 
     global.fetch.mockResolvedValue({
+  ok: true,
+  status: 200,
+  text: jest.fn().mockResolvedValue(""),
       json: jest.fn().mockResolvedValue({
         message: { content: JSON.stringify({}) },
       }),
@@ -119,6 +125,9 @@ describe("generateSchedule", () => {
     Event.find.mockResolvedValue([]);
 
     global.fetch.mockResolvedValue({
+  ok: true,
+  status: 200,
+  text: jest.fn().mockResolvedValue(""),
       json: jest.fn().mockResolvedValue({
         message: {
           content: "THIS IS NOT JSON",
@@ -141,6 +150,9 @@ describe("generateSchedule", () => {
     Event.find.mockResolvedValue([]);
 
     global.fetch.mockResolvedValue({
+  ok: true,
+  status: 200,
+  text: jest.fn().mockResolvedValue(""),
       json: jest.fn().mockResolvedValue({
         message: {
           content: JSON.stringify({ wrongKey: [] }),
