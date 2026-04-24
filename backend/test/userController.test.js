@@ -556,3 +556,192 @@ describe("updateNotificationSettings", () => {
         expect(res.status).toHaveBeenCalledWith(500);
     });
 });
+
+// updatePrivacy tests
+describe("updatePrivacy", () => {
+  const { updatePrivacy } = require("../controllers/userController.js");
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("updates profile visibility successfully", async () => {
+    const fakeUser = {
+      _id: "user123",
+      updateOne: jest.fn().mockResolvedValue({}),
+    };
+    User.findById.mockResolvedValue(fakeUser);
+
+    const req = mockReq({ body: { profileVisibility: "friends" } });
+    const res = mockRes();
+
+    await updatePrivacy(req, res);
+
+    expect(fakeUser.updateOne).toHaveBeenCalledWith({ profileVisibility: "friends" });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Privacy settings updated.",
+      profileVisibility: "friends",
+    });
+  });
+
+  test("accepts all three valid visibility options", async () => {
+    const validOptions = ["public", "friends", "hidden"];
+
+    for (const option of validOptions) {
+      const fakeUser = {
+        _id: "user123",
+        updateOne: jest.fn().mockResolvedValue({}),
+      };
+      User.findById.mockResolvedValue(fakeUser);
+
+      const req = mockReq({ body: { profileVisibility: option } });
+      const res = mockRes();
+
+      await updatePrivacy(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Privacy settings updated.",
+        profileVisibility: option,
+      });
+    }
+  });
+
+  test("returns 400 for an invalid visibility option", async () => {
+    const req = mockReq({ body: { profileVisibility: "everyone" } });
+    const res = mockRes();
+
+    await updatePrivacy(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid visibility option." });
+  });
+
+  test("does not call findById when visibility option is invalid", async () => {
+    const req = mockReq({ body: { profileVisibility: "invalid" } });
+    const res = mockRes();
+
+    await updatePrivacy(req, res);
+
+    expect(User.findById).not.toHaveBeenCalled();
+  });
+
+  test("returns 404 when user is not found", async () => {
+    User.findById.mockResolvedValue(null);
+
+    const req = mockReq({ body: { profileVisibility: "public" } });
+    const res = mockRes();
+
+    await updatePrivacy(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "User not found" });
+  });
+
+  test("returns 500 on unexpected error", async () => {
+    User.findById.mockRejectedValue(new Error("DB error"));
+
+    const req = mockReq({ body: { profileVisibility: "public" } });
+    const res = mockRes();
+
+    await updatePrivacy(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "Failed to update privacy settings." });
+  });
+});
+
+// searchUsers tests
+describe("searchUsers", () => {
+  const { searchUsers } = require("../controllers/userController.js");
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("returns empty array when no query string is provided", async () => {
+    const req = mockReq({ query: {} });
+    const res = mockRes();
+
+    await searchUsers(req, res);
+
+    expect(res.json).toHaveBeenCalledWith([]);
+    expect(User.find).not.toHaveBeenCalled();
+  });
+
+  test("returns matching public users", async () => {
+    FriendRequest.find.mockResolvedValue([]);
+    const fakeUsers = [
+      { _id: "abc", username: "alice", avatar: "" },
+      { _id: "def", username: "alicia", avatar: "" },
+    ];
+    User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ limit: jest.fn().mockResolvedValue(fakeUsers) }) });
+
+    const req = mockReq({ query: { q: "ali" } });
+    const res = mockRes();
+
+    await searchUsers(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(fakeUsers);
+  });
+
+  test("excludes the searching user from results", async () => {
+    FriendRequest.find.mockResolvedValue([]);
+    User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ limit: jest.fn().mockResolvedValue([]) }) });
+
+    const req = mockReq({ query: { q: "alice" } });
+    const res = mockRes();
+
+    await searchUsers(req, res);
+
+    const findArg = User.find.mock.calls[0][0];
+    expect(findArg._id).toEqual({ $ne: "user123" });
+  });
+
+  test("includes friends-only users when requester is a friend", async () => {
+    FriendRequest.find.mockResolvedValue([
+      { sender: { toString: () => "user123" }, recipient: { toString: () => "friend456" }, status: 1 },
+    ]);
+
+    const fakeUsers = [{ _id: "friend456", username: "friendUser", avatar: "" }];
+    User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ limit: jest.fn().mockResolvedValue(fakeUsers) }) });
+
+    const req = mockReq({ query: { q: "friend" } });
+    const res = mockRes();
+
+    await searchUsers(req, res);
+
+    const findArg = User.find.mock.calls[0][0];
+    const friendsOnlyCondition = findArg.$or.find(
+      (c) => c.profileVisibility === "friends"
+    );
+    expect(friendsOnlyCondition._id.$in).toContain("friend456");
+    expect(res.json).toHaveBeenCalledWith(fakeUsers);
+  });
+
+  test("does not include hidden users in results", async () => {
+    FriendRequest.find.mockResolvedValue([]);
+    User.find.mockReturnValue({ select: jest.fn().mockReturnValue({ limit: jest.fn().mockResolvedValue([]) }) });
+
+    const req = mockReq({ query: { q: "ghost" } });
+    const res = mockRes();
+
+    await searchUsers(req, res);
+
+    const findArg = User.find.mock.calls[0][0];
+    // "hidden" should not appear as an allowed visibility option
+    const allowedVisibilities = findArg.$or.map((c) => c.profileVisibility).filter(Boolean);
+    expect(allowedVisibilities).not.toContain("hidden");
+  });
+
+  test("returns 500 on unexpected error", async () => {
+    FriendRequest.find.mockRejectedValue(new Error("DB error"));
+
+    const req = mockReq({ query: { q: "alice" } });
+    const res = mockRes();
+
+    await searchUsers(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "Failed to search users" });
+  });
+});
