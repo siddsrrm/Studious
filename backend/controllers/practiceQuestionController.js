@@ -320,26 +320,25 @@ exports.logPracticeQuestionAttempt = async (req, res) => {
 // POST /api/practice-questions/generate-mastery
 exports.generateMasteryPracticeTest = async (req, res) => {
   try {
-  const { studyPlanId, noteIds, numQuestions } = req.body || {};
+    const { studyPlanId, noteIds, numQuestions } = req.body || {};
 
     if (!studyPlanId) {
       return res.status(400).json({ message: "studyPlanId is required" });
     }
 
-    const providedNoteIds = Array.isArray(noteIds)
-      ? noteIds.filter(Boolean)
-      : [];
-
+    const providedNoteIds = Array.isArray(noteIds) ? noteIds.filter(Boolean) : [];
     const targetCount = Number.isFinite(Number(numQuestions)) ? Math.max(1, Number(numQuestions)) : 5;
 
-    // Check if there are any questions at all for this study plan
-    const anyCount = await PracticeQuestion.countDocuments({
-      ownerID: req.user.userId,
-      studyPlanId,
-    });
+    // 1. CRITICAL FIX: Scope all queries strictly to the requested notes
+    const baseQuery = { ownerID: req.user.userId, studyPlanId };
+    if (providedNoteIds.length > 0) {
+      baseQuery.generatedFromNoteId = { $in: providedNoteIds };
+    }
+
+    const anyCount = await PracticeQuestion.countDocuments(baseQuery);
     if (anyCount === 0) {
       return res.status(404).json({
-        message: "No practice questions found for this study plan. Generate a standard test first.",
+        message: "No practice questions found for this selection. Generate a standard test first.",
       });
     }
 
@@ -353,14 +352,14 @@ exports.generateMasteryPracticeTest = async (req, res) => {
           selected.push(d);
           selectedIds.add(key);
         }
-        if (selected.length >= targetCount) break;
+        // Limit how many target examples we feed the AI context window
+        if (selected.length >= targetCount) break; 
       }
     };
 
     // 1) Missed questions: correctAttempts < attempts
     const missed = await PracticeQuestion.find({
-      ownerID: req.user.userId,
-      studyPlanId,
+      ...baseQuery,
       $expr: { $lt: ["$correctAttempts", "$attempts"] },
     })
       .sort({ lastAttemptedAt: 1 })
@@ -368,46 +367,31 @@ exports.generateMasteryPracticeTest = async (req, res) => {
       .lean();
     addUnique(missed);
 
-    // 2) Unseen questions: attempts === 0
-    if (selected.length < targetCount) {
-      const unseen = await PracticeQuestion.find({
-        ownerID: req.user.userId,
-        studyPlanId,
-        attempts: 0,
-      })
-        .sort({ createdAt: 1 })
-        .limit(targetCount - selected.length)
-        .lean();
-      addUnique(unseen);
-    }
+  // IMPORTANT: Mastery means ONLY weaknesses. Do not pad with unseen questions.
 
-    // 3) Oldest attempted (or never attempted last)
-    if (selected.length < targetCount) {
+    // 2. CRITICAL FIX: Only fallback to "mastered" questions if the user 
+    // has ZERO missed or unseen questions. We no longer pad the array.
+    if (selected.length === 0) {
       const remaining = await PracticeQuestion.find({
-        ownerID: req.user.userId,
-        studyPlanId,
+        ...baseQuery,
         _id: { $nin: Array.from(selectedIds) },
       })
         .sort({ lastAttemptedAt: 1 })
-        .limit(targetCount - selected.length)
+        .limit(targetCount)
         .lean();
       addUnique(remaining);
     }
 
-    // Fetch notes content for context
-    // Note context is optional now:
-    // - If noteIds were provided, use them.
-    // - Else, derive notes from the selected target questions' generatedFromNoteId.
-    const derivedNoteIds = providedNoteIds.length
-      ? providedNoteIds
-      : Array.from(
-          new Set(
-            selected
-              .map((q) => q.generatedFromNoteId)
-              .filter(Boolean)
-              .map((id) => id.toString())
-          )
-        );
+    // 1. STRICT ISOLATION: Ignore frontend noteIds entirely for mastery.
+    // Only pull the exact notes linked to the specific questions the user missed.
+    const derivedNoteIds = Array.from(
+      new Set(
+        selected
+          .map((q) => q.generatedFromNoteId)
+          .filter(Boolean)
+          .map((id) => id.toString())
+      )
+    );
 
     const notes = derivedNoteIds.length
       ? await Note.find({
@@ -421,18 +405,22 @@ exports.generateMasteryPracticeTest = async (req, res) => {
       .join("\n\n---\n\n")
       .slice(0, 12000);
 
+    // 2. DYNAMIC COUNTING: Only ask for exactly as many questions as were missed.
+    const generationCount = selected.length;
+
     // Prompt engineering block
-  const prompt = `You are an expert educator and exam writer.
+    const prompt = `You are an expert educator and exam writer.
 
 Your task: generate an adaptive mastery practice test for a student.
 
 You are given:
-1) The study notes (context). If notes are empty, use the target questions only.
-2) A list of target questions the student struggled with or hasn't mastered.
+1) A list of target questions the student struggled with.
+2) The specific study notes those questions came from.
 
 CRITICAL REQUIREMENTS:
-- Generate EXACTLY ${targetCount} NEW questions.
-- These questions MUST be VARIATIONS of the target questions, testing the SAME underlying concepts but phrased differently.
+- Generate EXACTLY ${generationCount} NEW questions.
+- Create exactly ONE variation for each of the TARGET QUESTIONS provided below.
+- These questions MUST test the SAME underlying concepts but be phrased differently.
 - The student must not be able to answer by memorizing the previous wording.
 - Return ONLY strict JSON. No markdown. No explanations.
 
@@ -478,7 +466,7 @@ ${combinedNotes}
         ],
         format: "json",
         stream: false,
-        options: { temperature: 0.35 },
+        options: { temperature: 0.35, num_ctx: 8192 },
       }),
     });
 
@@ -495,41 +483,56 @@ ${combinedNotes}
     try {
       parsed = JSON.parse(content);
     } catch {
-      return res.status(500).json({
-        message: "Failed to parse AI response into JSON",
-        raw: content,
-      });
+      return res.status(500).json({ message: "Failed to parse AI response into JSON", raw: content });
     }
 
     const outQuestions = Array.isArray(parsed?.questions) ? parsed.questions : [];
-    if (outQuestions.length !== targetCount) {
+    if (outQuestions.length === 0) {
+      return res.status(500).json({ message: `AI returned ${outQuestions.length} questions; expected exactly ${generationCount}`, raw: parsed });
+    }
+
+    if (outQuestions.length !== generationCount) {
       return res.status(500).json({
-        message: `AI returned ${outQuestions.length} questions; expected exactly ${targetCount}`,
+        message: `AI returned ${outQuestions.length} questions; expected exactly ${generationCount}`,
         raw: parsed,
       });
     }
 
-    // Save generated mastery questions
-    const docsToSave = outQuestions.map((q) => {
-      const qt = q.questionType;
-      const isMC = qt === "multiple-choice";
+    // Map generated questions back to the source questions we selected.
+    // This preserves correct note provenance and prevents cross-note leakage.
+    const docsToSave = outQuestions.map((q, i) => {
+      const isMC = q.questionType === "multiple-choice";
+      let extractedAnswer = "";
+      if (isMC) {
+        if (Array.isArray(q.options) && q.correctIndex !== undefined && q.options[q.correctIndex]) {
+          extractedAnswer = q.options[q.correctIndex];
+        } else if (q.answer) {
+          extractedAnswer = q.answer;
+        }
+      } else {
+        extractedAnswer = q.answer;
+      }
+
       return {
         ownerID: req.user.userId,
         studyPlanId,
         questionType: isMC ? "multiple-choice" : "free-response",
-        question: q.question,
-        answer: isMC ? (q.options || [])[q.correctIndex] : q.answer,
-        options: isMC ? (q.options || []) : [],
-  generatedFromNoteId: (notes && notes[0] && notes[0]._id) ? notes[0]._id : undefined,
+        question: q.question || "AI generated a blank question",
+        answer: extractedAnswer || "AI failed to provide an answer", 
+        options: Array.isArray(q.options) ? q.options : [],
+        // Preserve originating note from the specific source question.
+        generatedFromNoteId: selected[i]?.generatedFromNoteId,
       };
     });
 
     const saved = await PracticeQuestion.insertMany(docsToSave);
+    
     return res.status(201).json({
       message: `Successfully generated ${saved.length} mastery questions`,
       questions: saved,
       sourceSelection: { missed: missed.length, selected: selected.length },
     });
+
   } catch (err) {
     console.error("[generate-mastery] Error:", err.message);
     return res.status(500).json({ message: "Internal server error", error: err.message });
