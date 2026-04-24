@@ -203,6 +203,12 @@ const genericUpload = multer({
 router.post("/file", protect, (req, res) => {
   genericUpload.single("file")(req, res, (err) => {
     if (err) {
+      console.error("Generic upload error:", err);
+
+      if (err.code === "LIMIT_FILE_SIZE" || err.message?.includes?.("large")) {
+        return res.status(413).json({ message: "File too large (max 500MB)" });
+      }
+
       return res.status(400).json({ message: "Upload failed" });
     }
 
@@ -212,7 +218,7 @@ router.post("/file", protect, (req, res) => {
 
     return res.json({
       filename: req.file.originalname,
-      fileUrl: `/uploads/${path.basename(req.file.path)}`, // or however you serve static files
+      fileUrl: `/data/assets/${path.basename(req.file.path)}`,
       size: req.file.size,
       mimeType: req.file.mimetype,
     });
