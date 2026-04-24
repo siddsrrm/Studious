@@ -100,6 +100,9 @@ async function sendAnalyticsReport() {
         
 
         for (const user of users) {
+            const preferredDay = user.notificationSettings.analyticsReportDay ?? 1;
+const todayDay = new Date().getDay();
+if (todayDay !== preferredDay) continue;
             const now = new Date();
             const monday = new Date(now);
             monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
@@ -162,14 +165,13 @@ async function sendAnalyticsReport() {
     }
 }
 
-// run every Monday at 8am
+// Change from weekly Monday-only to daily, then filter by user preference
 function startAnalyticsJob() {
-    cron.schedule("0 8 * * 1", () => {
+    cron.schedule("0 8 * * *", () => {
         console.log("Running analytics report job...");
         sendAnalyticsReport();
     });
 }
-
 //run every day at 8am
 function startReminderJob() {
     cron.schedule("0 8 * * *", () => {

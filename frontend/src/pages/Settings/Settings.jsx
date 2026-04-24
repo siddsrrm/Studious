@@ -537,6 +537,21 @@ function NotificationSection() {
   <option value="true">Enabled</option>
   <option value="false">Disabled</option>
 </select>
+<p className={styles.fieldLabel}>Preferred report day</p>
+<select
+  className={styles.input}
+  value={settings.analyticsReportDay ?? 1}
+  disabled={!settings.analyticsReportEnabled}
+  onChange={(e) => setSettings({ ...settings, analyticsReportDay: parseInt(e.target.value) })}
+>
+  <option value={1}>Monday</option>
+  <option value={2}>Tuesday</option>
+  <option value={3}>Wednesday</option>
+  <option value={4}>Thursday</option>
+  <option value={5}>Friday</option>
+  <option value={6}>Saturday</option>
+  <option value={0}>Sunday</option>
+</select>
 
       <button
         className={styles.button}
