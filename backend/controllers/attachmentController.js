@@ -46,12 +46,6 @@ exports.createAttachment = async (req, res) => {
       return res.status(400).json({ message: "taskId is required" });
     }
 
-    let data = {
-      ownerID: userId,
-      taskId,
-      type,
-    };
-
     const validTypes = ["link", "file"];
     if (!validTypes.includes(type)) {
       return res.status(400).json({ message: "Invalid attachment type" });
