@@ -147,7 +147,8 @@ exports.generatePracticeQuestions = async (req, res) => {
     console.log("Starting practice question generation...");
     console.log(`Type: ${questionType}, Count: ${numQuestions || "auto"}`);
 
-    if (!studyPlanId) return res.status(400).json({ message: "studyPlanId is required" });
+    if (!studyPlanId)
+      return res.status(400).json({ message: "studyPlanId is required" });
     if (!noteIds || !Array.isArray(noteIds) || noteIds.length === 0) {
       return res.status(400).json({ message: "noteIds array is required" });
     }
@@ -158,7 +159,8 @@ exports.generatePracticeQuestions = async (req, res) => {
     });
 
     console.log(`Fetched ${notes.length} note(s) from database`);
-    if (notes.length === 0) return res.status(404).json({ message: "No notes found" });
+    if (notes.length === 0)
+      return res.status(404).json({ message: "No notes found" });
 
     const combinedText = notes
       .map((note) => `Title: ${note.title}\n${note.content}`)
@@ -173,8 +175,9 @@ exports.generatePracticeQuestions = async (req, res) => {
     ### MANDATORY OUTPUT FORMAT:
     Return ONLY a JSON object. Do not include any other question types.
 
-    ${isMC ?
-        `// Format for Multiple Choice:
+    ${
+      isMC
+        ? `// Format for Multiple Choice:
     {
       "questions": [
         {
@@ -183,8 +186,8 @@ exports.generatePracticeQuestions = async (req, res) => {
           "correctIndex": 0
         }
       ]
-    }` :
-        `// Format for Free Response:
+    }`
+        : `// Format for Free Response:
     {
       "questions": [
         {
@@ -192,17 +195,22 @@ exports.generatePracticeQuestions = async (req, res) => {
           "answer": "Photosynthesis" 
         }
       ]
-    }`}
+    }`
+    }
 
     ### STRICT RULES:
     1. ONLY generate "${questionType}" questions. 
     2. Do NOT include a "freeResponseQuestions" key if asking for multiple-choice.
     3. Do NOT include a "multipleChoiceQuestions" key if asking for free-response.
     4. The root key must be "questions".
-    5. Generate exactly ${numQuestions || 3} items.${!isMC ? `
+    5. Generate exactly ${numQuestions || 3} items.${
+      !isMC
+        ? `
     6. FREE RESPONSE RULE 1: The "answer" MUST be a maximum of 2 words.
     7. FREE RESPONSE RULE 2: Focus ONLY on vocabulary terms, specific names, or key concepts. 
-    8. FREE RESPONSE RULE 3: Do NOT ask conceptual "how" or "why" questions. Only ask "what" or "who" questions that can be answered with a single term.` : ""}
+    8. FREE RESPONSE RULE 3: Do NOT ask conceptual "how" or "why" questions. Only ask "what" or "who" questions that can be answered with a single term.`
+        : ""
+    }
 
     ### Study Notes:
     """
@@ -216,12 +224,16 @@ exports.generatePracticeQuestions = async (req, res) => {
       body: JSON.stringify({
         model: process.env.OLLAMA_MODEL,
         messages: [
-          { role: "system", content: "You are a teacher who only communicates in raw JSON data structures." },
+          {
+            role: "system",
+            content:
+              "You are a teacher who only communicates in raw JSON data structures.",
+          },
           { role: "user", content: prompt },
         ],
         format: "json", // Hard requirement for valid JSON output
         stream: false,
-        options: { temperature: 0.3 } // Low temperature for higher accuracy
+        options: { temperature: 0.3 }, // Low temperature for higher accuracy
       }),
     });
 
@@ -254,30 +266,36 @@ exports.generatePracticeQuestions = async (req, res) => {
           generatedFromNoteId: notes[0]._id,
         };
 
-        console.log(`Parsed Question #${index + 1}: "${q.question.substring(0, 50)}..."`);
+        console.log(
+          `Parsed Question #${index + 1}: "${q.question.substring(0, 50)}..."`,
+        );
         return questionObj;
       });
 
-      if (generatedQuestions.length === 0) throw new Error("No questions found in JSON");
+      if (generatedQuestions.length === 0)
+        throw new Error("No questions found in JSON");
 
-      const savedQuestions = await PracticeQuestion.insertMany(generatedQuestions);
-      console.log(`Saved ${savedQuestions.length} questions to database. Done!\n`);
+      const savedQuestions =
+        await PracticeQuestion.insertMany(generatedQuestions);
+      console.log(
+        `Saved ${savedQuestions.length} questions to database. Done!\n`,
+      );
 
       res.status(201).json({
         message: `Successfully generated ${savedQuestions.length} practice questions`,
         questions: savedQuestions,
       });
-
     } catch (parseError) {
       console.error("Failed to parse AI JSON:", content);
       return res.status(500).json({
         message: "Failed to parse AI response into valid questions",
-        raw: content
+        raw: content,
       });
     }
-
   } catch (err) {
     console.error("Error generating practice questions:", err.message);
-    res.status(500).json({ message: "Internal server error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
   }
 };

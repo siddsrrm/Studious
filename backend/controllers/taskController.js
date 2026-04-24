@@ -50,7 +50,9 @@ exports.createTask = async (req, res) => {
 
     res.status(201).json(task);
   } catch (err) {
-    res.status(500).json({ message: "Error creating task", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error creating task", error: err.message });
   }
 };
 
@@ -62,12 +64,12 @@ exports.updateTask = async (req, res) => {
     if (task.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
 
-    const wasCompleted = task.completed
+    const wasCompleted = task.completed;
     //use model method to update task
     const updated = await task.updateTask(req.body);
 
     if (!wasCompleted && req.body.completed === true) {
-      checkTaskAchievements(req.user.userId).catch(console.error)
+      checkTaskAchievements(req.user.userId).catch(console.error);
     }
 
     // update progress tracker
@@ -200,7 +202,6 @@ exports.deleteSubTask = async (req, res) => {
       await tracker.recalculateAllProgress();
     }
     await tracker.updateTaskProgress(task.studyPlanID);
-
 
     res.json(task);
   } catch (err) {

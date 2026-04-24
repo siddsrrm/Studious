@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Task from "./Task.jsx";
 import "../css/ToDoList.css";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -12,6 +16,9 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
+  const [generatingSchedule, setGeneratingSchedule] = useState(false);
+  const [draftSchedule, setDraftSchedule] = useState([]);
+  const [showDraft, setShowDraft] = useState(false);
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -51,6 +58,15 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     const progress = total === 0 ? 100 : (completed / total) * 100;
     if (onProgressChange) onProgressChange(progress);
   }, [tasks]);
+
+  // Disable background while modal is open
+  useEffect(() => {
+    if (showDraft) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [showDraft]);
 
   const handleAddTask = async ({ title, description, priority, dueDate }) => {
     try {
@@ -97,6 +113,90 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     setFilterPriority("all");
     setFilterDueDateFrom("");
     setFilterDueDateTo("");
+  };
+
+  const handleGenerateSchedule = async () => {
+    if (!token) {
+      console.error("No auth token");
+      return;
+    }
+
+    if (!studyPlanId || generatingSchedule) return;
+
+    setGeneratingSchedule(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${API}/schedule/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ studyPlanId }),
+      });
+
+      if (!res.ok) {
+        setError("Failed to generate schedule");
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Generated schedule:", data);
+
+      setDraftSchedule(
+        data.map((e, idx) => ({
+          id: crypto.randomUUID(),
+          title: e.title,
+          start: new Date(e.start),
+          end: new Date(e.end),
+          editable: true,
+        })),
+      );
+
+      setShowDraft(true);
+    } catch {
+      setError("Failed to generate schedule");
+    } finally {
+      setGeneratingSchedule(false);
+    }
+  };
+
+  const handleConfirmSchedule = async () => {
+    try {
+      const requests = draftSchedule.map((e) =>
+        fetch(`${API}/events`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: e.title,
+            start: new Date(e.start).toISOString(),
+            end: new Date(e.end).toISOString(),
+          }),
+        }),
+      );
+
+      const results = await Promise.all(requests);
+
+      const failed = results.find((r) => !r.ok);
+      if (failed) {
+        setError("Some events failed to save");
+        return;
+      }
+
+      setShowDraft(false);
+      setDraftSchedule([]);
+    } catch (err) {
+      setError("Failed to save schedule");
+    }
+  };
+
+  const handleDiscardSchedule = () => {
+    setDraftSchedule([]);
+    setShowDraft(false);
   };
 
   return (
@@ -147,6 +247,23 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           </ul>
         )}
         <AddTaskForm onAddTask={handleAddTask} />
+        {tasks.length > 0 && (
+          <button
+            onClick={handleGenerateSchedule}
+            disabled={generatingSchedule}
+            className="generate-btn"
+          >
+            {generatingSchedule ? "Generating..." : "Generate Schedule"}
+          </button>
+        )}
+        {showDraft && (
+          <ScheduleModal
+            draftSchedule={draftSchedule}
+            setDraftSchedule={setDraftSchedule}
+            onConfirm={handleConfirmSchedule}
+            onDiscard={handleDiscardSchedule}
+          />
+        )}
       </div>
       <div className="tasks-container">
         {filteredTasks.map((task) => (
@@ -204,6 +321,179 @@ const AddTaskForm = ({ onAddTask }) => {
       />
       <button type="submit">Add Task</button>
     </form>
+  );
+};
+
+const ScheduleModal = ({
+  draftSchedule,
+  setDraftSchedule,
+  onConfirm,
+  onDiscard,
+  onEditEvent,
+}) => {
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedStart, setEditedStart] = useState("");
+  const [editedEnd, setEditedEnd] = useState("");
+
+  const toDatetimeLocal = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingEvent) return;
+
+    setDraftSchedule((prev) =>
+      prev.map((ev) =>
+        ev.id === editingEvent.id
+          ? {
+              ...ev,
+              title: editedTitle,
+              start: new Date(editedStart),
+              end: new Date(editedEnd),
+            }
+          : ev,
+      ),
+    );
+
+    setEditingEvent(null);
+    setEditedTitle("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEvent(null);
+    setEditedTitle("");
+  };
+
+  return (
+    <>
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3>Review Draft Schedule</h3>
+            <p className="modal-subtext">
+              Drag, resize, or click events to edit before saving.
+            </p>
+          </div>
+
+          <div className="calendar-wrapper">
+            <FullCalendar
+              height="70vh"
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="timeGridWeek"
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              editable={true}
+              selectable={true}
+              events={draftSchedule}
+              eventOverlap={false}
+              slotDuration="00:15:00"
+              eventTimeFormat={{
+                hour: "numeric",
+                minute: "2-digit",
+                meridiem: "short",
+              }}
+              eventDrop={(info) => {
+                setDraftSchedule((prev) =>
+                  prev.map((ev) =>
+                    ev.id === info.event.id
+                      ? {
+                          ...ev,
+                          start: info.event.start,
+                          end: info.event.end,
+                        }
+                      : ev,
+                  ),
+                );
+              }}
+              eventResize={(info) => {
+                setDraftSchedule((prev) =>
+                  prev.map((ev) =>
+                    ev.id === info.event.id
+                      ? {
+                          ...ev,
+                          start: info.event.start,
+                          end: info.event.end,
+                        }
+                      : ev,
+                  ),
+                );
+              }}
+              eventClick={(info) => {
+                info.jsEvent.preventDefault();
+                setEditingEvent({
+                  id: info.event.id,
+                });
+                setEditedTitle(info.event.title);
+                setEditedStart(info.event.start);
+                setEditedEnd(info.event.end);
+              }}
+            />
+          </div>
+
+          <div className="modal-actions">
+            <button className="secondary" onClick={onDiscard}>
+              Discard
+            </button>
+            <button className="primary" onClick={onConfirm}>
+              Confirm Schedule
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {editingEvent && (
+        <div className="modal-overlay">
+          <div className="modal-content small">
+            <h2 className="text-lg font-semibold text-gray-800">Edit Event</h2>
+
+            <div className="modal-field">
+              <label>Title</label>
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Start</label>
+              <input
+                type="datetime-local"
+                value={toDatetimeLocal(editedStart)}
+                onChange={(e) => setEditedStart(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>End</label>
+              <input
+                type="datetime-local"
+                value={toDatetimeLocal(editedEnd)}
+                onChange={(e) => setEditedEnd(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-actions">
+              <button className="secondary" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+
+              <button className="primary" onClick={handleSaveEdit}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
