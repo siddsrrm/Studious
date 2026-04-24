@@ -5,7 +5,7 @@
   margin: 20px auto;
   width: 85%;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
-  color: #0f172a; 
+  color: #0f172a;
 }
 
 .todolist-card h2 {
@@ -21,6 +21,199 @@
 .todolist-card li {
   padding: 6px 0;
   color: #334155;
+}
+
+.generate-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #6366f1;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 14px;
+}
+
+.generate-btn:hover {
+  background-color: #4f46e5;
+}
+
+.generate-btn:disabled {
+  background-color: #c7d2fe;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* =========================
+   MODAL BACKDROP
+========================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* =========================
+   MODAL BASE
+========================= */
+.modal-content {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  width: 90%;
+  max-width: 1000px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Small modal (edit event) */
+.modal-content.small {
+  max-width: 420px;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* =========================
+   MODAL HEADER TEXT
+========================= */
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.modal-subtext {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* =========================
+   CALENDAR WRAPPER
+========================= */
+.calendar-wrapper {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* FullCalendar styling */
+.fc {
+  font-family: inherit;
+}
+
+.fc-toolbar-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.fc-button {
+  background-color: #6366f1 !important;
+  border: none !important;
+}
+
+.fc-button:hover {
+  background-color: #4f46e5 !important;
+}
+
+.fc-event {
+  border-radius: 6px;
+  padding: 2px;
+}
+
+/* =========================
+   MODAL INPUTS (IMPORTANT FIX)
+========================= */
+.modal-content input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #fff;
+  margin-top: 6px;
+}
+
+.modal-content input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* =========================
+   MODAL FIELDS
+========================= */
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-field label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* =========================
+   MODAL ACTION BUTTONS
+========================= */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Base button reset */
+.modal-actions button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+/* Primary button (blue) */
+.modal-actions .primary {
+  background-color: #6366f1;
+  color: white;
+}
+
+.modal-actions .primary:hover {
+  background-color: #4f46e5;
+}
+
+/* Secondary button (gray) */
+.modal-actions .secondary {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.modal-actions .secondary:hover {
+  background-color: #cbd5e1;
 }
 
 .tasks-container {
