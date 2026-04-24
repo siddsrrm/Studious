@@ -70,15 +70,11 @@ const Attachments = ({ taskId, token }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          taskId: taskId,
-          type,
-          url,
-          filename,
-          fileUrl,
-          size,
-          mimeType,
-        }),
+        body: JSON.stringify(
+          type === "link"
+            ? { taskId, type, url }
+            : { taskId, type, filename, fileUrl, size, mimeType },
+        ),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -119,15 +115,11 @@ const Attachments = ({ taskId, token }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          taskId: taskId,
-          type,
-          url,
-          filename,
-          fileUrl,
-          size,
-          mimeType,
-        }),
+        body: JSON.stringify(
+          type === "link"
+            ? { taskId, type, url }
+            : { taskId, type, filename, fileUrl, size, mimeType },
+        ),
       });
       const data = await res.json();
       if (!res.ok) {

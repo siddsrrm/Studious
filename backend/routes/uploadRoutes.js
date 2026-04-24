@@ -3,8 +3,7 @@ const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const protect = require("../middleware/authMiddleware");
 const ffmpeg = require("fluent-ffmpeg");
-const whisper =
-  require("whisper-node").default || require("whisper-node").whisper;
+const whisper = require("whisper-node").default || require("whisper-node").whisper;
 const path = require("path");
 const fs = require("fs");
 

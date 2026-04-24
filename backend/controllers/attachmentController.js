@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs/promises");
 const Attachment = require("../models/Attachment");
 
 // Helper to safely get user ID
@@ -31,15 +33,24 @@ exports.getAttachments = async (req, res) => {
 };
 
 exports.createAttachment = async (req, res) => {
+  let fileName;
+  let filePath;
+
   try {
     const userId = getUserId(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { taskId, type, url, filename, fileUrl, size, mimeType } = req.body;
+    const { taskId, type, url } = req.body;
 
     if (!taskId) {
       return res.status(400).json({ message: "taskId is required" });
     }
+
+    let data = {
+      ownerID: userId,
+      taskId,
+      type,
+    };
 
     const validTypes = ["link", "file"];
     if (!validTypes.includes(type)) {
@@ -67,32 +78,36 @@ exports.createAttachment = async (req, res) => {
           message: 'Invalid URL format for attachment type "link"',
         });
       }
+
+      data.url = url;
     }
 
     if (type === "file") {
-      if (!filename) {
+      if (!req.file) {
         return res.status(400).json({
-          message: 'filename required for attachment type "file"',
+          message: "File is required",
         });
       }
 
-      if (!fileUrl) {
+      // Duplicate check
+      const existing = await Attachment.findOne({
+        ownerID: userId,
+        taskId,
+        type: "file",
+        filename: req.file.originalname,
+        size: req.file.size,
+      });
+
+      if (existing) {
         return res.status(400).json({
-          message: 'fileUrl required for attachment type "file"',
+          message: "This file already exists for this task",
         });
       }
 
-      if (size === undefined) {
-        return res.status(400).json({
-          message: 'size required for attachment type "file"',
-        });
-      }
+      fileName = `${Date.now()}-${req.file.originalname}`;
+      filePath = path.join(__dirname, "../uploads", fileName);
 
-      if (!mimeType) {
-        return res.status(400).json({
-          message: 'mimeType required for attachment type "file"',
-        });
-      }
+      await fs.writeFile(filePath, req.file.buffer);
 
       if (fileUrl.startsWith("http")) {
         try {
@@ -111,9 +126,16 @@ exports.createAttachment = async (req, res) => {
     }
 
     const attachment = await Attachment.create(data);
-
     res.status(201).json(attachment);
   } catch (err) {
+    try {
+      await fs.unlink(filePath);
+      console.log("[deleteAttachment] File deleted:", filePath);
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        console.error("[deleteAttachment] File deletion error:", err);
+      }
+    }
     res.status(500).json({
       message: "Error creating attachment",
       error: err.message,
@@ -136,7 +158,40 @@ exports.updateAttachment = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    if (req.body.type === "file") {
+      const { fileUrl, filename, size, mimeType } = req.body;
+
+      if (!fileUrl || !filename || !size || !mimeType) {
+        return res.status(400).json({ message: "Incomplete file data" });
+      }
+    }
+
+    // Old file info
+    const oldFileUrl = attachment.fileUrl;
+    const oldType = attachment.type;
+
     const updated = await attachment.updateAttachment(req.body);
+
+    // Cleanup old file if either:
+    // - type changed to link, or
+    // - fileUrl changed (new file)
+    if (
+      oldType === "file" &&
+      oldFileUrl &&
+      (updated.type !== "file" || updated.fileUrl !== oldFileUrl)
+    ) {
+      try {
+        const fileName = path.basename(oldFileUrl);
+        const filePath = path.join(__dirname, "../uploads", fileName);
+
+        if (fs.existsSync(filePath)) {
+          await fs.unlink(filePath);
+          console.log("[updateAttachment] Old file deleted:", filePath);
+        }
+      } catch (err) {
+        console.error("[updateAttachment] Cleanup error:", err);
+      }
+    }
 
     res.json(updated);
   } catch (err) {
@@ -146,9 +201,6 @@ exports.updateAttachment = async (req, res) => {
     });
   }
 };
-
-const path = require("path");
-const fs = require("fs");
 
 exports.deleteAttachment = async (req, res) => {
   try {
@@ -172,7 +224,7 @@ exports.deleteAttachment = async (req, res) => {
         const filePath = path.join(__dirname, "../uploads", fileName);
 
         if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+          await fs.unlink(filePath);
           console.log("[deleteAttachment] File deleted:", filePath);
         } else {
           console.warn("[deleteAttachment] File not found on disk:", filePath);
