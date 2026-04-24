@@ -62,6 +62,7 @@ const HomePage = () => {
   }, []);
 
   // ----------------------------- GPA calculation -----------------------------
+  const [gradeRefreshKey, setGradeRefreshKey] = useState(0);
   const [gpaError, setGpaError] = useState(false);
   const [gpa, setGpa] = useState(0);
   const [overallGrades, setOverallGrades] = useState({});
@@ -110,7 +111,7 @@ const HomePage = () => {
 
     fetchAllGrades();
     setAllCreditHours(creditHoursMap);
-  }, [studyPlans]);
+  }, [studyPlans, gradeRefreshKey]);
 
   useEffect(() => {
     let totalPoints = 0;
@@ -272,6 +273,7 @@ const HomePage = () => {
 
   const handleBack = () => {
     setActivePlanId(null);
+    setGradeRefreshKey((k) => k + 1);
   };
 
   // Renders study plan interface
