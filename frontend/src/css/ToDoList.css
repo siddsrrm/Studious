@@ -45,6 +45,24 @@
   cursor: not-allowed;
 }
 
+.upload-assignment-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #a5b4fc;
+  background-color: #eef2ff;
+  color: #3730a3;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.upload-assignment-btn:hover {
+  background-color: #e0e7ff;
+  border-color: #818cf8;
+}
+
 /* =========================
    MODAL BACKDROP
 ========================= */
