@@ -15,7 +15,8 @@ exports.getMessages = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
   try {
-    const { conversationId, content } = req.body
+    const { conversationId } = req.params
+    const { content } = req.body
     const senderId = req.user.userId
 
     const newMsg = await Message.create({ conversationId, senderId, content })

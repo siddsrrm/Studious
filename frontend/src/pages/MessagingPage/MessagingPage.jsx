@@ -86,6 +86,21 @@ function MessagingPage() {
     selectConversation(convo)
   }
 
+  const sendMessage = async () => {
+    if (!inputValue.trim() || !selectedConvo) return
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/conversations/${selectedConvo._id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ content: inputValue })
+    })
+
+    const msg = await res.json()
+    setMessages(prev => [...prev, msg])
+    setInputValue("")
+  }
+
+
   return (
     <div className={styles.page}>
       <div className={styles.topBar}>
@@ -176,7 +191,7 @@ function MessagingPage() {
                   : messages.map(msg => (
                       <div
                         key={msg._id}
-                        className={`${styles.messageBubble} ${msg.senderId === myUserId ? styles.messageSent : styles.messageReceived}`}
+                        className={`${styles.messageBubble} ${msg.senderId?.toString() === myUserId ? styles.messageSent : styles.messageReceived}`}
                       >
                         {msg.content}
                       </div>
@@ -191,8 +206,9 @@ function MessagingPage() {
                   placeholder="Type a message..."
                   value={inputValue}
                   onChange={e => setInputValue(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && sendMessage()}
                 />
-                <button className={styles.sendButton}>Send</button>
+                <button className={styles.sendButton} onClick={sendMessage}>Send</button>
               </div>
             </>
           )}
