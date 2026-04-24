@@ -19,6 +19,10 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [generatingSchedule, setGeneratingSchedule] = useState(false);
   const [draftSchedule, setDraftSchedule] = useState([]);
   const [showDraft, setShowDraft] = useState(false);
+  const [showAssignmentUpload, setShowAssignmentUpload] = useState(false);
+  const [assignmentFile, setAssignmentFile] = useState(null);
+  const [uploadingAssignment, setUploadingAssignment] = useState(false);
+  const [assignmentUploadError, setAssignmentUploadError] = useState("");
 
   const filteredTasks = tasks.filter((task) => {
     if (filterPriority !== "all" && task.priority !== filterPriority)
@@ -162,6 +166,59 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     }
   };
 
+  const handleUploadAssignment = async () => {
+    setAssignmentUploadError("");
+
+    if (!token) {
+      setAssignmentUploadError(
+        "Please log in to upload an assignment document.",
+      );
+      return;
+    }
+
+    if (!assignmentFile) {
+      setAssignmentUploadError("Please select a PDF document.");
+      return;
+    }
+
+    setUploadingAssignment(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", assignmentFile);
+      formData.append("studyPlanId", studyPlanId);
+
+      const res = await fetch(`${API}/tasks/generate-from-document`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setAssignmentUploadError(
+          data.message || "Failed to generate tasks from assignment document.",
+        );
+        return;
+      }
+
+      const createdTasks = Array.isArray(data.tasks) ? data.tasks : [];
+      if (createdTasks.length > 0) {
+        setTasks((prev) => [...prev, ...createdTasks]);
+      }
+
+      setShowAssignmentUpload(false);
+      setAssignmentFile(null);
+    } catch {
+      setAssignmentUploadError("Network error. Please try again.");
+    } finally {
+      setUploadingAssignment(false);
+    }
+  };
+
   const handleConfirmSchedule = async () => {
     try {
       const requests = draftSchedule.map((e) =>
@@ -247,21 +304,53 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           </ul>
         )}
         <AddTaskForm onAddTask={handleAddTask} />
-        {tasks.length > 0 && (
+        <div
+          style={{
+            marginTop: "1rem",
+            display: "flex",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+          }}
+        >
           <button
-            onClick={handleGenerateSchedule}
-            disabled={generatingSchedule}
-            className="generate-btn"
+            type="button"
+            className="upload-assignment-btn"
+            onClick={() => setShowAssignmentUpload(true)}
           >
-            {generatingSchedule ? "Generating..." : "Generate Schedule"}
+            Upload Assignment PDF
           </button>
-        )}
+          {tasks.length > 0 && (
+            <button
+              onClick={handleGenerateSchedule}
+              disabled={generatingSchedule}
+              className="generate-btn"
+              type="button"
+            >
+              {generatingSchedule ? "Generating..." : "Generate Schedule"}
+            </button>
+          )}
+        </div>
         {showDraft && (
           <ScheduleModal
             draftSchedule={draftSchedule}
             setDraftSchedule={setDraftSchedule}
             onConfirm={handleConfirmSchedule}
             onDiscard={handleDiscardSchedule}
+          />
+        )}
+        {showAssignmentUpload && (
+          <AssignmentUploadModal
+            file={assignmentFile}
+            setFile={setAssignmentFile}
+            loading={uploadingAssignment}
+            error={assignmentUploadError}
+            onClose={() => {
+              if (!uploadingAssignment) {
+                setShowAssignmentUpload(false);
+                setAssignmentUploadError("");
+              }
+            }}
+            onSubmit={handleUploadAssignment}
           />
         )}
       </div>
@@ -494,6 +583,62 @@ const ScheduleModal = ({
         </div>
       )}
     </>
+  );
+};
+
+const AssignmentUploadModal = ({
+  file,
+  setFile,
+  loading,
+  error,
+  onClose,
+  onSubmit,
+}) => {
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Upload Assignment PDF</h3>
+          <p className="modal-subtext">
+            Upload a PDF assignment document and generate tasks for the current
+            to-do list.
+          </p>
+        </div>
+
+        <div className="modal-field">
+          <label htmlFor="assignment-upload">Assignment PDF</label>
+          <input
+            id="assignment-upload"
+            type="file"
+            accept="application/pdf,.pdf"
+            aria-label="Assignment PDF"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+          />
+          <p className="modal-subtext">PDF only, up to 20MB.</p>
+        </div>
+
+        {error && <p style={{ color: "#b91c1c" }}>{error}</p>}
+
+        <div className="modal-actions">
+          <button
+            className="secondary"
+            onClick={onClose}
+            disabled={loading}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="primary"
+            onClick={onSubmit}
+            disabled={loading || !file}
+            type="button"
+          >
+            {loading ? "Generating..." : "Generate Tasks"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

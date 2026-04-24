@@ -1,13 +1,13 @@
 const taskController = require("../controllers/taskController");
 const Task = require("../models/Task");
 const ProgressTracker = require("../models/ProgressTracker");
-const { checkTaskAchievements } = require("../services/achievementService");
+const pdfParse = require("pdf-parse");
 
 jest.mock("../models/Task");
 jest.mock("../models/ProgressTracker");
-jest.mock("../services/achievementService");
+jest.mock("pdf-parse");
 
-// Mock global fetch for Ollama calls
+// Mock global fetch for AI calls
 global.fetch = jest.fn();
 
 const makeRes = () => ({
@@ -17,7 +17,7 @@ const makeRes = () => ({
 
 const USER_ID = "user123";
 
-describe("taskController Tests", () => {
+describe("taskController - Document Generation", () => {
   let res;
   let mockTracker;
 
@@ -25,136 +25,151 @@ describe("taskController Tests", () => {
     res = makeRes();
     jest.clearAllMocks();
 
-    // Default Mock for ProgressTracker
+    // Mock ProgressTracker for syncTaskProgress
     mockTracker = {
       updateTaskProgress: jest.fn().mockResolvedValue(true),
       recalculateAllProgress: jest.fn().mockResolvedValue(true),
     };
     ProgressTracker.findOne.mockResolvedValue(mockTracker);
-    ProgressTracker.create.mockResolvedValue(mockTracker);
 
-    // Set env variables for Ollama
     process.env.OLLAMA_URL = "http://localhost:11434/api/chat";
     process.env.OLLAMA_MODEL = "phi3";
   });
 
-  // ------------------- updateTask (Achievement Logic) -------------------
-  describe("updateTask achievements", () => {
-    test("triggers achievements when task moves from incomplete to complete", async () => {
-      const mockTask = {
-        _id: "t1",
-        ownerID: { toString: () => USER_ID },
-        completed: false,
-        studyPlanID: "plan1",
-        updateTask: jest.fn().mockResolvedValue({ _id: "t1", completed: true }),
-      };
-      Task.findById.mockResolvedValue(mockTask);
-      checkTaskAchievements.mockResolvedValue({});
+  describe("generateTasksFromAssignmentDocument", () => {
+    test("returns 400 if studyPlanId is missing", async () => {
+      const req = { body: {}, user: { userId: USER_ID } };
+      await taskController.generateTasksFromAssignmentDocument(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "studyPlanId is required" }),
+      );
+    });
 
+    test("returns 400 if no file is uploaded", async () => {
       const req = {
-        params: { id: "t1" },
-        body: { completed: true },
+        body: { studyPlanId: "plan1" },
         user: { userId: USER_ID },
+        file: null,
       };
-
-      await taskController.updateTask(req, res);
-
-      expect(checkTaskAchievements).toHaveBeenCalledWith(USER_ID);
-      expect(mockTracker.updateTaskProgress).toHaveBeenCalledWith("plan1");
-    });
-  });
-
-  // ------------------- generateTaskBreakdown (AI) -------------------
-  describe("generateTaskBreakdown", () => {
-    test("returns 404 if task doesn't exist", async () => {
-      Task.findById.mockResolvedValue(null);
-      const req = { params: { id: "t1" }, user: { userId: USER_ID } };
-
-      await taskController.generateTaskBreakdown(req, res);
-      expect(res.status).toHaveBeenCalledWith(404);
+      await taskController.generateTasksFromAssignmentDocument(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "PDF file is required" }),
+      );
     });
 
-    test("successfully parses valid AI JSON response", async () => {
-      const mockTask = {
-        _id: "t1",
-        ownerID: { toString: () => USER_ID },
-        title: "Clean Kitchen",
-        description: "Deep clean",
-      };
-      Task.findById.mockResolvedValue(mockTask);
+    test("successfully parses PDF and inserts tasks from AI response", async () => {
+      // 1. Mock PDF Text Extraction
+      pdfParse.mockResolvedValue({
+        text: "Assignment: Build a React App. Due Oct 1st.",
+      });
 
-      // Mock successful Ollama response
+      // 2. Mock AI Response
       const aiResponse = {
         message: {
           content: JSON.stringify({
-            subtasks: [
-              { title: "Wash dishes", description: "Use soap" },
-              { title: "Mop floor" },
+            tasks: [
+              {
+                title: "Setup Project",
+                priority: "high",
+                dueDate: "2026-10-01T23:59:00Z",
+              },
+              { title: "Implement Auth", priority: "medium" },
             ],
           }),
         },
       };
-
       global.fetch.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(aiResponse),
       });
 
-      const req = { params: { id: "t1" }, user: { userId: USER_ID } };
-      await taskController.generateTaskBreakdown(req, res);
+      // 3. Mock Database Insertion
+      const mockCreatedTasks = [
+        { _id: "1", title: "Setup Project" },
+        { _id: "2", title: "Implement Auth" },
+      ];
+      Task.insertMany.mockResolvedValue(mockCreatedTasks);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          subtasks: expect.arrayContaining([
-            expect.objectContaining({ title: "Wash dishes" }),
-          ]),
-        }),
+      const req = {
+        body: { studyPlanId: "plan1", maxTasks: "5" },
+        user: { userId: USER_ID },
+        file: { buffer: Buffer.from("fake pdf"), originalname: "hw.pdf" },
+      };
+
+      await taskController.generateTasksFromAssignmentDocument(req, res);
+
+      // Verify PDF was parsed
+      expect(pdfParse).toHaveBeenCalledWith(req.file.buffer);
+
+      // Verify AI was called with document text
+      expect(global.fetch).toHaveBeenCalled();
+
+      // Verify DB interaction
+      expect(Task.insertMany).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ title: "Setup Project", priority: "high" }),
+        ]),
       );
-    });
 
-    test("returns 502 if Ollama service fails", async () => {
-      Task.findById.mockResolvedValue({
-        _id: "t1",
-        ownerID: { toString: () => USER_ID },
-      });
-
-      global.fetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        text: jest.fn().mockResolvedValue("Internal Server Error"),
-      });
-
-      const req = { params: { id: "t1" }, user: { userId: USER_ID } };
-      await taskController.generateTaskBreakdown(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(502);
+      // Verify Response
+      expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        message: "AI service request failed",
+        message: "Created 2 tasks",
+        tasks: mockCreatedTasks,
       });
     });
 
-    test("returns 500 if AI returns invalid JSON", async () => {
-      Task.findById.mockResolvedValue({
-        _id: "t1",
-        ownerID: { toString: () => USER_ID },
-      });
-
+    test("returns 500 if AI returns no valid tasks", async () => {
+      pdfParse.mockResolvedValue({ text: "Empty document" });
       global.fetch.mockResolvedValue({
         ok: true,
-        json: jest
-          .fn()
-          .mockResolvedValue({ message: { content: "Not JSON at all" } }),
+        json: jest.fn().mockResolvedValue({
+          message: { content: JSON.stringify({ tasks: [] }) },
+        }),
       });
 
-      const req = { params: { id: "t1" }, user: { userId: USER_ID } };
-      await taskController.generateTaskBreakdown(req, res);
+      const req = {
+        body: { studyPlanId: "plan1" },
+        user: { userId: USER_ID },
+        file: { buffer: Buffer.from("fake pdf") },
+      };
 
+      await taskController.generateTasksFromAssignmentDocument(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "Failed to parse AI response into subtasks",
+          message: "Failed to parse AI response into tasks",
         }),
       );
+    });
+
+    test("handles normalizePriority defaulting to medium", async () => {
+      pdfParse.mockResolvedValue({ text: "Content" });
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          message: {
+            content: JSON.stringify({
+              tasks: [{ title: "Task", priority: "super-urgent" }],
+            }),
+          },
+        }),
+      });
+      Task.insertMany.mockResolvedValue([{ title: "Task" }]);
+
+      const req = {
+        body: { studyPlanId: "plan1" },
+        user: { userId: USER_ID },
+        file: { buffer: Buffer.from("pdf") },
+      };
+
+      await taskController.generateTasksFromAssignmentDocument(req, res);
+
+      // Check that the task sent to insertMany has "medium" priority
+      const insertedTasks = Task.insertMany.mock.calls[0][0];
+      expect(insertedTasks[0].priority).toBe("medium");
     });
   });
 });
