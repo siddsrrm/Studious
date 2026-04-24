@@ -18,7 +18,7 @@ const conversationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 })
 
-// prevent duplicate conversations between the same pair of users
-conversationSchema.index({ participants: 1 }, { unique: true })
+// index for fast lookups by participant
+conversationSchema.index({ participants: 1 })
 
 module.exports = mongoose.model("Conversation", conversationSchema)
