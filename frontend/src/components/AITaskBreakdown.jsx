@@ -69,10 +69,16 @@ const AITaskBreakdown = ({ taskObj, onAdd }) => {
                 <div style={{ fontSize: 13 }}>{s.description}</div>
               )}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button onClick={() => handleAdd(s)}>Add</button>
+                <button onClick={() => handleAdd(s)}>Accept</button>
                 <button
                   onClick={() => handleReject(i)}
-                  style={{ backgroundColor: "#e53e3e", color: "white", border: "none", padding: "6px 10px", borderRadius: 4 }}
+                  style={{
+                    backgroundColor: "#e53e3e",
+                    color: "white",
+                    border: "none",
+                    padding: "6px 10px",
+                    borderRadius: 4,
+                  }}
                 >
                   Reject
                 </button>
