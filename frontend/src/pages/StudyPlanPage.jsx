@@ -3,7 +3,7 @@ import ToDoList from "../components/ToDoList";
 import NoteEditor from "../components/NoteEditor";
 import NotePage from "./NotePage";
 import PracticeQuestionsPage from "./PracticeQuestionsPage";
-import WorkloadPage from "./WorkloadPage";
+import WorkloadPage from "./CourseInfoPage";
 import GradeBookPage from "./GradeBookPage";
 
 function MilestonesModal({
