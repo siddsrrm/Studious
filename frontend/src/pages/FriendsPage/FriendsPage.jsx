@@ -207,7 +207,15 @@ function FriendsPage() {
                       <div className={styles.actions}>
                         <button
                           className={styles.messageButton}
-                          onClick={() => navigate("/messages")}
+                          onClick={async () => {
+                            const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/conversations`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({ friendId: user._id })
+                            })
+                            const convo = await res.json()
+                            navigate("/messages", { state: { convo } })
+                          }}
                         >
                           Message
                         </button>
