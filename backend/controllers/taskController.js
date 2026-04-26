@@ -38,7 +38,15 @@ exports.getTasks = async (req, res) => {
 
 exports.createTask = async (req, res) => {
   try {
-    const { studyPlanID, title, description, priority, dueDate } = req.body;
+    const {
+      studyPlanID,
+      title,
+      description,
+      priority,
+      dueDate,
+      recurring,
+      recurrence,
+    } = req.body;
 
     if (!studyPlanID)
       return res.status(400).json({ message: "studyPlanID is required" });
@@ -52,6 +60,13 @@ exports.createTask = async (req, res) => {
       priority: priority || "medium",
       dueDate: dueDate || null,
       subTasks: [],
+      recurring: recurring || false,
+      recurrence: recurring
+        ? {
+            value: Math.max(1, Number(req.body.recurrence?.value || 1)),
+            unit: req.body.recurrence?.unit || "days",
+          }
+        : null,
     });
 
     // update progress tracker
@@ -73,6 +88,8 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
+    let newTask = null; // Copy of task if marked complete and recurring
+
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     if (task.ownerID.toString() !== req.user.userId)
@@ -82,8 +99,64 @@ exports.updateTask = async (req, res) => {
     //use model method to update task
     const updated = await task.updateTask(req.body);
 
-    if (!wasCompleted && req.body.completed === true) {
+    if (!wasCompleted && updated.completed === true) {
       checkTaskAchievements(req.user.userId).catch(console.error);
+
+      // Copy task and offset due date if recurring
+      if (updated.recurring && updated.recurrence) {
+        const baseDate = task.dueDate || new Date();
+
+        const addRecurrence = (date, recurrence) => {
+          const d = new Date(date);
+
+          switch (recurrence.unit) {
+            case "minutes":
+              d.setMinutes(d.getMinutes() + recurrence.value);
+              break;
+            case "hours":
+              d.setHours(d.getHours() + recurrence.value);
+              break;
+            case "days":
+              d.setDate(d.getDate() + recurrence.value);
+              break;
+            case "weeks":
+              d.setDate(d.getDate() + recurrence.value * 7);
+              break;
+            case "months":
+              d.setMonth(d.getMonth() + recurrence.value);
+              break;
+          }
+
+          return d;
+        };
+
+        const newDueDate = addRecurrence(baseDate, task.recurrence);
+
+        newTask = new Task({
+          ownerID: task.ownerID,
+          studyPlanID: task.studyPlanID,
+          title: task.title,
+          description: task.description,
+          completed: false,
+          priority: task.priority,
+          dueDate: newDueDate,
+          recurring: task.recurring,
+          recurrence: task.recurrence,
+          subTasks: [],
+        });
+
+        await newTask.save();
+
+        newTask.subTasks = task.subTasks.map((st) => ({
+          ownerID: st.ownerID,
+          taskID: newTask._id,
+          title: st.title,
+          description: st.description,
+          completed: false,
+        }));
+
+        await newTask.save();
+      }
     }
 
     // update progress tracker
@@ -94,7 +167,7 @@ exports.updateTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json(updated);
+    res.json({ updatedTask: updated, newTask });
   } catch (err) {
     res
       .status(500)

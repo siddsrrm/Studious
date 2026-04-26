@@ -15,6 +15,9 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [editSubTitle, setEditSubTitle] = useState("");
   const [editSubDescription, setEditSubDescription] = useState("");
   const [editPriority, setEditPriority] = useState(taskObj.priority);
+  const [isRecurring, setIsRecurring] = useState(taskObj.recurring || false);
+  const [recurrenceValue, setRecurrenceValue] = useState(1);
+  const [recurrenceUnit, setRecurrenceUnit] = useState("days");
 
   const handleMarkCompleted = async () => {
     try {
@@ -41,8 +44,10 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         body: JSON.stringify({ completed: true }),
       });
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to update task.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask); // Adds task copy 'newTask' if recurring
+      } else setError("Failed to update task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -51,6 +56,12 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const handleEditSave = async () => {
     if (!editTitle.trim()) return;
     try {
+      const recurrence = isRecurring
+        ? {
+            value: Number(recurrenceValue),
+            unit: recurrenceUnit,
+          }
+        : null;
       const res = await fetch(`${API}/tasks/${taskObj._id}`, {
         method: "PUT",
         headers: {
@@ -61,11 +72,14 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           title: editTitle,
           description: editDescription,
           priority: editPriority,
+          recurring: isRecurring,
+          recurrence: recurrence,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        onUpdate(data);
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
         setIsEditing(false);
       } else {
         setError("Failed to update task.");
@@ -93,8 +107,10 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         body: JSON.stringify({ title, description }),
       });
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to create subtask.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to create subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -117,7 +133,8 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     );
     const data = await res.json();
     if (res.ok) {
-      onUpdate(data);
+      if (data.updatedTask) onUpdate(data.updatedTask);
+      if (data.newTask) onUpdate(data.newTask);
       setEditingSubTaskId(null);
     } else setError("Failed to update subtask.");
   };
@@ -136,8 +153,10 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
       );
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to update subtask.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to update subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -153,11 +172,49 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
       );
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to delete subtask.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to delete subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
+  };
+
+  const toMilliseconds = (value, unit) => {
+    const num = parseInt(value || 0, 10);
+
+    switch (unit) {
+      case "minutes":
+        return num * 60 * 1000;
+      case "hours":
+        return num * 60 * 60 * 1000;
+      case "days":
+        return num * 24 * 60 * 60 * 1000;
+      case "weeks":
+        return num * 7 * 24 * 60 * 60 * 1000;
+      case "months":
+        return num * 30 * 24 * 60 * 60 * 1000; // approximation
+      default:
+        return null;
+    }
+  };
+
+  const startEditing = () => {
+    setEditTitle(taskObj.title || "");
+    setEditDescription(taskObj.description || "");
+    setEditPriority(taskObj.priority || "medium");
+    setIsRecurring(taskObj.recurring || false);
+
+    if (taskObj.recurrence) {
+      setRecurrenceValue(taskObj.recurrence.value || 1);
+      setRecurrenceUnit(taskObj.recurrence.unit || "days");
+    } else {
+      setRecurrenceValue(1);
+      setRecurrenceUnit("days");
+    }
+
+    setIsEditing(true);
   };
 
   return (
@@ -183,6 +240,35 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
+            <label>
+              <input
+                type="checkbox"
+                checked={isRecurring || false}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+              />
+              Recurring
+            </label>
+            {isRecurring && (
+              <div className="recurrence-row">
+                <input
+                  type="number"
+                  min="1"
+                  value={recurrenceValue}
+                  onChange={(e) => setRecurrenceValue(e.target.value)}
+                />
+
+                <select
+                  value={recurrenceUnit}
+                  onChange={(e) => setRecurrenceUnit(e.target.value)}
+                >
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            )}
             <button onClick={handleEditSave}>Save</button>
             <button onClick={handleEditCancel}>Cancel</button>
           </>
@@ -206,7 +292,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           {taskObj.completed ? "Completed" : "Mark Complete"}
         </button>
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={startEditing}
           disabled={taskObj.completed || isEditing}
         >
           Edit

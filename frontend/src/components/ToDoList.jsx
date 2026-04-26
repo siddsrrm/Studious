@@ -59,6 +59,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   useEffect(() => {
     const total = tasks.length;
     const completed = tasks.filter((task) => task.completed == true).length;
+    const recurring = tasks.filter((task) => task.recurring == true).length;
     const progress = total === 0 ? 100 : (completed / total) * 100;
     if (onProgressChange) onProgressChange(progress);
   }, [tasks]);
@@ -72,7 +73,14 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     }
   }, [showDraft]);
 
-  const handleAddTask = async ({ title, description, priority, dueDate }) => {
+  const handleAddTask = async ({
+    title,
+    description,
+    priority,
+    dueDate,
+    recurring,
+    recurrence,
+  }) => {
     try {
       const res = await fetch(`${API}/tasks`, {
         method: "POST",
@@ -86,6 +94,8 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           description,
           priority,
           dueDate,
+          recurring,
+          recurrence,
         }),
       });
       const data = await res.json();
@@ -97,7 +107,14 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   };
 
   const handleUpdateTask = (updatedTask) => {
-    setTasks(tasks.map((t) => (t._id === updatedTask._id ? updatedTask : t)));
+    setTasks((prev) => {
+      const exists = prev.find((t) => t._id === updatedTask._id);
+      if (exists) {
+        return prev.map((t) => (t._id === updatedTask._id ? updatedTask : t));
+      } else {
+        return [...prev, updatedTask];
+      }
+    });
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -377,7 +394,16 @@ const AddTaskForm = ({ onAddTask }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAddTask({ title, description, priority, dueDate });
+    onAddTask({
+      title,
+      description,
+      priority,
+      dueDate,
+      recurring: isRecurring,
+      recurrence: isRecurring
+        ? { value: Number(recurrenceValue), unit: recurrenceUnit }
+        : null,
+    });
     setTitle("");
     setDescription("");
     setPriority("medium");
