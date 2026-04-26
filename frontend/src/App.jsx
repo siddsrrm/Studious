@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { getSocket, disconnectSocket } from "./socket";
+import AnalyticsPage from "./pages/Analytics/Analytics";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
@@ -14,7 +15,8 @@ import PeoplePage from "./pages/PeoplePage/PeoplePage";
 import FriendsPage from "./pages/FriendsPage/FriendsPage";
 import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
-import AchievementsPage from "./pages/AchievementsPage/AchievementsPage";
+import AchievementsPage from "./pages/AchievementsPage/AchievementsPage"
+import MessagingPage from "./pages/MessagingPage/MessagingPage";
 
 function App() {
   const [notif, setNotif] = useState(null)
@@ -74,15 +76,23 @@ function App() {
       showNotification(`Achievement unlocked: ${name}`)
     }
 
+    const onMessageReceived = (msg) => {
+      if (window.location.pathname !== "/messages") {
+        showNotification(`New message from ${msg.senderUsername}: ${msg.content}`)
+      }
+    }
+
     socket.on("friend_request_received", onRequestReceived)
     socket.on("friend_request_accepted", onRequestAccepted)
     socket.on("achievement_unlocked", onAchievementUnlocked)
+    socket.on("message_received", onMessageReceived)
     window.addEventListener("friend-toast", onFriendToast)
 
     return () => {
       socket.off("friend_request_received", onRequestReceived)
       socket.off("friend_request_accepted", onRequestAccepted)
       socket.off("achievement_unlocked", onAchievementUnlocked)
+      socket.off("message_received", onMessageReceived)
       window.removeEventListener("friend-toast", onFriendToast)
     }
   }, [token])
@@ -111,6 +121,8 @@ function App() {
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/analytics" element={ <AnalyticsPage/>}/>
+        <Route path="/messages" element={<MessagingPage />} />
       </Routes>
     </BrowserRouter>
   );

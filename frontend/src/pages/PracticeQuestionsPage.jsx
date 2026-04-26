@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PracticeQuestion from "../components/PracticeQuestion";
 import Flashcard from "../components/Flashcard";
+import GenerateFromWrongModal from "../components/PracticeQuestions/GenerateFromWrongModal";
 import "../css/PracticeQuestionsPage.css";
 
 const API = import.meta.env.VITE_API_URL;
@@ -22,6 +23,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
 
   // Flashcard state
   const [displayAsFlashcards, setDisplayAsFlashcards] = useState(false);
+  const [showGenerateWrongModal, setShowGenerateWrongModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -147,7 +149,7 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
     } finally {
       setGenerating(false);
     }
-  }; // <-- this closing brace was missing in your branch
+  };
 
   const handleChangeDisplay = (e) => {
     setDisplayAsFlashcards(e.target.checked);
@@ -167,8 +169,17 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
           color: "#0f172a",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}>Practice Questions</h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "16px",
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}>
+            Practice Questions
+          </h2>
           {/* Flashcard toggle — only shown when there are questions */}
           {questions.length > 0 && (
             <label className="checkboxItem" style={{ margin: 0 }}>
@@ -183,7 +194,12 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         </div>
 
         {error && (
-          <p style={{ color: error.startsWith("Successfully") ? "#16a34a" : "red", marginBottom: "12px" }}>
+          <p
+            style={{
+              color: error.startsWith("Successfully") ? "#16a34a" : "red",
+              marginBottom: "12px",
+            }}
+          >
             {error}
           </p>
         )}
@@ -192,7 +208,9 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
           <p>Loading practice questions...</p>
         ) : (
           questions.length === 0 && (
-            <p style={{ color: "#64748b" }}>No practice questions yet. Add one below!</p>
+            <p style={{ color: "#64748b" }}>
+              No practice questions yet. Add one below!
+            </p>
           )
         )}
 
@@ -201,7 +219,10 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
           className="addQuestionForm"
           onSubmit={(e) => {
             e.preventDefault();
-            handleAddPracticeQuestion({ question: newQuestion, answer: newAnswer });
+            handleAddPracticeQuestion({
+              question: newQuestion,
+              answer: newAnswer,
+            });
             setNewQuestion("");
             setNewAnswer("");
           }}
@@ -224,16 +245,36 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
         </form>
 
         {/* AI generation section */}
-        <div style={{ marginTop: "24px", borderTop: "1px solid #e2e8f0", paddingTop: "20px" }}>
-          <h3 style={{ marginBottom: "12px", fontSize: "0.95rem", fontWeight: 600 }}>
+        <div
+          style={{
+            marginTop: "24px",
+            borderTop: "1px solid #e2e8f0",
+            paddingTop: "20px",
+          }}
+        >
+          <h3
+            style={{
+              marginBottom: "12px",
+              fontSize: "0.95rem",
+              fontWeight: 600,
+            }}
+          >
             Generate Questions from Notes
           </h3>
           {notes.length === 0 ? (
-            <p style={{ color: "#64748b" }}>No notes available. Create some notes first!</p>
+            <p style={{ color: "#64748b" }}>
+              No notes available. Create some notes first!
+            </p>
           ) : (
             <form onSubmit={handleGenerateQuestions}>
               <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: 600,
+                  }}
+                >
                   Select Notes:
                 </label>
                 {notes.map((note) => (
@@ -246,11 +287,16 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
                         if (e.target.checked) {
                           setSelectedNoteIds((prev) => [...prev, note._id]);
                         } else {
-                          setSelectedNoteIds((prev) => prev.filter((id) => id !== note._id));
+                          setSelectedNoteIds((prev) =>
+                            prev.filter((id) => id !== note._id),
+                          );
                         }
                       }}
                     />
-                    <label htmlFor={`note-${note._id}`} style={{ marginLeft: "8px" }}>
+                    <label
+                      htmlFor={`note-${note._id}`}
+                      style={{ marginLeft: "8px" }}
+                    >
                       {note.title}
                     </label>
                   </div>
@@ -258,13 +304,24 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
               </div>
 
               <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: 600,
+                  }}
+                >
                   Question Type:
                 </label>
                 <select
                   value={questionType}
                   onChange={(e) => setQuestionType(e.target.value)}
-                  style={{ padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1", width: "100%" }}
+                  style={{
+                    padding: "8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    width: "100%",
+                  }}
                 >
                   <option value="free-response">Free Response</option>
                   <option value="multiple-choice">Multiple Choice</option>
@@ -272,7 +329,13 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
               </div>
 
               <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: 600,
+                  }}
+                >
                   Number of Questions (Optional):
                 </label>
                 <input
@@ -297,20 +360,86 @@ const PracticeQuestionsPage = ({ studyPlanId }) => {
                 disabled={generating || selectedNoteIds.length === 0}
                 style={{
                   padding: "10px 20px",
-                  backgroundColor: generating || selectedNoteIds.length === 0 ? "#cbd5e1" : "#4f46e5",
+                  backgroundColor:
+                    generating || selectedNoteIds.length === 0
+                      ? "#cbd5e1"
+                      : "#4f46e5",
                   color: "white",
                   borderRadius: "6px",
                   border: "none",
-                  cursor: generating || selectedNoteIds.length === 0 ? "not-allowed" : "pointer",
+                  cursor:
+                    generating || selectedNoteIds.length === 0
+                      ? "not-allowed"
+                      : "pointer",
                   fontWeight: 600,
                 }}
               >
                 {generating ? "Generating..." : "Generate Questions"}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowGenerateWrongModal(true)}
+                style={{
+                  marginLeft: 12,
+                  padding: "10px 16px",
+                  backgroundColor: generating ? "#94a3b8" : "#10b981",
+                  color: 'white',
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: generating ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                }}
+                title="Generate questions from past incorrect answers"
+              >
+                Generate from Mastery
+              </button>
             </form>
           )}
         </div>
       </div>
+
+      {showGenerateWrongModal && (
+        <GenerateFromWrongModal
+          onClose={() => setShowGenerateWrongModal(false)}
+          disabled={generating}
+          onGenerate={async () => {
+            setShowGenerateWrongModal(false);
+            setGenerating(true);
+            setError("");
+            try {
+              const res = await fetch(`${API}/practice-questions/generate-mastery`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  studyPlanId,
+                  numQuestions: numQuestions ? parseInt(numQuestions) : undefined,
+                }),
+              });
+
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                setError(data.message || "Failed to generate mastery questions.");
+                return;
+              }
+
+              const newQs = Array.isArray(data.questions) ? data.questions : [];
+              if (newQs.length > 0) {
+                setQuestions((prev) => [...prev, ...newQs]);
+              }
+
+              setError(`Successfully generated ${newQs.length} mastery questions!`);
+              setTimeout(() => setError(""), 3000);
+            } catch {
+              setError("Network error. Please try again.");
+            } finally {
+              setGenerating(false);
+            }
+          }}
+        />
+      )}
 
       {/* Questions list */}
       <div>

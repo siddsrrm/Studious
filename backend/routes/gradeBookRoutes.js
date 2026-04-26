@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { getGradeBook, addEntry, updateEntry, deleteEntry } = require("../controllers/gradeBookController");
+const {
+  getGradeBook,
+  addEntry,
+  updateEntry,
+  deleteEntry,
+} = require("../controllers/gradeBookController");
 const authToken = require("../middleware/authMiddleware");
 
 router.get("/:studyPlanId", authToken, getGradeBook);
