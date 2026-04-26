@@ -75,15 +75,23 @@ function App() {
       showNotification(`Achievement unlocked: ${name}`)
     }
 
+    const onMessageReceived = (msg) => {
+      if (window.location.pathname !== "/messages") {
+        showNotification(`New message from ${msg.senderUsername}: ${msg.content}`)
+      }
+    }
+
     socket.on("friend_request_received", onRequestReceived)
     socket.on("friend_request_accepted", onRequestAccepted)
     socket.on("achievement_unlocked", onAchievementUnlocked)
+    socket.on("message_received", onMessageReceived)
     window.addEventListener("friend-toast", onFriendToast)
 
     return () => {
       socket.off("friend_request_received", onRequestReceived)
       socket.off("friend_request_accepted", onRequestAccepted)
       socket.off("achievement_unlocked", onAchievementUnlocked)
+      socket.off("message_received", onMessageReceived)
       window.removeEventListener("friend-toast", onFriendToast)
     }
   }, [token])

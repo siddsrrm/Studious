@@ -1,5 +1,7 @@
 const Message = require("../models/Message")
 const Conversation = require("../models/Conversation")
+const User = require("../models/User")
+const { emitToUser } = require("../socket")
 
 exports.getMessages = async (req, res) => {
   try {
@@ -27,6 +29,16 @@ exports.sendMessage = async (req, res) => {
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: { content, senderId, createdAt: new Date() },
       $inc: { [`unreadCount.${recipientId}`]: 1 }
+    })
+
+    const sender = await User.findById(senderId).select("username")
+    emitToUser(recipientId, "message_received", {
+      _id: newMsg._id,
+      conversationId,
+      senderId,
+      content,
+      createdAt: newMsg.createdAt,
+      senderUsername: sender.username
     })
 
     res.json(newMsg)

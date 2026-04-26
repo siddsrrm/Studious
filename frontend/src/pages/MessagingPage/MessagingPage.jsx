@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
+import { getSocket } from "../../socket"
 import styles from "./MessagingPage.module.css"
 
 function MessagingPage() {
@@ -14,6 +15,7 @@ function MessagingPage() {
   const [inputValue, setInputValue] = useState("")
   const [showNewConvo, setShowNewConvo] = useState(false)
   const [friends, setFriends] = useState([])
+  const selectedConvoRef = useRef(null)
 
   const loadConversations = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/conversations`, {
@@ -65,13 +67,36 @@ function MessagingPage() {
   }
 
   const selectConversation = async (convo) => {
-    console.log("selecting convo:", convo)
-    console.log("myUserId:", myUserId)
-    console.log("other participant:", getOtherParticipant(convo))
+    selectedConvoRef.current = convo
     setSelectedConvo(convo)
     await loadMessages(convo._id)
     await markAsRead(convo._id)
   }
+
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+
+    const onMessageReceived = (msg) => {
+      if (selectedConvoRef.current?._id === msg.conversationId) {
+        setMessages(prev => [...prev, msg])
+        markAsRead(msg.conversationId)
+      } else {
+        setConversations(prev => prev.map(c =>
+          c._id === msg.conversationId
+            ? {
+                ...c,
+                lastMessage: { content: msg.content, senderId: msg.senderId, createdAt: msg.createdAt },
+                unreadCount: { ...c.unreadCount, [myUserId]: (c.unreadCount?.[myUserId] || 0) + 1 }
+              }
+            : c
+        ))
+      }
+    }
+
+    socket.on("message_received", onMessageReceived)
+    return () => socket.off("message_received", onMessageReceived)
+  }, [])
 
   const startConversation = async (friendId) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/conversations`, {
