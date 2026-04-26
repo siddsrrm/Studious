@@ -18,19 +18,26 @@ const eventRoutes = require("./routes/eventRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const practiceQuestionRoutes = require("./routes/practiceQuestionRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
-const { startReminderJob } = require("./utils/reminderJob");
+const { startReminderJob, startAnalyticsJob } = require("./utils/reminderJob");
 const friendRequestRoutes = require("./routes/friendRequestRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
 const gradeBookRoutes = require("./routes/gradeBookRoutes");
-const messagingRoutes = require("./routes/messagingRoutes")
+const scheduleRoutes = require("./routes/scheduleRoutes");
+const attachmentRoutes = require("./routes/attachmentRoutes");
+const studyLogRoutes = require("./routes/studyLogRoutes");
+const messagingRoutes = require("./routes/messagingRoutes");
 
 const app = express();
 
 const passport = require("./config/passport");
 app.use(passport.initialize());
 
+const { sendAnalyticsReport } = require("./utils/reminderJob");
+
+
 connectDB();
 startReminderJob();
+startAnalyticsJob();
 
 const { pollCalendarForAllUsers } = require("./services/calendarPoller");
 
@@ -52,8 +59,14 @@ app.use("/api/practice-questions", practiceQuestionRoutes);
 app.use("/api/friendrequests", friendRequestRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/achievements", achievementRoutes);
+app.use("/api/study-logs", studyLogRoutes);
 app.use("/api/gradebook", gradeBookRoutes);
-app.use("/api/messages", messagingRoutes)
+app.use("/api/schedule", scheduleRoutes);
+app.use("/api/attachments", attachmentRoutes);
+
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "data/assets")));
+app.use("/api/messages", messagingRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
@@ -67,3 +80,7 @@ initSocket(server);
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+// temporary - remove after testing
+//sendAnalyticsReport();

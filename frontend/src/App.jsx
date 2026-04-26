@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { getSocket, disconnectSocket } from "./socket";
+import AnalyticsPage from "./pages/Analytics/Analytics";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
@@ -120,6 +121,7 @@ function App() {
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/analytics" element={ <AnalyticsPage/>}/>
         <Route path="/messages" element={<MessagingPage />} />
       </Routes>
     </BrowserRouter>

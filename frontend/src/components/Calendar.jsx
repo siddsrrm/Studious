@@ -50,11 +50,17 @@ const Calendar = () => {
   const closeModal = () => setModal(null);
 
   const handleFormChange = (e) =>
-    setModal((prev) => ({ ...prev, form: { ...prev.form, [e.target.name]: e.target.value } }));
+    setModal((prev) => ({
+      ...prev,
+      form: { ...prev.form, [e.target.name]: e.target.value },
+    }));
 
   // Create calendar event
   const handleCreate = async () => {
-    if (!modal.form.title.trim()) { setError("Title is required."); return; }
+    if (!modal.form.title.trim()) {
+      setError("Title is required.");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`${API}/events`, {
@@ -75,7 +81,10 @@ const Calendar = () => {
 
   // Edit calendar event
   const handleEdit = async () => {
-    if (!modal.form.title.trim()) { setError("Title is required."); return; }
+    if (!modal.form.title.trim()) {
+      setError("Title is required.");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`${API}/events/${modal.eventId}`, {
@@ -84,7 +93,9 @@ const Calendar = () => {
         body: JSON.stringify(modal.form),
       });
       const updated = await res.json();
-      setEvents((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
+      setEvents((prev) =>
+        prev.map((e) => (e._id === updated._id ? updated : e)),
+      );
       closeModal();
     } catch (err) {
       console.log(err);
@@ -98,7 +109,10 @@ const Calendar = () => {
   const handleDelete = async () => {
     setSaving(true);
     try {
-      await fetch(`${API}/events/${modal.eventId}`, { method: "DELETE", headers: authHeaders });
+      await fetch(`${API}/events/${modal.eventId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
       setEvents((prev) => prev.filter((e) => e._id !== modal.eventId));
       closeModal();
     } catch (err) {
@@ -113,7 +127,10 @@ const Calendar = () => {
   const handleEventChange = async (changeInfo) => {
     const ev = changeInfo.event;
     const pad = (d) => d.toISOString().slice(0, 16);
-    const body = { start: pad(ev.start), end: ev.end ? pad(ev.end) : pad(ev.start) };
+    const body = {
+      start: pad(ev.start),
+      end: ev.end ? pad(ev.end) : pad(ev.start),
+    };
     try {
       const res = await fetch(`${API}/events/${ev.id}`, {
         method: "PUT",
@@ -121,7 +138,9 @@ const Calendar = () => {
         body: JSON.stringify(body),
       });
       const updated = await res.json();
-      setEvents((prev) => prev.map((e) => (e._id === updated._id ? updated : e)));
+      setEvents((prev) =>
+        prev.map((e) => (e._id === updated._id ? updated : e)),
+      );
     } catch (err) {
       changeInfo.revert();
     }
@@ -162,7 +181,9 @@ const Calendar = () => {
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Title
+              </label>
               <input
                 type="text"
                 name="title"
@@ -175,7 +196,9 @@ const Calendar = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Start</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Start
+              </label>
               <input
                 type="datetime-local"
                 name="start"
@@ -186,7 +209,9 @@ const Calendar = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">End</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                End
+              </label>
               <input
                 type="datetime-local"
                 name="end"
@@ -220,7 +245,11 @@ const Calendar = () => {
                   disabled={saving}
                   className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  {saving ? "Saving…" : modal.mode === "create" ? "Create" : "Save"}
+                  {saving
+                    ? "Saving…"
+                    : modal.mode === "create"
+                      ? "Create"
+                      : "Save"}
                 </button>
               </div>
             </div>

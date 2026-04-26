@@ -1,7 +1,9 @@
 const practiceQuestionController = require("../controllers/practiceQuestionController");
 const PracticeQuestion = require("../models/PracticeQuestion");
+const Note = require("../models/Note");
 
 jest.mock("../models/PracticeQuestion");
+jest.mock("../models/Note");
 
 const makeRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -45,6 +47,7 @@ describe("getPracticeQuestions", () => {
     expect(PracticeQuestion.find).toHaveBeenCalledWith({
       ownerID: USER_ID,
       studyPlanId: "plan1",
+  hidden: { $ne: true },
     });
     expect(res.json).toHaveBeenCalledWith(mockData);
   });
@@ -214,13 +217,16 @@ describe("deletePracticeQuestion", () => {
   });
 
   test("deletes question", async () => {
-    const mockDeleteOne = jest.fn().mockResolvedValue({ deletedCount: 1 });
+    const mockSave = jest.fn().mockResolvedValue(true);
 
-    PracticeQuestion.findById.mockResolvedValue({
+    const mockDoc = {
       _id: "q1",
       ownerID: { toString: () => USER_ID },
-      deleteOne: mockDeleteOne,
-    });
+      hidden: false,
+      save: mockSave,
+    };
+
+    PracticeQuestion.findById.mockResolvedValue(mockDoc);
 
     const req = {
       params: { id: "q1" },
@@ -229,9 +235,96 @@ describe("deletePracticeQuestion", () => {
 
     await practiceQuestionController.deletePracticeQuestion(req, res);
 
-    expect(mockDeleteOne).toHaveBeenCalled();
+    expect(mockDoc.hidden).toBe(true);
+    expect(mockSave).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({
-      message: "Practice question deleted",
+      message: "Practice question removed from view",
     });
+  });
+});
+
+// ------------------- generateMasteryPracticeTest -------------------
+describe("generateMasteryPracticeTest", () => {
+  let res;
+  const ORIGINAL_ENV = process.env;
+
+  beforeEach(() => {
+    res = makeRes();
+    jest.clearAllMocks();
+    process.env = {
+      ...ORIGINAL_ENV,
+      OLLAMA_URL: "http://ollama.test/api/chat",
+      OLLAMA_MODEL: "test-model",
+    };
+  });
+
+  afterEach(() => {
+    process.env = ORIGINAL_ENV;
+    global.fetch && jest.restoreAllMocks();
+  });
+
+  test("does not require noteIds and can select hidden questions", async () => {
+    PracticeQuestion.countDocuments.mockResolvedValue(1);
+
+    const hiddenMissedQuestion = {
+      _id: "qHidden",
+      questionType: "free-response",
+      question: "What is 2+2?",
+      answer: "4",
+      options: [],
+      attempts: 2,
+      correctAttempts: 1,
+      lastAttemptedAt: new Date("2020-01-01"),
+      generatedFromNoteId: "note1",
+      hidden: true,
+    };
+
+    const chain = {
+      sort: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockResolvedValue([hiddenMissedQuestion]),
+    };
+    PracticeQuestion.find.mockReturnValue(chain);
+
+    Note.find.mockReturnValue({
+      lean: jest.fn().mockResolvedValue([
+        { _id: "note1", ownerID: USER_ID, title: "T", content: "C" },
+      ]),
+    });
+
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        message: { content: JSON.stringify({ questions: [{ questionType: "free-response", question: "2+3?", answer: "5" }] }) },
+      }),
+    });
+
+    const savedDocs = [{ _id: "new1", question: "2+3?" }];
+    PracticeQuestion.insertMany.mockResolvedValue(savedDocs);
+
+    const req = {
+      body: { studyPlanId: "plan1", numQuestions: 1 },
+      user: { userId: USER_ID },
+    };
+
+    await practiceQuestionController.generateMasteryPracticeTest(req, res);
+
+    // First find() call must be the "missed" query and must NOT exclude hidden
+    expect(PracticeQuestion.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerID: USER_ID,
+        studyPlanId: "plan1",
+        $expr: { $lt: ["$correctAttempts", "$attempts"] },
+      })
+    );
+
+    expect(Note.find).toHaveBeenCalled();
+    expect(PracticeQuestion.insertMany).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        questions: savedDocs,
+      })
+    );
   });
 });
