@@ -17,6 +17,9 @@ import LeaderboardPage from "./pages/Leaderboard/LeaderboardPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import AchievementsPage from "./pages/AchievementsPage/AchievementsPage"
 import MessagingPage from "./pages/MessagingPage/MessagingPage";
+import StudyGroupPage from "./pages/StudyGroupPage/StudyGroupPage";
+import StudyGroupDetailPage from "./pages/StudyGroupDetailPage/StudyGroupDetailPage";
+import MyGroupsPage from "./pages/MyGroupsPage/MyGroupsPage";
 
 function App() {
   const [notif, setNotif] = useState(null)
@@ -123,6 +126,9 @@ function App() {
         <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="/analytics" element={ <AnalyticsPage/>}/>
         <Route path="/messages" element={<MessagingPage />} />
+        <Route path="/mygroups" element={<MyGroupsPage />} />
+        <Route path="/studygroups" element={<StudyGroupPage />} />
+        <Route path="/studygroups/:groupId" element={<StudyGroupDetailPage />} />
       </Routes>
     </BrowserRouter>
   );

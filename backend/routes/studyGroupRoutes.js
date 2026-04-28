@@ -26,3 +26,5 @@ router.get("/:groupId/notes", authToken, getGroupNotes)
 router.post("/:groupId/notes", authToken, createGroupNote)
 router.put("/:groupId/notes/:noteId", authToken, updateGroupNote)
 router.delete("/:groupId/notes/:noteId", authToken, deleteGroupNote)
+
+module.exports = router

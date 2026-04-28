@@ -26,6 +26,7 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const studyLogRoutes = require("./routes/studyLogRoutes");
 const messagingRoutes = require("./routes/messagingRoutes");
+const studyGroupRoutes = require("./routes/studyGroupRoutes");
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use("/api/attachments", attachmentRoutes);
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "data/assets")));
 app.use("/api/messages", messagingRoutes);
+app.use("/api/studygroups", studyGroupRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
