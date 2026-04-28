@@ -18,7 +18,7 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import AchievementsPage from "./pages/AchievementsPage/AchievementsPage"
 import MessagingPage from "./pages/MessagingPage/MessagingPage";
 import StudyGroupPage from "./pages/StudyGroupPage/StudyGroupPage";
-import StudyGroupDetailPage from "./pages/StudyGroupDetailPage/StudyGroupDetailPage";
+import GroupDashboardPage from "./pages/GroupDashboardPage/GroupDashboardPage";
 import MyGroupsPage from "./pages/MyGroupsPage/MyGroupsPage";
 
 function App() {
@@ -128,7 +128,7 @@ function App() {
         <Route path="/messages" element={<MessagingPage />} />
         <Route path="/mygroups" element={<MyGroupsPage />} />
         <Route path="/studygroups" element={<StudyGroupPage />} />
-        <Route path="/studygroups/:groupId" element={<StudyGroupDetailPage />} />
+        <Route path="/studygroups/:groupId" element={<GroupDashboardPage />} />
       </Routes>
     </BrowserRouter>
   );
