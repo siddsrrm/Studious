@@ -8,7 +8,7 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true },
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
-  conversationId: { type: mongoose.Schema.Types.ObjectId, ref: "Conversation", required: true },
+  conversationId: { type: mongoose.Schema.Types.ObjectId, ref: "Conversation", default: null },
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: "StudyGroup", default: null }
 })
 

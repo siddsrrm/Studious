@@ -7,6 +7,7 @@ const studyGroupSchema = new mongoose.Schema({
   name: { type: String, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // array of users
+  joinRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // array of requests
   createdAt: { type: Date, default: Date.now }
 
   // messages and notes will reference this group via groupId
