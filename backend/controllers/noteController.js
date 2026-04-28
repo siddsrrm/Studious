@@ -16,6 +16,15 @@ const searchNotes = async (req, res) => {
   }
 }
 
+const getAllMyNotes = async (req, res) => {
+  try {
+    const notes = await Note.find({ ownerID: req.user.userId })
+    res.json(notes)
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching notes", error: err.message })
+  }
+}
+
 // Get all notes for a study plan
 const getNotes = async (req, res) => {
   try {
@@ -78,4 +87,4 @@ const deleteNote = async (req, res) => {
   }
 }
 
-module.exports = { searchNotes, getNotes, createNote, updateNote, deleteNote }
+module.exports = { searchNotes, getAllMyNotes, getNotes, createNote, updateNote, deleteNote }
