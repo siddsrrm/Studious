@@ -85,10 +85,25 @@ function App() {
       }
     }
 
+    const onGroupJoinRequest = (data) => {
+      showNotification(`${data.user.username} wants to join ${data.groupName}`)
+    }
+
+    const onGroupRequestAccepted = (data) => {
+      showNotification(`Your request to join ${data.groupName} was accepted`)
+    }
+
+    const onGroupRequestDeclined = (data) => {
+      showNotification(`Your request to join ${data.groupName} was declined`)
+    }
+
     socket.on("friend_request_received", onRequestReceived)
     socket.on("friend_request_accepted", onRequestAccepted)
     socket.on("achievement_unlocked", onAchievementUnlocked)
     socket.on("message_received", onMessageReceived)
+    socket.on("group_join_request", onGroupJoinRequest)
+    socket.on("group_request_accepted", onGroupRequestAccepted)
+    socket.on("group_request_declined", onGroupRequestDeclined)
     window.addEventListener("friend-toast", onFriendToast)
 
     return () => {
@@ -96,6 +111,9 @@ function App() {
       socket.off("friend_request_accepted", onRequestAccepted)
       socket.off("achievement_unlocked", onAchievementUnlocked)
       socket.off("message_received", onMessageReceived)
+      socket.off("group_join_request", onGroupJoinRequest)
+      socket.off("group_request_accepted", onGroupRequestAccepted)
+      socket.off("group_request_declined", onGroupRequestDeclined)
       window.removeEventListener("friend-toast", onFriendToast)
     }
   }, [token])

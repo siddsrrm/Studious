@@ -9,6 +9,7 @@ const {
   addMember,
   removeMember,
   deleteGroup,
+  updatePrivacy,
   requestToJoin,
   acceptJoinRequest,
   declineJoinRequest,
@@ -26,6 +27,7 @@ router.get("/", authToken, getGroups)
 router.get("/all", authToken, getAllGroups)
 router.get("/:groupId", authToken, getGroup)
 router.delete("/:groupId", authToken, deleteGroup)
+router.put("/:groupId/privacy", authToken, updatePrivacy)
 router.post("/:groupId/members", authToken, addMember)
 router.delete("/:groupId/members/:userId", authToken, removeMember)
 router.post("/:groupId/join", authToken, requestToJoin)

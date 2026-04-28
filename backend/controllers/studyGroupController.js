@@ -3,6 +3,7 @@ const Note = require("../models/Note")
 const User = require("../models/User")
 const StudyGroup = require("../models/StudyGroup")
 const { emitToUser } = require("../socket")
+const { checkStudyGroupAchievements } = require("../services/achievementService")
 
 // group management
 exports.createGroup = async (req, res) => {
@@ -85,6 +86,7 @@ exports.addMember = async (req, res) => {
       })
     })
 
+    checkStudyGroupAchievements(userId)
     res.json(group)
   } catch (err) {
     res.status(500).json({ message: "Failed to add member" })
@@ -145,6 +147,34 @@ exports.deleteGroup = async (req, res) => {
   }
 }
 
+exports.updatePrivacy = async (req, res) => {
+  try {
+    const { groupId } = req.params
+    const { privacy } = req.body
+    const requesterId = req.user.userId
+
+    if (!["open", "request"].includes(privacy))
+      return res.status(400).json({ message: "Invalid privacy value" })
+
+    const group = await StudyGroup.findById(groupId)
+    if (!group) return res.status(404).json({ message: "Group not found" })
+
+    if (group.createdBy.toString() !== requesterId)
+      return res.status(403).json({ message: "Only the owner can change privacy" })
+
+    group.privacy = privacy
+    await group.save()
+
+    group.members.forEach(m => {
+      emitToUser(m.toString(), "group_privacy_changed", { groupId, privacy })
+    })
+
+    res.json({ privacy: group.privacy })
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update privacy" })
+  }
+}
+
 // join requests
 exports.requestToJoin = async (req, res) => {
   try {
@@ -157,6 +187,27 @@ exports.requestToJoin = async (req, res) => {
     if (group.members.map(m => m.toString()).includes(userId))
       return res.status(400).json({ message: "Already a member" })
 
+    // open group — join immediately
+    if (group.privacy === "open") {
+      group.members.push(userId)
+      await group.save()
+      await group.populate("members", "username avatar")
+
+      const newMember = group.members.find(m => m._id.toString() === userId)
+      group.members
+        .filter(m => m._id.toString() !== userId)
+        .forEach(m => {
+          emitToUser(m._id.toString(), "group_member_joined", {
+            groupId,
+            member: { _id: newMember._id, username: newMember.username, avatar: newMember.avatar }
+          })
+        })
+
+      checkStudyGroupAchievements(userId)
+      return res.json({ message: "Joined", joined: true })
+    }
+
+    // request-only group
     if (group.joinRequests.map(r => r.toString()).includes(userId))
       return res.status(400).json({ message: "Request already sent" })
 
@@ -170,7 +221,7 @@ exports.requestToJoin = async (req, res) => {
       user: { _id: requester._id, username: requester.username, avatar: requester.avatar }
     })
 
-    res.json({ message: "Request sent" })
+    res.json({ message: "Request sent", joined: false })
   } catch (err) {
     res.status(500).json({ message: "Failed to send join request" })
   }
@@ -195,6 +246,8 @@ exports.acceptJoinRequest = async (req, res) => {
     await group.populate("joinRequests", "username avatar")
 
     const newMember = group.members.find(m => m._id.toString() === userId)
+
+    checkStudyGroupAchievements(userId)
 
     // notify the accepted user
     emitToUser(userId, "group_request_accepted", { groupId, groupName: group.name })
