@@ -19,6 +19,7 @@ const searchNotes = async (req, res) => {
 const getAllMyNotes = async (req, res) => {
   try {
     const notes = await Note.find({ ownerID: req.user.userId })
+      .populate("studyPlanID", "title")
     res.json(notes)
   } catch (err) {
     res.status(500).json({ message: "Error fetching notes", error: err.message })
