@@ -2,6 +2,7 @@ const UserAchievement = require("../models/UserAchievement")
 const Task = require("../models/Task")
 const FriendRequest = require("../models/FriendRequest")
 const StudyPlan = require("../models/StudyPlan")
+const StudyGroup = require("../models/StudyGroup")
 const { emitToUser } = require("../socket")
 
 async function awardIfNew(userId, achievementId) {
@@ -32,7 +33,11 @@ async function checkFriendAchievements(userId) {
     status: 1
   })
   if (count >= 1) await awardIfNew(userId, "first_friend")
-  if (count >= 2) await awardIfNew(userId, "joined_study_group")
+}
+
+async function checkStudyGroupAchievements(userId) {
+  const count = await StudyGroup.countDocuments({ members: userId })
+  if (count >= 1) await awardIfNew(userId, "joined_study_group")
 }
 
 async function checkStudyPlanAchievements(userId) {
@@ -40,4 +45,4 @@ async function checkStudyPlanAchievements(userId) {
   if (count >= 1) await awardIfNew(userId, "first_study_plan")
 }
 
-module.exports = { checkTaskAchievements, checkFriendAchievements, checkStudyPlanAchievements }
+module.exports = { checkTaskAchievements, checkFriendAchievements, checkStudyPlanAchievements, checkStudyGroupAchievements }

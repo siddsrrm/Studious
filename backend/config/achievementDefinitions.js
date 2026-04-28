@@ -38,7 +38,7 @@ const ACHIEVEMENT_DEFINITIONS = [
   {
     id: "joined_study_group",
     name: "Study Group",
-    description: "Join a study group (have 2+ friends)",
+    description: "Join a study group",
     badge: "joined-a-study-group.png"
   }
 ]
