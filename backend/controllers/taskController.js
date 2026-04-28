@@ -38,15 +38,8 @@ exports.getTasks = async (req, res) => {
 
 exports.createTask = async (req, res) => {
   try {
-    const {
-      studyPlanID,
-      title,
-      description,
-      priority,
-      dueDate,
-      recurring,
-      recurrence,
-    } = req.body;
+    const { studyPlanID, title, description, priority, dueDate, recurrence } =
+      req.body;
 
     if (!studyPlanID)
       return res.status(400).json({ message: "studyPlanID is required" });
@@ -60,11 +53,10 @@ exports.createTask = async (req, res) => {
       priority: priority || "medium",
       dueDate: dueDate || null,
       subTasks: [],
-      recurring: recurring || false,
-      recurrence: recurring
+      recurrence: recurrence
         ? {
-            value: Math.max(1, Number(req.body.recurrence?.value || 1)),
-            unit: req.body.recurrence?.unit || "days",
+            value: Math.max(1, Number(req.body.recurrence.value || 1)),
+            unit: req.body.recurrence.unit || "days",
           }
         : null,
     });
@@ -88,7 +80,7 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-    let newTask = null; // Copy of task if marked complete and recurring
+    let newTask = null;
 
     if (!task) return res.status(404).json({ message: "Task not found" });
 
@@ -96,16 +88,29 @@ exports.updateTask = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
 
     const wasCompleted = task.completed;
-    //use model method to update task
+
+    if (req.body.recurrence) {
+      if (!req.body.recurrence.value || !req.body.recurrence.unit) {
+        return res.status(400).json({
+          message: "Recurrence must include value and unit",
+        });
+      }
+    }
+
     const updated = await task.updateTask(req.body);
 
     if (!wasCompleted && updated.completed === true) {
       checkTaskAchievements(req.user.userId).catch(console.error);
 
-      // Copy task and offset due date if recurring
-      if (updated.recurring && updated.recurrence) {
-        const baseDate = task.dueDate || new Date();
+      // Prevent duplicate recurrence
+      if (task.lastCompletedAt) {
+        return res.json({ updatedTask: updated, newTask: null });
+      }
 
+      task.lastCompletedAt = new Date();
+      await task.save();
+
+      if (updated.recurrence && updated.dueDate) {
         const addRecurrence = (date, recurrence) => {
           const d = new Date(date);
 
@@ -130,48 +135,46 @@ exports.updateTask = async (req, res) => {
           return d;
         };
 
-        const newDueDate = addRecurrence(baseDate, task.recurrence);
+        const newDueDate = addRecurrence(updated.dueDate, updated.recurrence);
 
         newTask = new Task({
-          ownerID: task.ownerID,
-          studyPlanID: task.studyPlanID,
-          title: task.title,
-          description: task.description,
+          ownerID: updated.ownerID,
+          studyPlanID: updated.studyPlanID,
+          title: updated.title,
+          description: updated.description,
           completed: false,
-          priority: task.priority,
+          priority: updated.priority,
           dueDate: newDueDate,
-          recurring: task.recurring,
-          recurrence: task.recurrence,
-          subTasks: [],
+          recurrence: updated.recurrence,
+          subTasks: updated.subTasks.map((st) => ({
+            ownerID: st.ownerID,
+            taskID: null, // temp, set after save
+            title: st.title,
+            description: st.description,
+            completed: false,
+          })),
         });
 
         await newTask.save();
 
-        newTask.subTasks = task.subTasks.map((st) => ({
-          ownerID: st.ownerID,
+        // now safely assign taskID
+        newTask.subTasks = newTask.subTasks.map((st) => ({
+          ...st.toObject(),
           taskID: newTask._id,
-          title: st.title,
-          description: st.description,
-          completed: false,
         }));
 
         await newTask.save();
       }
     }
 
-    // update progress tracker
-    let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (!tracker) {
-      tracker = await ProgressTracker.create({ userID: task.ownerID });
-      await tracker.recalculateAllProgress();
-    }
-    await tracker.updateTaskProgress(task.studyPlanID);
+    await syncTaskProgress(task.ownerID, task.studyPlanID);
 
     res.json({ updatedTask: updated, newTask });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error updating task", error: err.message });
+    res.status(500).json({
+      message: "Error updating task",
+      error: err.message,
+    });
   }
 };
 

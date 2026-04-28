@@ -59,7 +59,6 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   useEffect(() => {
     const total = tasks.length;
     const completed = tasks.filter((task) => task.completed == true).length;
-    const recurring = tasks.filter((task) => task.recurring == true).length;
     const progress = total === 0 ? 100 : (completed / total) * 100;
     if (onProgressChange) onProgressChange(progress);
   }, [tasks]);
@@ -78,7 +77,6 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     description,
     priority,
     dueDate,
-    recurring,
     recurrence,
   }) => {
     try {
@@ -94,7 +92,6 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           description,
           priority,
           dueDate,
-          recurring,
           recurrence,
         }),
       });
@@ -391,23 +388,34 @@ const AddTaskForm = ({ onAddTask }) => {
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
 
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceValue, setRecurrenceValue] = useState(1);
+  const [recurrenceUnit, setRecurrenceUnit] = useState("days");
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
+
     onAddTask({
       title,
       description,
       priority,
       dueDate,
-      recurring: isRecurring,
       recurrence: isRecurring
-        ? { value: Number(recurrenceValue), unit: recurrenceUnit }
+        ? {
+            value: Number(recurrenceValue),
+            unit: recurrenceUnit,
+          }
         : null,
     });
+
     setTitle("");
     setDescription("");
     setPriority("medium");
     setDueDate("");
+    setIsRecurring(false);
+    setRecurrenceValue(1);
+    setRecurrenceUnit("days");
   };
 
   return (
@@ -434,6 +442,37 @@ const AddTaskForm = ({ onAddTask }) => {
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
       />
+
+      <label>
+        <input
+          type="checkbox"
+          checked={isRecurring}
+          onChange={(e) => setIsRecurring(e.target.checked)}
+        />
+        Recurring
+      </label>
+
+      {isRecurring && (
+        <div>
+          <input
+            type="number"
+            min="1"
+            value={recurrenceValue}
+            onChange={(e) => setRecurrenceValue(e.target.value)}
+          />
+          <select
+            value={recurrenceUnit}
+            onChange={(e) => setRecurrenceUnit(e.target.value)}
+          >
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months">Months</option>
+          </select>
+        </div>
+      )}
+
       <button type="submit">Add Task</button>
     </form>
   );

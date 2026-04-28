@@ -15,7 +15,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [editSubTitle, setEditSubTitle] = useState("");
   const [editSubDescription, setEditSubDescription] = useState("");
   const [editPriority, setEditPriority] = useState(taskObj.priority);
-  const [isRecurring, setIsRecurring] = useState(taskObj.recurring || false);
+  const [isRecurring, setIsRecurring] = useState(!!taskObj.recurrence);
   const [recurrenceValue, setRecurrenceValue] = useState(1);
   const [recurrenceUnit, setRecurrenceUnit] = useState("days");
 
@@ -56,12 +56,6 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const handleEditSave = async () => {
     if (!editTitle.trim()) return;
     try {
-      const recurrence = isRecurring
-        ? {
-            value: Number(recurrenceValue),
-            unit: recurrenceUnit,
-          }
-        : null;
       const res = await fetch(`${API}/tasks/${taskObj._id}`, {
         method: "PUT",
         headers: {
@@ -72,8 +66,12 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           title: editTitle,
           description: editDescription,
           priority: editPriority,
-          recurring: isRecurring,
-          recurrence: recurrence,
+          recurrence: isRecurring
+            ? {
+                value: Number(recurrenceValue),
+                unit: recurrenceUnit,
+              }
+            : null,
         }),
       });
       const data = await res.json();
@@ -204,7 +202,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     setEditTitle(taskObj.title || "");
     setEditDescription(taskObj.description || "");
     setEditPriority(taskObj.priority || "medium");
-    setIsRecurring(taskObj.recurring || false);
+    setIsRecurring(!!taskObj.recurrence);
 
     if (taskObj.recurrence) {
       setRecurrenceValue(taskObj.recurrence.value || 1);
@@ -220,7 +218,34 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   return (
     <>
       <div className="task-card">
-        {isEditing ? (
+        <>
+          <h2>{taskObj.title}</h2>
+          <p>Description: {taskObj.description}</p>
+        </>
+        <p>Priority: {taskObj.priority}</p>
+        <p>
+          Due:{" "}
+          {taskObj.dueDate
+            ? new Date(taskObj.dueDate).toLocaleDateString("en-US", {
+                timeZone: "UTC",
+              })
+            : "No due date"}
+        </p>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
+          {taskObj.completed ? "Completed" : "Mark Complete"}
+        </button>
+        <p>Subtasks:</p>
+        <ul>
+          {taskObj.subTasks.map((subTask) => (
+            <li key={subTask._id}>{subTask.title}</li>
+          ))}
+        </ul>
+        <AITaskBreakdown taskObj={taskObj} onAdd={handleAddSubTask} />
+        <SubTaskForm onAdd={handleAddSubTask} />
+        <p>Attachments:</p>
+        <Attachments taskId={taskObj._id} token={token} />
+        {isEditing && (
           <>
             <input
               type="text"
@@ -272,25 +297,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             <button onClick={handleEditSave}>Save</button>
             <button onClick={handleEditCancel}>Cancel</button>
           </>
-        ) : (
-          <>
-            <h2>{taskObj.title}</h2>
-            <p>Description: {taskObj.description}</p>
-          </>
         )}
-        <p>Priority: {taskObj.priority}</p>
-        <p>
-          Due:{" "}
-          {taskObj.dueDate
-            ? new Date(taskObj.dueDate).toLocaleDateString("en-US", {
-                timeZone: "UTC",
-              })
-            : "No due date"}
-        </p>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
-          {taskObj.completed ? "Completed" : "Mark Complete"}
-        </button>
         <button
           onClick={startEditing}
           disabled={taskObj.completed || isEditing}
@@ -300,16 +307,6 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         <button className="delete-btn" onClick={() => onDelete(taskObj._id)}>
           Delete Task
         </button>
-        <p>Subtasks:</p>
-        <ul>
-          {taskObj.subTasks.map((subTask) => (
-            <li key={subTask._id}>{subTask.title}</li>
-          ))}
-        </ul>
-        <AITaskBreakdown taskObj={taskObj} onAdd={handleAddSubTask} />
-        <SubTaskForm onAdd={handleAddSubTask} />
-        <p>Attachments:</p>
-        <Attachments taskId={taskObj._id} token={token} />
       </div>
       {taskObj.subTasks.map((subTask) => (
         <div className="subtask-card" key={subTask._id}>
