@@ -24,6 +24,7 @@ function GroupDashboardPage() {
   const [myNotes, setMyNotes] = useState([])
   const [viewNote, setViewNote] = useState(null)
   const [joinRequested, setJoinRequested] = useState(false)
+  const [privacy, setPrivacy] = useState("open")
   const messagesEndRef = useRef(null)
 
   const loadGroup = async () => {
@@ -33,6 +34,7 @@ function GroupDashboardPage() {
     if (res.ok) {
       const data = await res.json()
       setGroup(data)
+      setPrivacy(data.privacy ?? "open")
       const alreadyRequested = data.joinRequests?.some(r => r._id?.toString() === myUserId)
       setJoinRequested(alreadyRequested)
     }
@@ -116,6 +118,12 @@ function GroupDashboardPage() {
     const onRequestAccepted = (data) => {
       if (data.groupId === groupId) loadGroup()
     }
+    const onPrivacyChanged = (data) => {
+      if (data.groupId === groupId) {
+        setPrivacy(data.privacy)
+        setGroup(prev => prev ? { ...prev, privacy: data.privacy } : prev)
+      }
+    }
 
     socket.on("group_message_received", onGroupMessage)
     socket.on("group_join_request", onJoinRequest)
@@ -125,6 +133,7 @@ function GroupDashboardPage() {
     socket.on("group_note_removed", onNoteRemoved)
     socket.on("group_deleted", onGroupDeleted)
     socket.on("group_request_accepted", onRequestAccepted)
+    socket.on("group_privacy_changed", onPrivacyChanged)
 
     return () => {
       socket.off("group_message_received", onGroupMessage)
@@ -135,6 +144,7 @@ function GroupDashboardPage() {
       socket.off("group_note_removed", onNoteRemoved)
       socket.off("group_deleted", onGroupDeleted)
       socket.off("group_request_accepted", onRequestAccepted)
+      socket.off("group_privacy_changed", onPrivacyChanged)
     }
   }, [groupId])
 
@@ -170,7 +180,32 @@ function GroupDashboardPage() {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.ok) setJoinRequested(true)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.joined) {
+        await loadGroup()
+      } else {
+        setJoinRequested(true)
+      }
+    }
+  }
+
+  const leaveGroup = async () => {
+    if (!window.confirm(`Leave "${group.name}"?`)) return
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/members/${myUserId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) navigate("/mygroups")
+  }
+
+  const changePrivacy = async (newPrivacy) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/privacy`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ privacy: newPrivacy })
+    })
+    if (res.ok) setPrivacy(newPrivacy)
   }
 
   const acceptRequest = async (userId) => {
@@ -308,6 +343,9 @@ function GroupDashboardPage() {
           {isOwner && (
             <button className={styles.deleteGroupButton} onClick={deleteGroup}>Delete Group</button>
           )}
+          {isMember && !isOwner && (
+            <button className={styles.leaveGroupButton} onClick={leaveGroup}>Leave Group</button>
+          )}
         </div>
         <hr className={styles.contentDivider} />
 
@@ -317,7 +355,9 @@ function GroupDashboardPage() {
             <p className={styles.joinText}>You are not a member of this group.</p>
             {joinRequested
               ? <button className={styles.requestedButton} disabled>Request Sent</button>
-              : <button className={styles.joinButton} onClick={requestToJoin}>Request to Join</button>
+              : <button className={styles.joinButton} onClick={requestToJoin}>
+                  {privacy === "open" ? "Join Group" : "Request to Join"}
+                </button>
             }
           </div>
         )}
@@ -399,6 +439,18 @@ function GroupDashboardPage() {
             {activeTab === "Members" && (
               <div className={styles.membersPanel}>
                 <div className={styles.panelToolbar}>
+                  {isOwner && (
+                    <div className={styles.privacyToggle}>
+                      <button
+                        className={`${styles.privacyOption} ${privacy === "open" ? styles.privacyActive : ""}`}
+                        onClick={() => changePrivacy("open")}
+                      >Open</button>
+                      <button
+                        className={`${styles.privacyOption} ${privacy === "request" ? styles.privacyActive : ""}`}
+                        onClick={() => changePrivacy("request")}
+                      >Requests Only</button>
+                    </div>
+                  )}
                   <button className={styles.toolbarButton} onClick={() => { setShowAddMember(true); loadFriends() }}>+ Add Member</button>
                 </div>
 
@@ -504,7 +556,11 @@ function GroupDashboardPage() {
                       <div key={note._id} className={styles.modalItem} onClick={() => shareNote(note._id)}>
                         <div className={styles.noteCardInfo}>
                           <p className={styles.modalItemName}>{note.title || "Untitled"}</p>
-                          {note.studyPlanID && <p className={styles.noteMeta}>from a study plan</p>}
+                          <p className={styles.noteMeta}>
+                            {note.studyPlanID?.title
+                              ? `from ${note.studyPlanID.title}`
+                              : "from a study plan"}
+                          </p>
                         </div>
                       </div>
                     ))
