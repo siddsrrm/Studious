@@ -373,6 +373,9 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
               />
 
               <div className="modal-actions">
+                <button type="submit" form="add-task-form" className="primary">
+                  Add Task
+                </button>
                 <button
                   type="button"
                   className="secondary"
@@ -459,7 +462,7 @@ const AddTaskForm = ({ onAddTask }) => {
   };
 
   return (
-    <form className="addtask-form" onSubmit={handleSubmit}>
+    <form id="add-task-form" className="addtask-form" onSubmit={handleSubmit}>
       <div className="modal-field">
         <label>Title</label>
         <input
@@ -494,15 +497,14 @@ const AddTaskForm = ({ onAddTask }) => {
           onChange={(e) => setDueDate(e.target.value)}
         />
       </div>
-      <div className="modal-field">
-        <label>
-          <input
-            type="checkbox"
-            checked={isRecurring}
-            onChange={(e) => setIsRecurring(e.target.checked)}
-          />
-          Recurring
-        </label>
+      <div className="modal-field checkbox-row">
+        <label htmlFor="recurring">Recurring</label>
+        <input
+          id="recurring"
+          type="checkbox"
+          checked={isRecurring}
+          onChange={(e) => setIsRecurring(e.target.checked)}
+        />
       </div>
 
       {isRecurring && (
@@ -525,12 +527,6 @@ const AddTaskForm = ({ onAddTask }) => {
           </select>
         </div>
       )}
-
-      <div className="modal-actions">
-        <button type="submit" className="primary">
-          Add Task
-        </button>
-      </div>
     </form>
   );
 };

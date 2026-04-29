@@ -122,16 +122,6 @@
 }
 
 /* MODAL */
-.modal-field label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-field {
-  margin-bottom: 6px;
-}
-
 .modal-content {
   background: #ffffff;
   border-radius: 16px;
@@ -177,7 +167,7 @@
 }
 
 /* INPUTS */
-.modal-content input,
+.modal-content input:not([type="checkbox"]),
 .modal-content select {
   width: 100%;
   border: 1px solid #cbd5e1;
@@ -201,9 +191,13 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-bottom: 6px;
 }
 
 .modal-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   color: #64748b;
   font-weight: 500;
@@ -212,7 +206,7 @@
 /* ACTIONS */
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 10px;
   margin-top: 10px;
 }
@@ -226,12 +220,25 @@
   transition: 0.2s ease;
 }
 
-/* MODAL ACTION LAYOUT */
-.modal-actions {
+/* CHECKBOX */
+.modal-field.checkbox-row {
+  flex-direction: row;
+}
+
+.checkbox-row {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 10px;
+  align-items: center;
+  justify-content: flex-start; /* keep left aligned */
+  gap: 8px;
+}
+
+.checkbox-row label {
+  display: inline; /* override global flex label */
+  margin: 0;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin: 0;
 }
 
 /* CALENDAR */
