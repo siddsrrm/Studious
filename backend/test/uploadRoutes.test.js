@@ -1,5 +1,9 @@
 const request = require("supertest");
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+
+const uploadDir = path.join(__dirname, "../data/assets");
 
 jest.mock("../middleware/authMiddleware", () => {
   // auth middleware stub: always authenticate
@@ -102,6 +106,13 @@ describe("uploadRoutes", () => {
   afterEach(() => {
     delete global.fetch;
     jest.clearAllMocks();
+
+    if (fs.existsSync(uploadDir)) {
+      const files = fs.readdirSync(uploadDir);
+      for (const file of files) {
+        fs.unlinkSync(path.join(uploadDir, file));
+      }
+    }
   });
 
   test("POST /api/upload/pdf returns extracted text + pageCount", async () => {
