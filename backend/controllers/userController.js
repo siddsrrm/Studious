@@ -41,6 +41,22 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+exports.updatePrivacy = async (req, res) => {
+  try {
+    const { profileVisibility } = req.body;
+    const validOptions = ["public", "friends", "hidden"];
+    if (!validOptions.includes(profileVisibility)) {
+      return res.status(400).json({ message: "Invalid visibility option." });
+    }
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    await user.updateOne({ profileVisibility });
+    res.json({ message: "Privacy settings updated.", profileVisibility });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update privacy settings." });
+  }
+};
+
 
 exports.getInfo = async (req, res) => {
 
@@ -188,9 +204,11 @@ exports.updateNotificationSettings = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
         if (!user) return res.status(404).json({ message: "User not found" });
-        const { remindersEnabled, reminderDaysBefore } = req.body;
+        const { remindersEnabled, reminderDaysBefore, analyticsReportEnabled, analyticsReportDay } = req.body;
         if (remindersEnabled !== undefined) user.notificationSettings.remindersEnabled = remindersEnabled;
         if (reminderDaysBefore !== undefined) user.notificationSettings.reminderDaysBefore = reminderDaysBefore;
+        if (analyticsReportEnabled !== undefined) user.notificationSettings.analyticsReportEnabled = analyticsReportEnabled;
+        if (analyticsReportDay !== undefined) user.notificationSettings.analyticsReportDay = analyticsReportDay;
         await user.save();
         res.json(user.notificationSettings);
     } catch (err) {
@@ -206,12 +224,27 @@ exports.searchUsers = async (req, res) => {
   }
 
   try {
+     // Get the searcher's friend list
+    const friendships = await FriendRequest.find({
+      $or: [{ sender: req.user.userId }, { recipient: req.user.userId }],
+      status: 1
+    });
+    const friendIds = friendships.map(f =>
+      f.sender.toString() === req.user.userId ? f.recipient.toString() : f.sender.toString()
+    );
+
     const users = await User.find({
-      username: { $regex: q, $options: "i" }, // case-insensitive
-      _id: { $ne: req.user.userId } // not equal to the user
-    }).select("username avatar").limit(20) // limit to 20 results
-    
-    res.json(users)
+      username: { $regex: q, $options: "i" },
+      _id: { $ne: req.user.userId },
+      $or: [
+        { profileVisibility: "public" },
+        { profileVisibility: { $exists: false } }, //include people with no profileVisibility saved yet
+        { profileVisibility: "friends", _id: { $in: friendIds } }
+        // hidden users are excluded entirely
+      ]
+    }).select("username avatar").limit(20);
+
+    res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Failed to search users" })
   }

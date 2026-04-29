@@ -16,7 +16,7 @@ import {Color} from '@tiptap/extension-color'
 import {TextStyle} from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
 import { Extension } from '@tiptap/core' 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 const getSpeechRecognition = () => {
   if (typeof window === 'undefined') return null
@@ -222,6 +222,7 @@ const VoiceInputButton = ({ editor }) => {
   const [error, setError] = useState('')
   const [interim, setInterim] = useState('')
   const [finalText, setFinalText] = useState('')
+  const recognitionRef = useRef(null)
 
   useEffect(() => {
     if (!finalText || !editor) return
@@ -232,6 +233,9 @@ const VoiceInputButton = ({ editor }) => {
   useEffect(() => {
     // Cleanup on unmount
     return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
       setIsListening(false)
     }
   }, [])
@@ -245,13 +249,16 @@ const VoiceInputButton = ({ editor }) => {
     }
 
     if (isListening) {
-      // We can't reliably stop a previous instance without holding a ref;
-      // instead, flip state and rely on `onend` to settle.
+      // Stop the current recognition
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
       setIsListening(false)
       return
     }
 
     const recognition = new SpeechRecognition()
+    recognitionRef.current = recognition
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = navigator?.language || 'en-US'
@@ -288,6 +295,7 @@ const VoiceInputButton = ({ editor }) => {
     recognition.onend = () => {
       setInterim('')
       setIsListening(false)
+      recognitionRef.current = null
     }
 
     try {

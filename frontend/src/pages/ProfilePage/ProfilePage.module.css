@@ -175,6 +175,24 @@
   border-color: #fca5a5;
 }
 
+.messageButton {
+  padding: 9px 0;
+  width: 100%;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+  transition: background-color 0.15s;
+}
+
+.messageButton:hover {
+  background-color: #4338ca;
+}
+
 .pendingActions {
   width: 100%;
   display: flex;

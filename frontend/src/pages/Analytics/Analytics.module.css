@@ -1,0 +1,79 @@
+/* analytics.module.css
+   Companion styles for AnalyticsPage.jsx.
+   Tailwind handles layout/spacing; this file handles
+   animations, transitions, and anything Tailwind can't do inline.
+*/
+
+/* ── Stat card ─────────────────────────────────────────────────────────── */
+.statCard {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.1);
+}
+
+.statIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Bar chart (daily) ─────────────────────────────────────────────────── */
+.dayBar {
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: bottom;
+}
+
+/* ── Course breakdown bars ─────────────────────────────────────────────── */
+.barFill {
+  transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.courseRow {
+  transition: opacity 0.2s ease;
+}
+.courseRow:hover {
+  opacity: 0.85;
+}
+
+/* ── Loading spinner ───────────────────────────────────────────────────── */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e0e7ff;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Page fade-in on mount ─────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply to each section for a staggered entrance */
+.fadeUp {
+  animation: fadeUp 0.4s ease both;
+}
+
+/* ── Week nav button active state ──────────────────────────────────────── */
+.weekBtn {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.weekBtn:hover:not(:disabled) {
+  background: #e0e7ff;
+  color: #4338ca;
+}
