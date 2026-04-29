@@ -13,6 +13,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
+  const [showAddTask, setShowAddTask] = useState(false);
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
@@ -123,6 +124,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+      const data = await res.json();
       if (res.ok) {
         setTasks((prev) => prev.filter((t) => t._id !== data.deletedTaskId));
       } else setError("Failed to delete task.");
@@ -321,7 +323,13 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             ))}
           </ul>
         )}
-        <AddTaskForm onAddTask={handleAddTask} />
+        <button
+          type="button"
+          className="primary"
+          onClick={() => setShowAddTask(true)}
+        >
+          + Add Task
+        </button>
         <div
           style={{
             marginTop: "1rem",
@@ -348,6 +356,32 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             </button>
           )}
         </div>
+        {showAddTask && (
+          <div className="modal-overlay" onClick={() => setShowAddTask(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Add Task</h3>
+              </div>
+
+              <AddTaskForm
+                onAddTask={(task) => {
+                  handleAddTask(task);
+                  setShowAddTask(false); // close after submit
+                }}
+              />
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setShowAddTask(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {showDraft && (
           <ScheduleModal
             draftSchedule={draftSchedule}

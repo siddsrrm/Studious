@@ -8,7 +8,7 @@ const API = import.meta.env.VITE_API_URL;
 const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
-  const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState(taskObj.title);
   const [editDescription, setEditDescription] = useState(taskObj.description);
   const [editingSubTaskId, setEditingSubTaskId] = useState(null);
@@ -78,7 +78,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
       if (res.ok) {
         if (data.updatedTask) onUpdate(data.updatedTask);
         if (data.newTask) onUpdate(data.newTask);
-        setIsEditing(false);
+        setShowEditModal(false);
       } else {
         setError("Failed to update task.");
       }
@@ -90,8 +90,8 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const handleEditCancel = () => {
     setEditTitle(taskObj.title);
     setEditDescription(taskObj.description);
-    setIsEditing(false);
     setEditPriority(taskObj.priority);
+    setShowEditModal(false);
   };
 
   const handleAddSubTask = async ({ title, description }) => {
@@ -212,7 +212,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
       setRecurrenceUnit("days");
     }
 
-    setIsEditing(true);
+    setShowEditModal(true);
   };
 
   return (
@@ -245,62 +245,9 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         <SubTaskForm onAdd={handleAddSubTask} />
         <p>Attachments:</p>
         <Attachments taskId={taskObj._id} token={token} />
-        {isEditing && (
-          <>
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-            />
-            <input
-              type="text"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-            />
-            <select
-              value={editPriority}
-              onChange={(e) => setEditPriority(e.target.value)}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-            <label>
-              <input
-                type="checkbox"
-                checked={isRecurring || false}
-                onChange={(e) => setIsRecurring(e.target.checked)}
-              />
-              Recurring
-            </label>
-            {isRecurring && (
-              <div className="recurrence-row">
-                <input
-                  type="number"
-                  min="1"
-                  value={recurrenceValue}
-                  onChange={(e) => setRecurrenceValue(e.target.value)}
-                />
-
-                <select
-                  value={recurrenceUnit}
-                  onChange={(e) => setRecurrenceUnit(e.target.value)}
-                >
-                  <option value="minutes">Minutes</option>
-                  <option value="hours">Hours</option>
-                  <option value="days">Days</option>
-                  <option value="weeks">Weeks</option>
-                  <option value="months">Months</option>
-                </select>
-              </div>
-            )}
-            <button onClick={handleEditSave}>Save</button>
-            <button onClick={handleEditCancel}>Cancel</button>
-          </>
-        )}
         <button
           onClick={startEditing}
-          disabled={taskObj.completed || isEditing}
+          disabled={taskObj.completed || showEditModal}
         >
           Edit
         </button>
@@ -354,6 +301,87 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           </button>
         </div>
       ))}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={handleEditCancel}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Task</h3>
+            </div>
+
+            <div className="modal-field">
+              <label>Title</label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Description</label>
+              <input
+                type="text"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Priority</label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <div className="modal-field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={isRecurring || false}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                />
+                Recurring
+              </label>
+            </div>
+
+            {isRecurring && (
+              <div className="recurrence-row">
+                <input
+                  type="number"
+                  min="1"
+                  value={recurrenceValue}
+                  onChange={(e) => setRecurrenceValue(e.target.value)}
+                />
+
+                <select
+                  value={recurrenceUnit}
+                  onChange={(e) => setRecurrenceUnit(e.target.value)}
+                >
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button className="secondary" onClick={handleEditCancel}>
+                Cancel
+              </button>
+              <button className="primary" onClick={handleEditSave}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
