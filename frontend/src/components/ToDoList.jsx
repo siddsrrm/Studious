@@ -126,7 +126,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        setTasks((prev) => prev.filter((t) => t._id !== data.deletedTaskId));
+        setTasks((prev) => prev.filter((t) => t._id !== taskId));
       } else setError("Failed to delete task.");
     } catch {
       setError("Network error. Please try again.");
@@ -317,9 +317,11 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         ) : tasks.length === 0 ? (
           <p>No tasks yet. Add one below!</p>
         ) : (
-          <ul>
+          <ul aria-label="Task titles summary">
             {filteredTasks.map((task) => (
-              <li key={task._id}>{task.title}</li>
+              <li key={task._id}>
+                <span data-testid="task-title-summary">{task.title}</span>
+              </li>
             ))}
           </ul>
         )}
@@ -458,40 +460,53 @@ const AddTaskForm = ({ onAddTask }) => {
 
   return (
     <form className="addtask-form" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Task title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="Task description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-      <input
-        type="date"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
-      />
-
-      <label>
+      <div className="modal-field">
+        <label>Title</label>
         <input
-          type="checkbox"
-          checked={isRecurring}
-          onChange={(e) => setIsRecurring(e.target.checked)}
+          type="text"
+          placeholder="Task title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
         />
-        Recurring
-      </label>
+      </div>
+      <div className="modal-field">
+        <label>Description</label>
+        <input
+          type="text"
+          placeholder="Task description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div className="modal-field">
+        <label>Priority</label>
+        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div className="modal-field">
+        <label>Due Date</label>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+      </div>
+      <div className="modal-field">
+        <label>
+          <input
+            type="checkbox"
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+          />
+          Recurring
+        </label>
+      </div>
 
       {isRecurring && (
-        <div>
+        <div className="modal-field">
           <input
             type="number"
             min="1"
@@ -511,7 +526,11 @@ const AddTaskForm = ({ onAddTask }) => {
         </div>
       )}
 
-      <button type="submit">Add Task</button>
+      <div className="modal-actions">
+        <button type="submit" className="primary">
+          Add Task
+        </button>
+      </div>
     </form>
   );
 };

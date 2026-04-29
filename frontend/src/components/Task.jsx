@@ -43,10 +43,11 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
         body: JSON.stringify({ completed: true }),
       });
+
       const data = await res.json();
       if (res.ok) {
         if (data.updatedTask) onUpdate(data.updatedTask);
-        if (data.newTask) onUpdate(data.newTask); // Adds task copy 'newTask' if recurring
+        if (data.newTask) onUpdate(data.newTask);
       } else setError("Failed to update task.");
     } catch {
       setError("Network error. Please try again.");
@@ -67,21 +68,17 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           description: editDescription,
           priority: editPriority,
           recurrence: isRecurring
-            ? {
-                value: Number(recurrenceValue),
-                unit: recurrenceUnit,
-              }
+            ? { value: Number(recurrenceValue), unit: recurrenceUnit }
             : null,
         }),
       });
+
       const data = await res.json();
       if (res.ok) {
         if (data.updatedTask) onUpdate(data.updatedTask);
         if (data.newTask) onUpdate(data.newTask);
         setShowEditModal(false);
-      } else {
-        setError("Failed to update task.");
-      }
+      } else setError("Failed to update task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -104,6 +101,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
         body: JSON.stringify({ title, description }),
       });
+
       const data = await res.json();
       if (res.ok) {
         if (data.updatedTask) onUpdate(data.updatedTask);
@@ -129,6 +127,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         }),
       },
     );
+
     const data = await res.json();
     if (res.ok) {
       if (data.updatedTask) onUpdate(data.updatedTask);
@@ -150,6 +149,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           body: JSON.stringify({ completed: true }),
         },
       );
+
       const data = await res.json();
       if (res.ok) {
         if (data.updatedTask) onUpdate(data.updatedTask);
@@ -169,6 +169,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
+
       const data = await res.json();
       if (res.ok) {
         if (data.updatedTask) onUpdate(data.updatedTask);
@@ -176,25 +177,6 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
       } else setError("Failed to delete subtask.");
     } catch {
       setError("Network error. Please try again.");
-    }
-  };
-
-  const toMilliseconds = (value, unit) => {
-    const num = parseInt(value || 0, 10);
-
-    switch (unit) {
-      case "minutes":
-        return num * 60 * 1000;
-      case "hours":
-        return num * 60 * 60 * 1000;
-      case "days":
-        return num * 24 * 60 * 60 * 1000;
-      case "weeks":
-        return num * 7 * 24 * 60 * 60 * 1000;
-      case "months":
-        return num * 30 * 24 * 60 * 60 * 1000; // approximation
-      default:
-        return null;
     }
   };
 
@@ -207,9 +189,6 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
     if (taskObj.recurrence) {
       setRecurrenceValue(taskObj.recurrence.value || 1);
       setRecurrenceUnit(taskObj.recurrence.unit || "days");
-    } else {
-      setRecurrenceValue(1);
-      setRecurrenceUnit("days");
     }
 
     setShowEditModal(true);
@@ -218,10 +197,9 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   return (
     <>
       <div className="task-card">
-        <>
-          <h2>{taskObj.title}</h2>
-          <p>Description: {taskObj.description}</p>
-        </>
+        <h2>{taskObj.title}</h2>
+
+        <p>Description: {taskObj.description}</p>
         <p>Priority: {taskObj.priority}</p>
         <p>
           Due:{" "}
@@ -231,30 +209,38 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
               })
             : "No due date"}
         </p>
+
         {error && <p style={{ color: "red" }}>{error}</p>}
+
         <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
           {taskObj.completed ? "Completed" : "Mark Complete"}
         </button>
+
         <p>Subtasks:</p>
         <ul>
           {taskObj.subTasks.map((subTask) => (
             <li key={subTask._id}>{subTask.title}</li>
           ))}
         </ul>
+
         <AITaskBreakdown taskObj={taskObj} onAdd={handleAddSubTask} />
         <SubTaskForm onAdd={handleAddSubTask} />
+
         <p>Attachments:</p>
         <Attachments taskId={taskObj._id} token={token} />
+
         <button
           onClick={startEditing}
           disabled={taskObj.completed || showEditModal}
         >
           Edit
         </button>
+
         <button className="delete-btn" onClick={() => onDelete(taskObj._id)}>
           Delete Task
         </button>
       </div>
+
       {taskObj.subTasks.map((subTask) => (
         <div className="subtask-card" key={subTask._id}>
           {editingSubTaskId === subTask._id ? (
@@ -276,6 +262,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             <>
               <h2>{subTask.title}</h2>
               <p>{subTask.description}</p>
+
               <button
                 onClick={() => {
                   setEditingSubTaskId(subTask._id);
@@ -287,12 +274,14 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
               </button>
             </>
           )}
+
           <button
             onClick={() => handleMarkSubTaskCompleted(subTask._id)}
             disabled={subTask.completed}
           >
             {subTask.completed ? "Completed" : "Mark Complete"}
           </button>
+
           <button
             className="delete-btn"
             onClick={() => handleDeleteSubTask(subTask._id)}
@@ -301,6 +290,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           </button>
         </div>
       ))}
+
       {showEditModal && (
         <div className="modal-overlay" onClick={handleEditCancel}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -311,7 +301,6 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             <div className="modal-field">
               <label>Title</label>
               <input
-                type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
               />
@@ -320,7 +309,6 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             <div className="modal-field">
               <label>Description</label>
               <input
-                type="text"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
               />
@@ -350,14 +338,13 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             </div>
 
             {isRecurring && (
-              <div className="recurrence-row">
+              <div>
                 <input
                   type="number"
                   min="1"
                   value={recurrenceValue}
                   onChange={(e) => setRecurrenceValue(e.target.value)}
                 />
-
                 <select
                   value={recurrenceUnit}
                   onChange={(e) => setRecurrenceUnit(e.target.value)}
