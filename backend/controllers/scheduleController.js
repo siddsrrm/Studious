@@ -102,6 +102,7 @@ OUTPUT REQUIREMENTS
 }
 `;
 
+    console.log("Sending AI request for schedule generation...");
     const aiRes = await fetch(process.env.OLLAMA_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -120,8 +121,19 @@ OUTPUT REQUIREMENTS
       }),
     });
 
+    if (!aiRes.ok) {
+      const errText = await aiRes.text().catch(() => "");
+      console.error(
+        "Ollama error (schedule generation):",
+        aiRes.status,
+        errText,
+      );
+      return res.status(502).json({ message: "AI service request failed" });
+    }
+
     const aiJson = await aiRes.json();
     const content = aiJson?.message?.content || "";
+    console.log("AI response length:", content.length);
 
     const parsed = JSON.parse(content);
 
@@ -136,6 +148,7 @@ OUTPUT REQUIREMENTS
       end: e.end,
     }));
 
+    console.log("Final schedule generated:", finalSchedule);
     return res.json(finalSchedule);
   } catch (err) {
     console.error("Error generating schedule:", err.message);

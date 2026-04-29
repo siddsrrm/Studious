@@ -18,6 +18,7 @@ exports.getPracticeQuestions = async (req, res) => {
     const practiceQuestions = await PracticeQuestion.find({
       ownerID: req.user.userId,
       studyPlanId: studyPlanId,
+      hidden: { $ne: true },
     });
 
     console.log("[GET] Found questions:", practiceQuestions.length);
@@ -123,11 +124,12 @@ exports.deletePracticeQuestion = async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    await practiceQuestion.deleteOne({ _id: req.params.id });
+  practiceQuestion.hidden = true;
+  await practiceQuestion.save();
 
-    console.log("[DELETE] Deleted:", req.params.id);
+  console.log("[DELETE] Soft-deleted (hidden):", req.params.id);
 
-    res.json({ message: "Practice question deleted" });
+  res.json({ message: "Practice question removed from view" });
   } catch (err) {
     console.error("[DELETE] Error:", err.message);
     res.status(500).json({
@@ -297,5 +299,260 @@ exports.generatePracticeQuestions = async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal server error", error: err.message });
+  }
+};
+
+// POST /api/practice-questions/:id/attempt
+exports.logPracticeQuestionAttempt = async (req, res) => {
+  try {
+    const { isCorrect } = req.body || {};
+    const { id } = req.params;
+
+    if (typeof isCorrect !== "boolean") {
+      return res.status(400).json({ message: "isCorrect (boolean) is required" });
+    }
+
+    const practiceQuestion = await PracticeQuestion.findById(id);
+    if (!practiceQuestion) {
+      return res.status(404).json({ message: "Practice question not found" });
+    }
+
+    if (practiceQuestion.ownerID.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    practiceQuestion.attempts = (practiceQuestion.attempts || 0) + 1;
+    if (isCorrect) {
+      practiceQuestion.correctAttempts = (practiceQuestion.correctAttempts || 0) + 1;
+    }
+    practiceQuestion.lastAttemptedAt = new Date();
+
+    await practiceQuestion.save();
+    return res.json(practiceQuestion);
+  } catch (err) {
+    console.error("[POST] /practice-questions/:id/attempt error:", err.message);
+    return res.status(500).json({ message: "Internal server error", error: err.message });
+  }
+};
+
+// POST /api/practice-questions/generate-mastery
+exports.generateMasteryPracticeTest = async (req, res) => {
+  try {
+    const { studyPlanId, noteIds, numQuestions } = req.body || {};
+
+    if (!studyPlanId) {
+      return res.status(400).json({ message: "studyPlanId is required" });
+    }
+
+    const providedNoteIds = Array.isArray(noteIds) ? noteIds.filter(Boolean) : [];
+    const targetCount = Number.isFinite(Number(numQuestions)) ? Math.max(1, Number(numQuestions)) : 5;
+
+    // 1. CRITICAL FIX: Scope all queries strictly to the requested notes
+    const baseQuery = { ownerID: req.user.userId, studyPlanId };
+    if (providedNoteIds.length > 0) {
+      baseQuery.generatedFromNoteId = { $in: providedNoteIds };
+    }
+
+    const anyCount = await PracticeQuestion.countDocuments(baseQuery);
+    if (anyCount === 0) {
+      return res.status(404).json({
+        message: "No practice questions found for this selection. Generate a standard test first.",
+      });
+    }
+
+    const selected = [];
+    const selectedIds = new Set();
+
+    const addUnique = (docs) => {
+      for (const d of docs) {
+        const key = d._id.toString();
+        if (!selectedIds.has(key)) {
+          selected.push(d);
+          selectedIds.add(key);
+        }
+        // Limit how many target examples we feed the AI context window
+        if (selected.length >= targetCount) break; 
+      }
+    };
+
+    // 1) Missed questions: correctAttempts < attempts
+    const missed = await PracticeQuestion.find({
+      ...baseQuery,
+      $expr: { $lt: ["$correctAttempts", "$attempts"] },
+    })
+      .sort({ lastAttemptedAt: 1 })
+      .limit(targetCount)
+      .lean();
+    addUnique(missed);
+
+  // IMPORTANT: Mastery means ONLY weaknesses. Do not pad with unseen questions.
+
+    // 2. CRITICAL FIX: Only fallback to "mastered" questions if the user 
+    // has ZERO missed or unseen questions. We no longer pad the array.
+    if (selected.length === 0) {
+      const remaining = await PracticeQuestion.find({
+        ...baseQuery,
+        _id: { $nin: Array.from(selectedIds) },
+      })
+        .sort({ lastAttemptedAt: 1 })
+        .limit(targetCount)
+        .lean();
+      addUnique(remaining);
+    }
+
+    // 1. STRICT ISOLATION: Ignore frontend noteIds entirely for mastery.
+    // Only pull the exact notes linked to the specific questions the user missed.
+    const derivedNoteIds = Array.from(
+      new Set(
+        selected
+          .map((q) => q.generatedFromNoteId)
+          .filter(Boolean)
+          .map((id) => id.toString())
+      )
+    );
+
+    const notes = derivedNoteIds.length
+      ? await Note.find({
+          _id: { $in: derivedNoteIds },
+          ownerID: req.user.userId,
+        }).lean()
+      : [];
+
+    const combinedNotes = (notes || [])
+      .map((n) => `Title: ${n.title}\n${n.content}`)
+      .join("\n\n---\n\n")
+      .slice(0, 12000);
+
+    // 2. DYNAMIC COUNTING: Only ask for exactly as many questions as were missed.
+    const generationCount = selected.length;
+
+    // Prompt engineering block
+    const prompt = `You are an expert educator and exam writer.
+
+Your task: generate an adaptive mastery practice test for a student.
+
+You are given:
+1) A list of target questions the student struggled with.
+2) The specific study notes those questions came from.
+
+CRITICAL REQUIREMENTS:
+- Generate EXACTLY ${generationCount} NEW questions.
+- Create exactly ONE variation for each of the TARGET QUESTIONS provided below.
+- These questions MUST test the SAME underlying concepts but be phrased differently.
+- The student must not be able to answer by memorizing the previous wording.
+- Return ONLY strict JSON. No markdown. No explanations.
+
+OUTPUT FORMAT (must match exactly):
+{
+  "questions": [
+    {
+      "questionType": "free-response",
+      "question": "...",
+      "answer": "..."
+    }
+  ]
+}
+
+RULES:
+- Every item must include questionType.
+- questionType must be either "free-response" or "multiple-choice".
+- For multiple-choice, include "options" (array of 4 strings) and "correctIndex" (0-3).
+- For free-response, include "answer" (short, ideally <= 2 words).
+
+TARGET QUESTIONS (for variation):
+${JSON.stringify(selected.map(q => ({ questionType: q.questionType, question: q.question, answer: q.answer, options: q.options || [] })), null, 2)}
+
+STUDY NOTES:
+"""
+${combinedNotes}
+"""`;
+
+    const ollamaUrl = process.env.OLLAMA_URL;
+    const ollamaModel = process.env.OLLAMA_MODEL;
+    if (!ollamaUrl || !ollamaModel) {
+      return res.status(500).json({ message: "OLLAMA configuration missing" });
+    }
+
+    const aiRes = await fetch(ollamaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [
+          { role: "system", content: "You only output raw JSON." },
+          { role: "user", content: prompt },
+        ],
+        format: "json",
+        stream: false,
+        options: { temperature: 0.35, num_ctx: 8192 },
+      }),
+    });
+
+    if (!aiRes.ok) {
+      const errorText = await aiRes.text().catch(() => "");
+      console.error("[generate-mastery] Ollama error:", aiRes.status, errorText);
+      return res.status(502).json({ message: "AI service request failed" });
+    }
+
+    const aiJson = await aiRes.json();
+    const content = aiJson?.message?.content || "";
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return res.status(500).json({ message: "Failed to parse AI response into JSON", raw: content });
+    }
+
+    const outQuestions = Array.isArray(parsed?.questions) ? parsed.questions : [];
+    if (outQuestions.length === 0) {
+      return res.status(500).json({ message: `AI returned ${outQuestions.length} questions; expected exactly ${generationCount}`, raw: parsed });
+    }
+
+    if (outQuestions.length !== generationCount) {
+      return res.status(500).json({
+        message: `AI returned ${outQuestions.length} questions; expected exactly ${generationCount}`,
+        raw: parsed,
+      });
+    }
+
+    // Map generated questions back to the source questions we selected.
+    // This preserves correct note provenance and prevents cross-note leakage.
+    const docsToSave = outQuestions.map((q, i) => {
+      const isMC = q.questionType === "multiple-choice";
+      let extractedAnswer = "";
+      if (isMC) {
+        if (Array.isArray(q.options) && q.correctIndex !== undefined && q.options[q.correctIndex]) {
+          extractedAnswer = q.options[q.correctIndex];
+        } else if (q.answer) {
+          extractedAnswer = q.answer;
+        }
+      } else {
+        extractedAnswer = q.answer;
+      }
+
+      return {
+        ownerID: req.user.userId,
+        studyPlanId,
+        questionType: isMC ? "multiple-choice" : "free-response",
+        question: q.question || "AI generated a blank question",
+        answer: extractedAnswer || "AI failed to provide an answer", 
+        options: Array.isArray(q.options) ? q.options : [],
+        // Preserve originating note from the specific source question.
+        generatedFromNoteId: selected[i]?.generatedFromNoteId,
+      };
+    });
+
+    const saved = await PracticeQuestion.insertMany(docsToSave);
+    
+    return res.status(201).json({
+      message: `Successfully generated ${saved.length} mastery questions`,
+      questions: saved,
+      sourceSelection: { missed: missed.length, selected: selected.length },
+    });
+
+  } catch (err) {
+    console.error("[generate-mastery] Error:", err.message);
+    return res.status(500).json({ message: "Internal server error", error: err.message });
   }
 };

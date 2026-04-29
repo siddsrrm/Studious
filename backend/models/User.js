@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
   notificationSettings: {
     remindersEnabled: { type: Boolean, default: false },
     reminderDaysBefore: { type: Number, default: 1 },
+    analyticsReportEnabled: { type: Boolean, default: false },
+    analyticsReportDay: { type: Number, default: 1, min: 0, max: 6 }
 },
   googleId: { type: String, default: null },
   googleAccessToken: { type: String, default: null },
@@ -26,7 +28,12 @@ googleRefreshToken: { type: String, default: null },
 googleCalendarConnected: { type: Boolean, default: false },
 displayName: { type: String, default: "" },
 bio: { type: String, default: "", maxlength: 200 },
-location:    { type: String, default: "" }
+location:    { type: String, default: "" },
+profileVisibility: {
+  type: String,
+  enum: ["public", "friends", "hidden"],
+  default: "public"
+}
 })
 
 userSchema.methods.createStudyPlan = function(title, description) {

@@ -11,6 +11,19 @@ const practiceQuestionSchema = new mongoose.Schema({
     ref: "StudyPlan",
     required: true,
   },
+  // Mastery tracking
+  attempts: {
+    type: Number,
+    default: 0,
+  },
+  correctAttempts: {
+    type: Number,
+    default: 0,
+  },
+  lastAttemptedAt: {
+    type: Date,
+    default: null,
+  },
   questionType: {
     type: String,
     enum: ["multiple-choice", "free-response"],
@@ -22,6 +35,13 @@ const practiceQuestionSchema = new mongoose.Schema({
   generatedFromNoteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Note",
+  },
+
+  // Soft-delete flag: hidden questions should not appear in the main UI list,
+  // but they remain in the database and are still eligible for mastery tests.
+  hidden: {
+    type: Boolean,
+    default: false,
   },
 });
 
