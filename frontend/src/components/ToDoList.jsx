@@ -96,8 +96,11 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         }),
       });
       const data = await res.json();
-      if (res.ok) setTasks([...tasks, data]);
-      else setError(data.message || "Failed to create task.");
+      if (res.ok) {
+        if (data.updatedTask) {
+          setTasks((prev) => [...prev, data.updatedTask]);
+        }
+      } else setError(data.message || "Failed to create task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -120,8 +123,9 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setTasks(tasks.filter((t) => t._id !== taskId));
-      else setError("Failed to delete task.");
+      if (res.ok) {
+        setTasks((prev) => prev.filter((t) => t._id !== data.deletedTaskId));
+      } else setError("Failed to delete task.");
     } catch {
       setError("Network error. Please try again.");
     }

@@ -69,7 +69,7 @@ exports.createTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.status(201).json(task);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     res
       .status(500)
@@ -169,7 +169,7 @@ exports.updateTask = async (req, res) => {
 
     await syncTaskProgress(task.ownerID, task.studyPlanID);
 
-    res.json({ updatedTask: updated, newTask });
+    res.json({ updatedTask: updated, newTask: newTask || null });
   } catch (err) {
     res.status(500).json({
       message: "Error updating task",
@@ -197,7 +197,9 @@ exports.deleteTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json({ message: "Task deleted" });
+    res.json({
+      deletedTaskId: task._id,
+    });
   } catch (err) {
     res
       .status(500)
@@ -236,7 +238,7 @@ exports.createSubTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.status(201).json(task);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     res
       .status(500)
@@ -262,7 +264,7 @@ exports.updateSubTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json(updated);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     if (err.message === "Subtask not found")
       return res.status(404).json({ message: err.message });
@@ -293,7 +295,7 @@ exports.deleteSubTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json(task);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     res
       .status(500)
