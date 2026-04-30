@@ -238,6 +238,8 @@ exports.cancelJoinRequest = async (req, res) => {
     group.joinRequests = group.joinRequests.filter(r => r.toString() !== userId)
     await group.save()
 
+    emitToUser(group.createdBy.toString(), "group_join_request_cancelled", { groupId, userId })
+
     res.json({ message: "Request cancelled" })
   } catch (err) {
     res.status(500).json({ message: "Failed to cancel request" })
