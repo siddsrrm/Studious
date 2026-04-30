@@ -11,6 +11,7 @@ const {
   deleteGroup,
   updatePrivacy,
   requestToJoin,
+  cancelJoinRequest,
   acceptJoinRequest,
   declineJoinRequest,
   getMessages,
@@ -31,6 +32,7 @@ router.put("/:groupId/privacy", authToken, updatePrivacy)
 router.post("/:groupId/members", authToken, addMember)
 router.delete("/:groupId/members/:userId", authToken, removeMember)
 router.post("/:groupId/join", authToken, requestToJoin)
+router.delete("/:groupId/join", authToken, cancelJoinRequest)
 router.post("/:groupId/join/:userId/accept", authToken, acceptJoinRequest)
 router.post("/:groupId/join/:userId/decline", authToken, declineJoinRequest)
 router.get("/:groupId/messages", authToken, getMessages)

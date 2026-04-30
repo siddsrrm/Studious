@@ -191,6 +191,14 @@ function GroupDashboardPage() {
     }
   }
 
+  const cancelRequest = async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/join`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) setJoinRequested(false)
+  }
+
   const leaveGroup = async () => {
     if (!window.confirm(`Leave "${group.name}"?`)) return
     const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/members/${myUserId}`, {
@@ -354,7 +362,7 @@ function GroupDashboardPage() {
           <div className={styles.joinCard}>
             <p className={styles.joinText}>You are not a member of this group.</p>
             {joinRequested
-              ? <button className={styles.requestedButton} disabled>Request Sent</button>
+              ? <button className={styles.requestedButton} onClick={cancelRequest}>Request Sent</button>
               : <button className={styles.joinButton} onClick={requestToJoin}>
                   {privacy === "open" ? "Join Group" : "Request to Join"}
                 </button>
@@ -469,7 +477,7 @@ function GroupDashboardPage() {
                         </div>
                         <div className={styles.requestInfo}>
                           <p className={styles.requestUsername}>{user.username}</p>
-                          <p className={styles.requestSub}>Wants to join this group</p>
+                          <p className={styles.requestSub}>wants to join this group</p>
                         </div>
                         <div className={styles.requestActions}>
                           <button className={styles.acceptButton} onClick={() => acceptRequest(user._id)}>Accept</button>

@@ -227,6 +227,23 @@ exports.requestToJoin = async (req, res) => {
   }
 }
 
+exports.cancelJoinRequest = async (req, res) => {
+  try {
+    const { groupId } = req.params
+    const userId = req.user.userId
+
+    const group = await StudyGroup.findById(groupId)
+    if (!group) return res.status(404).json({ message: "Group not found" })
+
+    group.joinRequests = group.joinRequests.filter(r => r.toString() !== userId)
+    await group.save()
+
+    res.json({ message: "Request cancelled" })
+  } catch (err) {
+    res.status(500).json({ message: "Failed to cancel request" })
+  }
+}
+
 exports.acceptJoinRequest = async (req, res) => {
   try {
     const { groupId, userId } = req.params

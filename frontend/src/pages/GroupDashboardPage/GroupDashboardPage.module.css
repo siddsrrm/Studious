@@ -273,7 +273,14 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  cursor: default;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.requestedButton:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 /* Tabs */
@@ -593,7 +600,14 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  cursor: default;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.requestedButton:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 .requestsBadge {
