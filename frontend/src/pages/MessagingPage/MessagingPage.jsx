@@ -69,6 +69,11 @@ function MessagingPage() {
   const selectConversation = async (convo) => {
     selectedConvoRef.current = convo
     setSelectedConvo(convo)
+    setConversations(prev => prev.map(c =>
+      c._id === convo._id
+        ? { ...c, unreadCount: { ...c.unreadCount, [myUserId]: 0 } }
+        : c
+    ))
     await loadMessages(convo._id)
     await markAsRead(convo._id)
   }
