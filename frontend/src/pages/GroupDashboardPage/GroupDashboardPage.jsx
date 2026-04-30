@@ -25,6 +25,7 @@ function GroupDashboardPage() {
   const [viewNote, setViewNote] = useState(null)
   const [joinRequested, setJoinRequested] = useState(false)
   const [privacy, setPrivacy] = useState("open")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const messagesEndRef = useRef(null)
 
   const loadGroup = async () => {
@@ -252,7 +253,6 @@ function GroupDashboardPage() {
   }
 
   const deleteGroup = async () => {
-    if (!window.confirm(`Delete "${group.name}"? This cannot be undone.`)) return
     const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
@@ -341,7 +341,7 @@ function GroupDashboardPage() {
             <p className={styles.groupMeta}>{members.length} members</p>
           </div>
           {isOwner && (
-            <button className={styles.deleteGroupButton} onClick={deleteGroup}>Delete Group</button>
+            <button className={styles.deleteGroupButton} onClick={() => setShowDeleteConfirm(true)}>Delete Group</button>
           )}
           {isMember && !isOwner && (
             <button className={styles.leaveGroupButton} onClick={leaveGroup}>Leave Group</button>
@@ -565,6 +565,20 @@ function GroupDashboardPage() {
                       </div>
                     ))
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete group confirmation */}
+      {showDeleteConfirm && (
+        <div className={styles.overlay} onClick={() => setShowDeleteConfirm(false)}>
+          <div className={styles.confirmModal} onClick={e => e.stopPropagation()}>
+            <p className={styles.confirmTitle}>Delete &ldquo;{group.name}&rdquo;?</p>
+            <p className={styles.confirmBody}>This will permanently delete the group and all its content. There is no way to recover it after confirmation.</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.confirmCancel} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              <button className={styles.confirmDelete} onClick={deleteGroup}>Yes, delete</button>
             </div>
           </div>
         </div>
