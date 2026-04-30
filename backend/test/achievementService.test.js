@@ -100,14 +100,14 @@ describe("checkFriendAchievements", () => {
     expect(UserAchievement.create).toHaveBeenCalledTimes(1)
   })
 
-  test("awards first_friend and joined_study_group when friend count reaches 2", async () => {
+  test("awards only first_friend when friend count reaches 2 (joined_study_group is separate)", async () => {
     FriendRequest.countDocuments.mockResolvedValue(2)
     UserAchievement.create.mockResolvedValue({ earnedAt: new Date() })
     await checkFriendAchievements(USER_ID)
-    expect(UserAchievement.create).toHaveBeenCalledTimes(2)
+    expect(UserAchievement.create).toHaveBeenCalledTimes(1)
     const ids = UserAchievement.create.mock.calls.map(c => c[0].achievementId)
     expect(ids).toContain("first_friend")
-    expect(ids).toContain("joined_study_group")
+    expect(ids).not.toContain("joined_study_group")
   })
 
   test("queries using both sender and recipient fields with status 1", async () => {
