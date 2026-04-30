@@ -256,6 +256,16 @@ function ProfilePage() {
     }
   }
 
+  const messageUser = async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/messages/conversations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ friendId: profile._id })
+    })
+    const convo = await res.json()
+    navigate("/messages", { state: { convo } })
+  }
+
   const getButtonState = () => {
     if (!profile) return { label: "Add Friend", type: "add", action: () => {} }
     const id = profile._id.toString()
@@ -346,6 +356,12 @@ function ProfilePage() {
               onClick={btn.action}
             >
               {btn.label}
+            </button>
+          )}
+
+          {!isSelf && btn.type === "friends" && (
+            <button className={styles.messageButton} onClick={messageUser}>
+              Message
             </button>
           )}
         </div>
