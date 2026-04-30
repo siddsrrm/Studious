@@ -52,7 +52,6 @@ function MyGroupsPage() {
         <div className={styles.contentHeader}>
           <div>
             <h2 className={styles.contentTitle}>My Groups</h2>
-            <p className={styles.contentDescription}>Groups you are a member of.</p>
           </div>
           {groups.length > 0 && (
             <button className={styles.createButton} onClick={() => setShowCreateModal(true)}>
