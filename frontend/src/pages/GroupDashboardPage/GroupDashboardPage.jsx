@@ -464,7 +464,9 @@ function GroupDashboardPage() {
                           <p className={styles.noteTitle}>{note.title}</p>
                           <p className={styles.noteMeta}>by {note.ownerID?.username}</p>
                         </div>
-                        <button className={styles.deleteNoteButton} onClick={e => { e.stopPropagation(); deleteNote(note._id) }}>✕</button>
+                        {(note.ownerID?._id?.toString() === myUserId || isOwner) && (
+                          <button className={styles.deleteNoteButton} onClick={e => { e.stopPropagation(); deleteNote(note._id) }}>✕</button>
+                        )}
                       </div>
                     ))
                 }
