@@ -25,6 +25,8 @@ function GroupDashboardPage() {
   const [viewNote, setViewNote] = useState(null)
   const [joinRequested, setJoinRequested] = useState(false)
   const [privacy, setPrivacy] = useState("open")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const messagesEndRef = useRef(null)
 
   const loadGroup = async () => {
@@ -124,26 +126,44 @@ function GroupDashboardPage() {
         setGroup(prev => prev ? { ...prev, privacy: data.privacy } : prev)
       }
     }
+    const onRequestDeclined = (data) => {
+      if (data.groupId === groupId) setJoinRequested(false)
+    }
+    const onJoinRequestCancelled = (data) => {
+      if (data.groupId === groupId) {
+        setGroup(prev => prev ? {
+          ...prev,
+          joinRequests: (prev.joinRequests ?? []).filter(r => {
+            const id = r._id?.toString() ?? r?.toString()
+            return id !== data.userId
+          })
+        } : prev)
+      }
+    }
 
     socket.on("group_message_received", onGroupMessage)
     socket.on("group_join_request", onJoinRequest)
+    socket.on("group_join_request_cancelled", onJoinRequestCancelled)
     socket.on("group_member_joined", onMemberJoined)
     socket.on("group_member_removed", onMemberRemoved)
     socket.on("group_note_shared", onNoteShared)
     socket.on("group_note_removed", onNoteRemoved)
     socket.on("group_deleted", onGroupDeleted)
     socket.on("group_request_accepted", onRequestAccepted)
+    socket.on("group_request_declined", onRequestDeclined)
     socket.on("group_privacy_changed", onPrivacyChanged)
 
     return () => {
       socket.off("group_message_received", onGroupMessage)
       socket.off("group_join_request", onJoinRequest)
+      socket.off("group_join_request_cancelled", onJoinRequestCancelled)
       socket.off("group_member_joined", onMemberJoined)
       socket.off("group_member_removed", onMemberRemoved)
       socket.off("group_note_shared", onNoteShared)
       socket.off("group_note_removed", onNoteRemoved)
       socket.off("group_deleted", onGroupDeleted)
       socket.off("group_request_accepted", onRequestAccepted)
+      socket.off("group_request_declined", onRequestDeclined)
       socket.off("group_privacy_changed", onPrivacyChanged)
     }
   }, [groupId])
@@ -190,8 +210,15 @@ function GroupDashboardPage() {
     }
   }
 
+  const cancelRequest = async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/join`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) setJoinRequested(false)
+  }
+
   const leaveGroup = async () => {
-    if (!window.confirm(`Leave "${group.name}"?`)) return
     const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/members/${myUserId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
@@ -208,12 +235,22 @@ function GroupDashboardPage() {
     if (res.ok) setPrivacy(newPrivacy)
   }
 
+  const removeRequestFromState = (userId) => {
+    setGroup(prev => prev ? {
+      ...prev,
+      joinRequests: (prev.joinRequests ?? []).filter(r => {
+        const id = r._id?.toString() ?? r?.toString()
+        return id !== userId
+      })
+    } : prev)
+  }
+
   const acceptRequest = async (userId) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}/join/${userId}/accept`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.ok) await loadGroup()
+    if (res.ok) removeRequestFromState(userId)
   }
 
   const declineRequest = async (userId) => {
@@ -221,7 +258,7 @@ function GroupDashboardPage() {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.ok) await loadGroup()
+    if (res.ok) removeRequestFromState(userId)
   }
 
   const loadMyNotes = async () => {
@@ -252,7 +289,6 @@ function GroupDashboardPage() {
   }
 
   const deleteGroup = async () => {
-    if (!window.confirm(`Delete "${group.name}"? This cannot be undone.`)) return
     const res = await fetch(`${import.meta.env.VITE_API_URL}/studygroups/${groupId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
@@ -341,10 +377,10 @@ function GroupDashboardPage() {
             <p className={styles.groupMeta}>{members.length} members</p>
           </div>
           {isOwner && (
-            <button className={styles.deleteGroupButton} onClick={deleteGroup}>Delete Group</button>
+            <button className={styles.deleteGroupButton} onClick={() => setShowDeleteConfirm(true)}>Delete Group</button>
           )}
           {isMember && !isOwner && (
-            <button className={styles.leaveGroupButton} onClick={leaveGroup}>Leave Group</button>
+            <button className={styles.leaveGroupButton} onClick={() => setShowLeaveConfirm(true)}>Leave Group</button>
           )}
         </div>
         <hr className={styles.contentDivider} />
@@ -354,7 +390,7 @@ function GroupDashboardPage() {
           <div className={styles.joinCard}>
             <p className={styles.joinText}>You are not a member of this group.</p>
             {joinRequested
-              ? <button className={styles.requestedButton} disabled>Request Sent</button>
+              ? <button className={styles.requestedButton} onClick={cancelRequest}>Request Sent</button>
               : <button className={styles.joinButton} onClick={requestToJoin}>
                   {privacy === "open" ? "Join Group" : "Request to Join"}
                 </button>
@@ -428,7 +464,9 @@ function GroupDashboardPage() {
                           <p className={styles.noteTitle}>{note.title}</p>
                           <p className={styles.noteMeta}>by {note.ownerID?.username}</p>
                         </div>
-                        <button className={styles.deleteNoteButton} onClick={e => { e.stopPropagation(); deleteNote(note._id) }}>✕</button>
+                        {(note.ownerID?._id?.toString() === myUserId || isOwner) && (
+                          <button className={styles.deleteNoteButton} onClick={e => { e.stopPropagation(); deleteNote(note._id) }}>✕</button>
+                        )}
                       </div>
                     ))
                 }
@@ -469,7 +507,7 @@ function GroupDashboardPage() {
                         </div>
                         <div className={styles.requestInfo}>
                           <p className={styles.requestUsername}>{user.username}</p>
-                          <p className={styles.requestSub}>Wants to join this group</p>
+                          <p className={styles.requestSub}>wants to join this group</p>
                         </div>
                         <div className={styles.requestActions}>
                           <button className={styles.acceptButton} onClick={() => acceptRequest(user._id)}>Accept</button>
@@ -565,6 +603,34 @@ function GroupDashboardPage() {
                       </div>
                     ))
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave group confirmation */}
+      {showLeaveConfirm && (
+        <div className={styles.overlay} onClick={() => setShowLeaveConfirm(false)}>
+          <div className={styles.confirmModal} onClick={e => e.stopPropagation()}>
+            <p className={styles.confirmTitle}>Leave &ldquo;{group.name}&rdquo;?</p>
+            <p className={styles.confirmBody}>You may need to request to join again if you want to return.</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.confirmCancel} onClick={() => setShowLeaveConfirm(false)}>Cancel</button>
+              <button className={styles.confirmDelete} onClick={leaveGroup}>Yes, leave</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete group confirmation */}
+      {showDeleteConfirm && (
+        <div className={styles.overlay} onClick={() => setShowDeleteConfirm(false)}>
+          <div className={styles.confirmModal} onClick={e => e.stopPropagation()}>
+            <p className={styles.confirmTitle}>Delete &ldquo;{group.name}&rdquo;?</p>
+            <p className={styles.confirmBody}>This will permanently delete the group and all its content. There is no way to recover it after confirmation.</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.confirmCancel} onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+              <button className={styles.confirmDelete} onClick={deleteGroup}>Yes, delete</button>
             </div>
           </div>
         </div>

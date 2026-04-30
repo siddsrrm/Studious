@@ -98,6 +98,70 @@
   margin: 0;
 }
 
+.confirmModal {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.confirmTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.confirmBody {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.confirmCancel {
+  flex: 1;
+  padding: 9px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.confirmCancel:hover {
+  background-color: #f9fafb;
+}
+
+.confirmDelete {
+  flex: 1;
+  padding: 9px;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.confirmDelete:hover {
+  background-color: #b91c1c;
+}
+
 .deleteGroupButton {
   padding: 7px 14px;
   background: none;
@@ -209,7 +273,14 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  cursor: default;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.requestedButton:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 /* Tabs */
@@ -529,7 +600,14 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  cursor: default;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.requestedButton:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 .requestsBadge {
