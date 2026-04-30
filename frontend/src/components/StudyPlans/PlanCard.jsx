@@ -54,7 +54,7 @@ const PlanCard = ({ plan, onSelect, onDelete }) => {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setConfirmOpen(false)}
-                  className="px-3 py-1 text-sm bg-gray-600 rounded hover:bg-gray-400"
+                  className="px-3 py-1 text-sm bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
                 >
                   Cancel
                 </button>
