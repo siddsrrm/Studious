@@ -13,6 +13,7 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
+  const [showAddTask, setShowAddTask] = useState(false);
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterDueDateFrom, setFilterDueDateFrom] = useState("");
   const [filterDueDateTo, setFilterDueDateTo] = useState("");
@@ -72,7 +73,13 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
     }
   }, [showDraft]);
 
-  const handleAddTask = async ({ title, description, priority, dueDate }) => {
+  const handleAddTask = async ({
+    title,
+    description,
+    priority,
+    dueDate,
+    recurrence,
+  }) => {
     try {
       const res = await fetch(`${API}/tasks`, {
         method: "POST",
@@ -86,18 +93,29 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
           description,
           priority,
           dueDate,
+          recurrence,
         }),
       });
       const data = await res.json();
-      if (res.ok) setTasks([...tasks, data]);
-      else setError(data.message || "Failed to create task.");
+      if (res.ok) {
+        if (data.updatedTask) {
+          setTasks((prev) => [...prev, data.updatedTask]);
+        }
+      } else setError(data.message || "Failed to create task.");
     } catch {
       setError("Network error. Please try again.");
     }
   };
 
   const handleUpdateTask = (updatedTask) => {
-    setTasks(tasks.map((t) => (t._id === updatedTask._id ? updatedTask : t)));
+    setTasks((prev) => {
+      const exists = prev.find((t) => t._id === updatedTask._id);
+      if (exists) {
+        return prev.map((t) => (t._id === updatedTask._id ? updatedTask : t));
+      } else {
+        return [...prev, updatedTask];
+      }
+    });
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -106,8 +124,10 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setTasks(tasks.filter((t) => t._id !== taskId));
-      else setError("Failed to delete task.");
+      const data = await res.json();
+      if (res.ok) {
+        setTasks((prev) => prev.filter((t) => t._id !== taskId));
+      } else setError("Failed to delete task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -297,13 +317,21 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
         ) : tasks.length === 0 ? (
           <p>No tasks yet. Add one below!</p>
         ) : (
-          <ul>
+          <ul aria-label="Task titles summary">
             {filteredTasks.map((task) => (
-              <li key={task._id}>{task.title}</li>
+              <li key={task._id}>
+                <span data-testid="task-title-summary">{task.title}</span>
+              </li>
             ))}
           </ul>
         )}
-        <AddTaskForm onAddTask={handleAddTask} />
+        <button
+          type="button"
+          className="primary"
+          onClick={() => setShowAddTask(true)}
+        >
+          + Add Task
+        </button>
         <div
           style={{
             marginTop: "1rem",
@@ -330,6 +358,35 @@ const ToDoList = ({ studyPlanId, onProgressChange }) => {
             </button>
           )}
         </div>
+        {showAddTask && (
+          <div className="modal-overlay" onClick={() => setShowAddTask(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Add Task</h3>
+              </div>
+
+              <AddTaskForm
+                onAddTask={(task) => {
+                  handleAddTask(task);
+                  setShowAddTask(false); // close after submit
+                }}
+              />
+
+              <div className="modal-actions">
+                <button type="submit" form="add-task-form" className="primary">
+                  Add Task
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setShowAddTask(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {showDraft && (
           <ScheduleModal
             draftSchedule={draftSchedule}
@@ -374,41 +431,102 @@ const AddTaskForm = ({ onAddTask }) => {
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
 
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceValue, setRecurrenceValue] = useState(1);
+  const [recurrenceUnit, setRecurrenceUnit] = useState("days");
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAddTask({ title, description, priority, dueDate });
+
+    onAddTask({
+      title,
+      description,
+      priority,
+      dueDate,
+      recurrence: isRecurring
+        ? {
+            value: Number(recurrenceValue),
+            unit: recurrenceUnit,
+          }
+        : null,
+    });
+
     setTitle("");
     setDescription("");
     setPriority("medium");
     setDueDate("");
+    setIsRecurring(false);
+    setRecurrenceValue(1);
+    setRecurrenceUnit("days");
   };
 
   return (
-    <form className="addtask-form" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Task title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="Task description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-      <input
-        type="date"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
-      />
-      <button type="submit">Add Task</button>
+    <form id="add-task-form" className="addtask-form" onSubmit={handleSubmit}>
+      <div className="modal-field">
+        <label>Title</label>
+        <input
+          type="text"
+          placeholder="Task title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+      <div className="modal-field">
+        <label>Description</label>
+        <input
+          type="text"
+          placeholder="Task description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div className="modal-field">
+        <label>Priority</label>
+        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div className="modal-field">
+        <label>Due Date</label>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+      </div>
+      <div className="modal-field checkbox-row">
+        <label htmlFor="recurring">Recurring</label>
+        <input
+          id="recurring"
+          type="checkbox"
+          checked={isRecurring}
+          onChange={(e) => setIsRecurring(e.target.checked)}
+        />
+      </div>
+
+      {isRecurring && (
+        <div className="modal-field">
+          <input
+            type="number"
+            min="1"
+            value={recurrenceValue}
+            onChange={(e) => setRecurrenceValue(e.target.value)}
+          />
+          <select
+            value={recurrenceUnit}
+            onChange={(e) => setRecurrenceUnit(e.target.value)}
+          >
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months">Months</option>
+          </select>
+        </div>
+      )}
     </form>
   );
 };

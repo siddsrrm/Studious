@@ -119,13 +119,17 @@ describe("ToDoList", () => {
 
   describe("task interactions", () => {
     test("adds a task", async () => {
+      await user.click(screen.getByRole("button", { name: "+ Add Task" }));
+
       const addTitle = screen.getByPlaceholderText("Task title");
       const addButton = screen.getByRole("button", { name: "Add Task" });
 
       // Mock POST response for new task
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ _id: "3", title: "New Task", completed: false }),
+        json: async () => ({
+          updatedTask: { _id: "3", title: "New Task", completed: false },
+        }),
       });
 
       await user.type(addTitle, "New Task");
@@ -190,7 +194,10 @@ describe("ToDoList", () => {
     });
 
     test("deletes a task", async () => {
-      fetch.mockResolvedValueOnce({ ok: true });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
 
       const task1Container = await findTaskByTitle("Task 1");
 
@@ -203,9 +210,9 @@ describe("ToDoList", () => {
       await waitFor(() =>
         expect(
           screen
-            .queryAllByText("Task 1")
-            .every((el) => !el.closest("[data-testid='task']")),
-        ).toBe(true),
+            .getAllByTestId("task-title-summary")
+            .map((el) => el.textContent),
+        ).toEqual(["Task 2"]),
       );
     });
   });

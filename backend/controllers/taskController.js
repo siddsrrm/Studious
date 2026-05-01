@@ -38,7 +38,8 @@ exports.getTasks = async (req, res) => {
 
 exports.createTask = async (req, res) => {
   try {
-    const { studyPlanID, title, description, priority, dueDate } = req.body;
+    const { studyPlanID, title, description, priority, dueDate, recurrence } =
+      req.body;
 
     if (!studyPlanID)
       return res.status(400).json({ message: "studyPlanID is required" });
@@ -52,6 +53,12 @@ exports.createTask = async (req, res) => {
       priority: priority || "medium",
       dueDate: dueDate || null,
       subTasks: [],
+      recurrence: recurrence
+        ? {
+            value: Math.max(1, Number(req.body.recurrence.value || 1)),
+            unit: req.body.recurrence.unit || "days",
+          }
+        : null,
     });
 
     // update progress tracker
@@ -62,7 +69,7 @@ exports.createTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.status(201).json(task);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     res
       .status(500)
@@ -73,32 +80,101 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
+    let newTask = null;
+
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     if (task.ownerID.toString() !== req.user.userId)
       return res.status(403).json({ message: "Forbidden" });
 
     const wasCompleted = task.completed;
-    //use model method to update task
+
+    if (req.body.recurrence) {
+      if (!req.body.recurrence.value || !req.body.recurrence.unit) {
+        return res.status(400).json({
+          message: "Recurrence must include value and unit",
+        });
+      }
+    }
+
     const updated = await task.updateTask(req.body);
 
-    if (!wasCompleted && req.body.completed === true) {
+    if (!wasCompleted && updated.completed === true) {
       checkTaskAchievements(req.user.userId).catch(console.error);
+
+      // Prevent duplicate recurrence
+      if (task.lastCompletedAt) {
+        return res.json({ updatedTask: updated, newTask: null });
+      }
+
+      task.lastCompletedAt = new Date();
+      await task.save();
+
+      if (updated.recurrence && updated.dueDate) {
+        const addRecurrence = (date, recurrence) => {
+          const d = new Date(date);
+
+          switch (recurrence.unit) {
+            case "minutes":
+              d.setMinutes(d.getMinutes() + recurrence.value);
+              break;
+            case "hours":
+              d.setHours(d.getHours() + recurrence.value);
+              break;
+            case "days":
+              d.setDate(d.getDate() + recurrence.value);
+              break;
+            case "weeks":
+              d.setDate(d.getDate() + recurrence.value * 7);
+              break;
+            case "months":
+              d.setMonth(d.getMonth() + recurrence.value);
+              break;
+          }
+
+          return d;
+        };
+
+        const newDueDate = addRecurrence(updated.dueDate, updated.recurrence);
+
+        newTask = new Task({
+          ownerID: updated.ownerID,
+          studyPlanID: updated.studyPlanID,
+          title: updated.title,
+          description: updated.description,
+          completed: false,
+          priority: updated.priority,
+          dueDate: newDueDate,
+          recurrence: updated.recurrence,
+          subTasks: updated.subTasks.map((st) => ({
+            ownerID: st.ownerID,
+            taskID: null, // temp, set after save
+            title: st.title,
+            description: st.description,
+            completed: false,
+          })),
+        });
+
+        await newTask.save();
+
+        // now safely assign taskID
+        newTask.subTasks = newTask.subTasks.map((st) => ({
+          ...st.toObject(),
+          taskID: newTask._id,
+        }));
+
+        await newTask.save();
+      }
     }
 
-    // update progress tracker
-    let tracker = await ProgressTracker.findOne({ userID: task.ownerID });
-    if (!tracker) {
-      tracker = await ProgressTracker.create({ userID: task.ownerID });
-      await tracker.recalculateAllProgress();
-    }
-    await tracker.updateTaskProgress(task.studyPlanID);
+    await syncTaskProgress(task.ownerID, task.studyPlanID);
 
-    res.json(updated);
+    res.json({ updatedTask: updated, newTask: newTask || null });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error updating task", error: err.message });
+    res.status(500).json({
+      message: "Error updating task",
+      error: err.message,
+    });
   }
 };
 
@@ -121,7 +197,9 @@ exports.deleteTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json({ message: "Task deleted" });
+    res.json({
+      deletedTaskId: task._id,
+    });
   } catch (err) {
     res
       .status(500)
@@ -160,7 +238,7 @@ exports.createSubTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.status(201).json(task);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     res
       .status(500)
@@ -186,7 +264,7 @@ exports.updateSubTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json(updated);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     if (err.message === "Subtask not found")
       return res.status(404).json({ message: err.message });
@@ -217,7 +295,7 @@ exports.deleteSubTask = async (req, res) => {
     }
     await tracker.updateTaskProgress(task.studyPlanID);
 
-    res.json(task);
+    res.status(201).json({ updatedTask: task, newTask: null });
   } catch (err) {
     res
       .status(500)

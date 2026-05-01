@@ -41,10 +41,14 @@ exports.createAttachment = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { taskId, type, url } = req.body;
+    const { taskId, type, url, fileUrl, filename, size, mimeType } = req.body;
 
     if (!taskId) {
       return res.status(400).json({ message: "taskId is required" });
+    }
+
+    if (!type) {
+      return res.status(400).json({ message: "type is required" });
     }
 
     const validTypes = ["link", "file"];
@@ -78,36 +82,23 @@ exports.createAttachment = async (req, res) => {
     }
 
     if (type === "file") {
-      if (!req.file) {
+      const uploadedFile = req.file;
+
+      const finalFileUrl = fileUrl || uploadedFile?.path;
+      const finalFilename = filename || uploadedFile?.originalname;
+      const finalSize = size || uploadedFile?.size;
+      const finalMimeType = mimeType || uploadedFile?.mimetype;
+
+      if (!finalFileUrl || !finalFilename) {
         return res.status(400).json({
-          message: "File is required",
+          message: "fileUrl and filename are required",
         });
       }
 
-      // Duplicate check
-      const existing = await Attachment.findOne({
-        ownerID: userId,
-        taskId,
-        type: "file",
-        filename: req.file.originalname,
-        size: req.file.size,
-      });
-
-      if (existing) {
-        return res.status(400).json({
-          message: "This file already exists for this task",
-        });
-      }
-
-      fileName = `${Date.now()}-${req.file.originalname}`;
-      filePath = path.join(__dirname, "../uploads", fileName);
-
-      await fsp.writeFile(filePath, req.file.buffer);
-
-      data.filename = req.file.originalname;
-      data.fileUrl = `/uploads/${fileName}`;
-      data.size = req.file.size;
-      data.mimeType = req.file.mimetype;
+      data.fileUrl = finalFileUrl;
+      data.filename = finalFilename;
+      data.size = finalSize;
+      data.mimeType = finalMimeType;
     }
 
     const attachment = await Attachment.create(data);
@@ -166,7 +157,7 @@ exports.updateAttachment = async (req, res) => {
     ) {
       try {
         const fileName = path.basename(oldFileUrl);
-        const filePath = path.join(__dirname, "../uploads", fileName);
+        const filePath = path.join(__dirname, "../data/assets", fileName);
 
         if (fs.existsSync(filePath)) {
           await fsp.unlink(filePath);
@@ -205,7 +196,7 @@ exports.deleteAttachment = async (req, res) => {
     if (attachment.type === "file" && attachment.fileUrl) {
       try {
         const fileName = path.basename(attachment.fileUrl);
-        const filePath = path.join(__dirname, "../uploads", fileName);
+        const filePath = path.join(__dirname, "../data/assets", fileName);
 
         if (fs.existsSync(filePath)) {
           await fsp.unlink(filePath);

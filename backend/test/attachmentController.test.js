@@ -1,10 +1,13 @@
-const attachmentController = require("../controllers/attachmentController");
-const Attachment = require("../models/Attachment");
 const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 
-jest.mock("../models/Attachment");
+jest.mock("../models/Attachment", () => ({
+  find: jest.fn(),
+  create: jest.fn(),
+  findById: jest.fn(),
+  deleteOne: jest.fn(),
+}));
 
 jest.mock("fs", () => ({
   existsSync: jest.fn(),
@@ -14,6 +17,9 @@ jest.mock("fs/promises", () => ({
   unlink: jest.fn(),
   writeFile: jest.fn(),
 }));
+
+const Attachment = require("../models/Attachment");
+const attachmentController = require("../controllers/attachmentController");
 
 const makeRes = () => ({
   status: jest.fn().mockReturnThis(),
@@ -146,7 +152,7 @@ describe("createAttachment", () => {
       },
       file: {
         originalname: "test.pdf",
-        buffer: Buffer.from("dummy"),
+        path: "/data/assets/test.pdf",
         size: 100,
         mimetype: "application/pdf",
       },

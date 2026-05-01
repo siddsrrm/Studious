@@ -8,13 +8,16 @@ const API = import.meta.env.VITE_API_URL;
 const Task = ({ taskObj, onUpdate, onDelete }) => {
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
-  const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState(taskObj.title);
   const [editDescription, setEditDescription] = useState(taskObj.description);
   const [editingSubTaskId, setEditingSubTaskId] = useState(null);
   const [editSubTitle, setEditSubTitle] = useState("");
   const [editSubDescription, setEditSubDescription] = useState("");
   const [editPriority, setEditPriority] = useState(taskObj.priority);
+  const [isRecurring, setIsRecurring] = useState(!!taskObj.recurrence);
+  const [recurrenceValue, setRecurrenceValue] = useState(1);
+  const [recurrenceUnit, setRecurrenceUnit] = useState("days");
 
   const handleMarkCompleted = async () => {
     try {
@@ -40,9 +43,12 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
         body: JSON.stringify({ completed: true }),
       });
+
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to update task.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to update task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -61,15 +67,18 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           title: editTitle,
           description: editDescription,
           priority: editPriority,
+          recurrence: isRecurring
+            ? { value: Number(recurrenceValue), unit: recurrenceUnit }
+            : null,
         }),
       });
+
       const data = await res.json();
       if (res.ok) {
-        onUpdate(data);
-        setIsEditing(false);
-      } else {
-        setError("Failed to update task.");
-      }
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+        setShowEditModal(false);
+      } else setError("Failed to update task.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -78,8 +87,8 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
   const handleEditCancel = () => {
     setEditTitle(taskObj.title);
     setEditDescription(taskObj.description);
-    setIsEditing(false);
     setEditPriority(taskObj.priority);
+    setShowEditModal(false);
   };
 
   const handleAddSubTask = async ({ title, description }) => {
@@ -92,9 +101,12 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         },
         body: JSON.stringify({ title, description }),
       });
+
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to create subtask.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to create subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -115,9 +127,11 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
         }),
       },
     );
+
     const data = await res.json();
     if (res.ok) {
-      onUpdate(data);
+      if (data.updatedTask) onUpdate(data.updatedTask);
+      if (data.newTask) onUpdate(data.newTask);
       setEditingSubTaskId(null);
     } else setError("Failed to update subtask.");
   };
@@ -135,9 +149,12 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           body: JSON.stringify({ completed: true }),
         },
       );
+
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to update subtask.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to update subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
@@ -152,46 +169,37 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
+
       const data = await res.json();
-      if (res.ok) onUpdate(data);
-      else setError("Failed to delete subtask.");
+      if (res.ok) {
+        if (data.updatedTask) onUpdate(data.updatedTask);
+        if (data.newTask) onUpdate(data.newTask);
+      } else setError("Failed to delete subtask.");
     } catch {
       setError("Network error. Please try again.");
     }
   };
 
+  const startEditing = () => {
+    setEditTitle(taskObj.title || "");
+    setEditDescription(taskObj.description || "");
+    setEditPriority(taskObj.priority || "medium");
+    setIsRecurring(!!taskObj.recurrence);
+
+    if (taskObj.recurrence) {
+      setRecurrenceValue(taskObj.recurrence.value || 1);
+      setRecurrenceUnit(taskObj.recurrence.unit || "days");
+    }
+
+    setShowEditModal(true);
+  };
+
   return (
     <>
       <div className="task-card">
-        {isEditing ? (
-          <>
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-            />
-            <input
-              type="text"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-            />
-            <select
-              value={editPriority}
-              onChange={(e) => setEditPriority(e.target.value)}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-            <button onClick={handleEditSave}>Save</button>
-            <button onClick={handleEditCancel}>Cancel</button>
-          </>
-        ) : (
-          <>
-            <h2>{taskObj.title}</h2>
-            <p>Description: {taskObj.description}</p>
-          </>
-        )}
+        <h2>{taskObj.title}</h2>
+
+        <p>Description: {taskObj.description}</p>
         <p>Priority: {taskObj.priority}</p>
         <p>
           Due:{" "}
@@ -201,30 +209,38 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
               })
             : "No due date"}
         </p>
+
         {error && <p style={{ color: "red" }}>{error}</p>}
+
         <button onClick={handleMarkCompleted} disabled={taskObj.completed}>
           {taskObj.completed ? "Completed" : "Mark Complete"}
         </button>
-        <button
-          onClick={() => setIsEditing(true)}
-          disabled={taskObj.completed || isEditing}
-        >
-          Edit
-        </button>
-        <button className="delete-btn" onClick={() => onDelete(taskObj._id)}>
-          Delete Task
-        </button>
+
         <p>Subtasks:</p>
         <ul>
           {taskObj.subTasks.map((subTask) => (
             <li key={subTask._id}>{subTask.title}</li>
           ))}
         </ul>
+
         <AITaskBreakdown taskObj={taskObj} onAdd={handleAddSubTask} />
         <SubTaskForm onAdd={handleAddSubTask} />
+
         <p>Attachments:</p>
         <Attachments taskId={taskObj._id} token={token} />
+
+        <button
+          onClick={startEditing}
+          disabled={taskObj.completed || showEditModal}
+        >
+          Edit
+        </button>
+
+        <button className="delete-btn" onClick={() => onDelete(taskObj._id)}>
+          Delete Task
+        </button>
       </div>
+
       {taskObj.subTasks.map((subTask) => (
         <div className="subtask-card" key={subTask._id}>
           {editingSubTaskId === subTask._id ? (
@@ -246,6 +262,7 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
             <>
               <h2>{subTask.title}</h2>
               <p>{subTask.description}</p>
+
               <button
                 onClick={() => {
                   setEditingSubTaskId(subTask._id);
@@ -257,12 +274,14 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
               </button>
             </>
           )}
+
           <button
             onClick={() => handleMarkSubTaskCompleted(subTask._id)}
             disabled={subTask.completed}
           >
             {subTask.completed ? "Completed" : "Mark Complete"}
           </button>
+
           <button
             className="delete-btn"
             onClick={() => handleDeleteSubTask(subTask._id)}
@@ -271,6 +290,85 @@ const Task = ({ taskObj, onUpdate, onDelete }) => {
           </button>
         </div>
       ))}
+
+      {showEditModal && (
+        <div className="modal-overlay" onClick={handleEditCancel}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Task</h3>
+            </div>
+
+            <div className="modal-field">
+              <label>Title</label>
+              <input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Description</label>
+              <input
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Priority</label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <div className="modal-field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={isRecurring || false}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                />
+                Recurring
+              </label>
+            </div>
+
+            {isRecurring && (
+              <div>
+                <input
+                  type="number"
+                  min="1"
+                  value={recurrenceValue}
+                  onChange={(e) => setRecurrenceValue(e.target.value)}
+                />
+                <select
+                  value={recurrenceUnit}
+                  onChange={(e) => setRecurrenceUnit(e.target.value)}
+                >
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button className="secondary" onClick={handleEditCancel}>
+                Cancel
+              </button>
+              <button className="primary" onClick={handleEditSave}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

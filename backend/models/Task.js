@@ -37,12 +37,31 @@ const TaskSchema = new mongoose.Schema(
     priority: { type: String, default: "medium" },
     dueDate: { type: Date, default: null },
     subTasks: [SubTaskSchema],
+    lastCompletedAt: { type: Date, default: null },
+    recurrence: {
+      type: {
+        value: { type: Number, min: 1 },
+        unit: {
+          type: String,
+          enum: ["minutes", "hours", "days", "weeks", "months"],
+        },
+      },
+      default: null,
+    },
   },
   { timestamps: true },
 );
 
 TaskSchema.methods.updateTask = async function (updates) {
-  const allowed = ["title", "description", "completed", "priority", "dueDate"];
+  const allowed = [
+    "title",
+    "description",
+    "completed",
+    "priority",
+    "dueDate",
+    "lastCompletedAt",
+    "recurrence",
+  ];
   allowed.forEach((field) => {
     if (updates[field] !== undefined) this[field] = updates[field];
   });

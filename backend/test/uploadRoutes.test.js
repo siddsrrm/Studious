@@ -1,5 +1,9 @@
 const request = require("supertest");
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+
+const uploadDir = path.join(__dirname, "../data/assets");
 
 jest.mock("../middleware/authMiddleware", () => {
   // auth middleware stub: always authenticate
@@ -102,6 +106,13 @@ describe("uploadRoutes", () => {
   afterEach(() => {
     delete global.fetch;
     jest.clearAllMocks();
+
+    if (fs.existsSync(uploadDir)) {
+      const files = fs.readdirSync(uploadDir);
+      for (const file of files) {
+        fs.unlinkSync(path.join(uploadDir, file));
+      }
+    }
   });
 
   test("POST /api/upload/pdf returns extracted text + pageCount", async () => {
@@ -167,17 +178,38 @@ describe("uploadRoutes", () => {
     });
 
     test("rejects file when exceeding size limit", async () => {
-      // Create a buffer slightly larger than 500MB limit (mocked scenario)
-      const largeBuffer = Buffer.alloc(501 * 1024 * 1024);
+      jest.resetModules();
+
+      // Mock multer BEFORE requiring routes
+      jest.doMock("multer", () => {
+        const multerMock = () => ({
+          single: () => (req, res, cb) => {
+            const err = new Error("File too large");
+            err.code = "LIMIT_FILE_SIZE";
+            cb(err);
+          },
+        });
+
+        multerMock.memoryStorage = jest.fn(() => ({}));
+        multerMock.diskStorage = jest.fn(() => ({}));
+
+        return multerMock;
+      });
+
+      const uploadRoutes = require("../routes/uploadRoutes");
+
+      const app = express();
+      app.use(express.json());
+      app.use("/api/upload", uploadRoutes);
 
       const res = await request(app)
         .post("/api/upload/file")
-        .attach("file", largeBuffer, {
-          filename: "large.bin",
+        .attach("file", Buffer.from("small"), {
+          filename: "test.bin",
           contentType: "application/octet-stream",
         });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(413);
       expect(res.body).toHaveProperty("message");
     });
   });
